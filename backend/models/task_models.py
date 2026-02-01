@@ -69,7 +69,7 @@ class TaskStatusChangeEvent(BaseModel):
 
     type: str = "task_status_changed"
     task_id: UUID
-    old_status: TaskStatus
+    old_status: TaskStatus | None
     new_status: TaskStatus
     timestamp: datetime
 

@@ -55,22 +55,25 @@ export function KanbanBoard() {
   ];
 
   return (
-    <div className="p-6">
+    <div className="h-full flex flex-col p-6 bg-[#1a1f2e]">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="flex-shrink-0 mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Agent Tasks</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-white">Agent Tasks</h1>
+          <p className="text-sm text-gray-400">
             Real-time task monitoring and management
           </p>
         </div>
-        <Badge variant={isConnected ? "default" : "destructive"}>
+        <Badge
+          variant={isConnected ? "default" : "destructive"}
+          className={isConnected ? "bg-green-500/20 text-green-400 border-green-500/30" : ""}
+        >
           {isConnected ? "🟢 Connected" : "🔴 Disconnected"}
         </Badge>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      {/* Kanban Board - grows to fill remaining space */}
+      <div className="flex-1 flex gap-4 overflow-x-auto overflow-y-hidden min-h-0">
         {columns.map((column) => (
           <KanbanColumn
             key={column.status}
@@ -82,7 +85,7 @@ export function KanbanBoard() {
       </div>
 
       {/* Stats */}
-      <div className="mt-6 text-sm text-muted-foreground">
+      <div className="flex-shrink-0 mt-4 text-xs text-gray-500">
         Total tasks: {tasks.size} | Events received: {events.length}
       </div>
     </div>

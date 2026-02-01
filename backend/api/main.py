@@ -93,6 +93,7 @@ async def task_websocket(websocket: WebSocket, user_id: UUID):
 
 
 # Import and include routers
-from backend.api.routes import tasks
+from backend.api.routes import tasks, commands
 
 app.include_router(tasks.router)
+app.include_router(commands.router)

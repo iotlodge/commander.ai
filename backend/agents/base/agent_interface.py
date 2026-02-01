@@ -211,14 +211,17 @@ class BaseAgent(ABC, MemoryAwareMixin):
                     current_query=command,
                 )
 
-            # Save user message
-            await self.save_message(
-                user_id=context.user_id,
-                agent_id=self.agent_id,
-                thread_id=context.thread_id,
-                role=ConversationRole.USER,
-                content=command,
-            )
+            # Save user message (optional - skip if memory system not fully set up)
+            try:
+                await self.save_message(
+                    user_id=context.user_id,
+                    agent_id=self.agent_id,
+                    thread_id=context.thread_id,
+                    role=ConversationRole.USER,
+                    content=command,
+                )
+            except Exception:
+                pass  # Memory system not fully initialized - skip for MVP
 
             # Execute graph
             if not self.graph:
@@ -226,14 +229,17 @@ class BaseAgent(ABC, MemoryAwareMixin):
 
             result = await self._execute_graph(command, context)
 
-            # Save assistant response
-            await self.save_message(
-                user_id=context.user_id,
-                agent_id=self.agent_id,
-                thread_id=context.thread_id,
-                role=ConversationRole.ASSISTANT,
-                content=result.response,
-            )
+            # Save assistant response (optional - skip if memory system not fully set up)
+            try:
+                await self.save_message(
+                    user_id=context.user_id,
+                    agent_id=self.agent_id,
+                    thread_id=context.thread_id,
+                    role=ConversationRole.ASSISTANT,
+                    content=result.response,
+                )
+            except Exception:
+                pass  # Memory system not fully initialized - skip for MVP
 
             # Notify completion
             if context.task_callback:
