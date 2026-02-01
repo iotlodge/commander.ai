@@ -36,13 +36,16 @@ class TaskWebSocketManager:
     async def broadcast_task_event(self, event: BaseModel):
         """Broadcast task event to all connected users"""
         message = event.model_dump(mode='json')
+        print(f"📤 Broadcasting event: {event.type} to {len(self.active_connections)} connections")
 
         # Send to all connections
         disconnected = []
         for user_id, connection in self.active_connections.items():
             try:
                 await connection.send_json(message)
-            except Exception:
+                print(f"  ✅ Sent to user {user_id}")
+            except Exception as e:
+                print(f"  ❌ Failed to send to user {user_id}: {e}")
                 disconnected.append(user_id)
 
         # Clean up failed connections
