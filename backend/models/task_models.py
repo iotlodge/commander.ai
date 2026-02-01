@@ -101,3 +101,11 @@ class ConsultationCompletedEvent(BaseModel):
     type: str = "consultation_completed"
     task_id: UUID
     timestamp: datetime
+
+
+class TaskDeletedEvent(BaseModel):
+    """WebSocket event when task is deleted"""
+
+    type: str = "task_deleted"
+    task_id: UUID
+    timestamp: datetime

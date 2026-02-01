@@ -6,12 +6,42 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { TaskStatus } from "@/lib/types";
 import { KanbanColumn } from "./kanban-column";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export function KanbanBoard() {
   const { tasks, getTasksByStatus, handleWebSocketEvent, addTask } = useTaskStore();
   const { isConnected, events } = useWebSocket(MVP_USER_ID);
+
+  const handlePurgeCompleted = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/tasks/purge/completed?user_id=${MVP_USER_ID}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) {
+        console.error("Failed to purge completed tasks");
+      }
+    } catch (error) {
+      console.error("Error purging completed tasks:", error);
+    }
+  };
+
+  const handlePurgeFailed = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/tasks/purge/failed?user_id=${MVP_USER_ID}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) {
+        console.error("Failed to purge failed tasks");
+      }
+    } catch (error) {
+      console.error("Error purging failed tasks:", error);
+    }
+  };
 
   // Handle WebSocket events
   useEffect(() => {
@@ -64,12 +94,32 @@ export function KanbanBoard() {
             Real-time task monitoring and management
           </p>
         </div>
-        <Badge
-          variant={isConnected ? "default" : "destructive"}
-          className={isConnected ? "bg-green-500/20 text-green-400 border-green-500/30" : ""}
-        >
-          {isConnected ? "🟢 Connected" : "🔴 Disconnected"}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handlePurgeCompleted}
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30"
+          >
+            <Trash2 className="h-4 w-4" />
+            Purge Completed
+          </Button>
+          <Button
+            onClick={handlePurgeFailed}
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+          >
+            <Trash2 className="h-4 w-4" />
+            Purge Failed
+          </Button>
+          <Badge
+            variant={isConnected ? "default" : "destructive"}
+            className={isConnected ? "bg-green-500/20 text-green-400 border-green-500/30" : ""}
+          >
+            {isConnected ? "🟢 Connected" : "🔴 Disconnected"}
+          </Badge>
+        </div>
       </div>
 
       {/* Kanban Board - grows to fill remaining space */}

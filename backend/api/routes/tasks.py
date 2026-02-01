@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.models.task_models import (
-    AgentTask, TaskCreate, TaskUpdate, TaskStatusChangeEvent
+    AgentTask, TaskCreate, TaskUpdate, TaskStatusChangeEvent, TaskDeletedEvent, TaskStatus
 )
 from backend.repositories.task_repository import TaskRepository, get_db_session
 from backend.api.websocket import get_ws_manager
@@ -92,3 +92,45 @@ async def update_task(
         )
 
     return task
+
+
+@router.delete("/purge/completed")
+async def purge_completed_tasks(
+    user_id: UUID,
+    repo: TaskRepository = Depends(get_repo),
+):
+    """Delete all completed tasks for a user"""
+    deleted_ids = await repo.delete_tasks_by_status(user_id, TaskStatus.COMPLETED)
+
+    # Broadcast deletion events via WebSocket
+    ws_manager = get_ws_manager()
+    for task_id in deleted_ids:
+        await ws_manager.broadcast_task_event(
+            TaskDeletedEvent(
+                task_id=task_id,
+                timestamp=datetime.utcnow()
+            )
+        )
+
+    return {"deleted_count": len(deleted_ids), "task_ids": deleted_ids}
+
+
+@router.delete("/purge/failed")
+async def purge_failed_tasks(
+    user_id: UUID,
+    repo: TaskRepository = Depends(get_repo),
+):
+    """Delete all failed tasks for a user"""
+    deleted_ids = await repo.delete_tasks_by_status(user_id, TaskStatus.FAILED)
+
+    # Broadcast deletion events via WebSocket
+    ws_manager = get_ws_manager()
+    for task_id in deleted_ids:
+        await ws_manager.broadcast_task_event(
+            TaskDeletedEvent(
+                task_id=task_id,
+                timestamp=datetime.utcnow()
+            )
+        )
+
+    return {"deleted_count": len(deleted_ids), "task_ids": deleted_ids}

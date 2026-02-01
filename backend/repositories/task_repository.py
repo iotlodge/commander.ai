@@ -154,6 +154,27 @@ class TaskRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
+    async def delete_tasks_by_status(self, user_id: UUID, status: TaskStatus) -> list[UUID]:
+        """Delete all tasks with given status for a user, return deleted task IDs"""
+        # Get task IDs before deletion
+        stmt = select(AgentTaskModel.id).where(
+            AgentTaskModel.user_id == user_id,
+            AgentTaskModel.status == status.value
+        )
+        result = await self.session.execute(stmt)
+        task_ids = [row[0] for row in result.fetchall()]
+
+        # Delete tasks
+        from sqlalchemy import delete as sql_delete
+        stmt = sql_delete(AgentTaskModel).where(
+            AgentTaskModel.user_id == user_id,
+            AgentTaskModel.status == status.value
+        )
+        await self.session.execute(stmt)
+        await self.session.commit()
+
+        return task_ids
+
     def _model_to_pydantic(self, model: AgentTaskModel) -> AgentTask:
         """Convert SQLAlchemy model to Pydantic model"""
         return AgentTask(
