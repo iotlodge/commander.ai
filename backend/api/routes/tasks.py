@@ -94,6 +94,32 @@ async def update_task(
     return task
 
 
+@router.delete("/{task_id}")
+async def delete_task(
+    task_id: UUID,
+    repo: TaskRepository = Depends(get_repo),
+):
+    """Delete a specific task"""
+    # Check if task exists
+    task = await repo.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Delete the task
+    await repo.delete_task(task_id)
+
+    # Broadcast deletion event via WebSocket
+    ws_manager = get_ws_manager()
+    await ws_manager.broadcast_task_event(
+        TaskDeletedEvent(
+            task_id=task_id,
+            timestamp=datetime.utcnow()
+        )
+    )
+
+    return {"deleted": True, "task_id": str(task_id)}
+
+
 @router.delete("/purge/completed")
 async def purge_completed_tasks(
     user_id: UUID,

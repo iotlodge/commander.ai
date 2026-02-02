@@ -175,6 +175,13 @@ class TaskRepository:
 
         return task_ids
 
+    async def delete_task(self, task_id: UUID) -> None:
+        """Delete a specific task by ID"""
+        from sqlalchemy import delete as sql_delete
+        stmt = sql_delete(AgentTaskModel).where(AgentTaskModel.id == task_id)
+        await self.session.execute(stmt)
+        await self.session.commit()
+
     def _model_to_pydantic(self, model: AgentTaskModel) -> AgentTask:
         """Convert SQLAlchemy model to Pydantic model"""
         return AgentTask(
