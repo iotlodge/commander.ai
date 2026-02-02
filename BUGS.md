@@ -12,11 +12,14 @@
 4. ✅ FIXED - The Board's minimum width is still just a bit too wide (scrollbar appears [needs to be about 5-10% less overall]).  Try making each of the columns width (cards if necessary) smaller or adjust so columns resize without a board scrollbar
    - Reduced column width from 320px to 285px (11% reduction)
 5. Reference BUG_image:
-   6. ✅ FIXED - Bug A: when the agent is highlighted, the font should be more readable (almost disappears)
-      - Changed selected item to white background with dark gray text for all elements
-      - Avatar gets blue background with white text when selected
-   7. ✅ FIXED - Bug B: when I click inside command window, the popup comes up (good), BUT when I select the agent to talk to it does not enter @name in the command window. It should enter the agent's name so I can then enter the command
-      - Added preventDefault on mouseDown to prevent focus loss
-      - Added onClick handler as backup to onSelect
-      - Made CommandInput readOnly to prevent interference
+   6. ✅ FIXED (commits d3dbff1) - Bug A: when the agent is highlighted, the font should be more readable (almost disappears)
+      - Used Tailwind group modifier: group-data-[selected=true]:text-gray-900
+      - @agent text now dark gray (gray-900) on white background when selected
+      - All text elements properly styled with dark colors when highlighted
+   7. ✅ FIXED (commits a7c33ce, aff7bea) - Bug B: when I click inside command window, the popup comes up (good), BUT when I select the agent to talk to it does not enter @name in the command window. It should enter the agent's name so I can then enter the command
+      - Added 10ms delay before closing autocomplete to ensure text insertion
+      - Supports two use cases:
+        * Type '@b' then select → replaces '@b' with '@bob '
+        * Click in empty field then select → inserts '@bob ' at cursor
+      - No need to type @ manually since autocomplete appears automatically
 
