@@ -4,8 +4,11 @@ import { AgentTask, TaskStatus } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
+import { useTaskStore } from "@/lib/store";
 
 interface TaskCardProps {
   task: AgentTask;
@@ -19,11 +22,28 @@ const statusColors = {
   [TaskStatus.FAILED]: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
+async function removeTask(taskId: string) {
+  try {
+    await fetch(`http://localhost:8000/api/tasks/${taskId}`, {
+      method: 'DELETE',
+    });
+  } catch (error) {
+    console.error('Failed to remove task:', error);
+  }
+}
+
 export function TaskCard({ task }: TaskCardProps) {
+  const { removeTask: removeTaskFromStore } = useTaskStore();
+
+  const handleRemove = async () => {
+    await removeTask(task.id);
+    removeTaskFromStore(task.id);
+  };
+
   return (
     <Card className="mb-3 hover:shadow-lg transition-shadow bg-[#1e2433] border-[#3a4454]">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="text-xs bg-[#4a9eff] text-white">
@@ -39,9 +59,21 @@ export function TaskCard({ task }: TaskCardProps) {
               </p>
             </div>
           </div>
-          <Badge variant="secondary" className={cn("text-xs border", statusColors[task.status])}>
-            {task.status.replace("_", " ")}
-          </Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className={cn("text-xs border", statusColors[task.status])}>
+              {task.status.replace("_", " ")}
+            </Badge>
+            {task.status === TaskStatus.QUEUED && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRemove}
+                className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
 
@@ -70,6 +102,31 @@ export function TaskCard({ task }: TaskCardProps) {
             Consulting @{task.consultation_target_nickname}
           </Badge>
         )}
+
+        {/* Metrics Section - Basic placeholders */}
+        {(task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.COMPLETED) && (
+          <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-[#3a4454]">
+            <div className="text-center">
+              <div className="text-xs text-gray-500">Tool Calls</div>
+              <div className="text-sm font-semibold text-gray-300">
+                {task.tool_calls_count ?? 0}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500">Agent Calls</div>
+              <div className="text-sm font-semibold text-gray-300">
+                {task.agent_calls_count ?? 0}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500">Tokens</div>
+              <div className="text-sm font-semibold text-gray-300">
+                {task.total_tokens?.toLocaleString() ?? 0}
+              </div>
+            </div>
+          </div>
+        )}
+        {/* TODO: Wire up backend instrumentation to track actual metrics */}
 
         {/* Timestamps */}
         <div className="flex justify-between text-xs text-gray-500 pt-2 border-t border-[#3a4454]">

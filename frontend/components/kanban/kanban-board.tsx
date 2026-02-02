@@ -89,7 +89,7 @@ export function KanbanBoard() {
       {/* Header */}
       <div className="flex-shrink-0 mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Agent Tasks</h1>
+          <h1 className="text-2xl font-bold text-white">Agent Interaction</h1>
           <p className="text-sm text-gray-400">
             Real-time task monitoring and management
           </p>

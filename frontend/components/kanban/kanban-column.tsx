@@ -21,7 +21,7 @@ const statusConfig = {
     textColor: "text-[#4a9eff]",
   },
   [TaskStatus.TOOL_CALL]: {
-    title: "Tool Call",
+    title: "Feedback Requested",
     color: "bg-[#2a3444] border-[#a855f7]",
     textColor: "text-[#a855f7]",
   },

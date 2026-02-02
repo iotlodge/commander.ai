@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     memory_service = await get_memory_service()
 
     # Initialize and register agents
-    initialize_default_agents()
+    await initialize_default_agents()
 
     print("🚀 commander.ai started successfully")
 
@@ -93,7 +93,8 @@ async def task_websocket(websocket: WebSocket, user_id: UUID):
 
 
 # Import and include routers
-from backend.api.routes import tasks, commands
+from backend.api.routes import tasks, commands, graphs
 
 app.include_router(tasks.router)
 app.include_router(commands.router)
+app.include_router(graphs.router)

@@ -19,6 +19,8 @@ from backend.memory.schemas import (
     MemoryType,
     MemorySearchResult,
 )
+from backend.repositories.graph_repository import GraphRepository
+from backend.repositories.task_repository import get_session_factory
 
 
 @dataclass
@@ -184,6 +186,39 @@ class BaseAgent(ABC, MemoryAwareMixin):
         """Initialize agent (create graph, connect to memory)"""
         await self._ensure_memory_service()
         self.graph = self.create_graph()
+
+        # Generate and store graph visualization
+        await self._store_graph_visualization()
+
+    async def _store_graph_visualization(self) -> None:
+        """Generate mermaid diagram and store in database"""
+        if not self.graph:
+            return
+
+        try:
+            # Generate mermaid diagram using LangGraph built-in
+            graph_obj = self.graph.get_graph()
+            mermaid_diagram = graph_obj.draw_mermaid()
+
+            # Count nodes and edges
+            node_count = len(graph_obj.nodes)
+            edge_count = len(graph_obj.edges)
+
+            # Store to database
+            session_factory = get_session_factory()
+            async with session_factory() as session:
+                graph_repo = GraphRepository(session)
+                await graph_repo.upsert_graph(
+                    agent_id=self.metadata.id,
+                    agent_nickname=self.metadata.nickname,
+                    mermaid_diagram=mermaid_diagram,
+                    graph_schema=None,  # Optional: could store graph_obj.to_json() if needed
+                    node_count=node_count,
+                    edge_count=edge_count
+                )
+        except Exception as e:
+            # Don't fail agent initialization if graph storage fails
+            print(f"Warning: Failed to store graph visualization for {self.metadata.nickname}: {e}")
 
     async def execute(
         self,

@@ -71,7 +71,7 @@ class AgentRegistry:
 
 
 # Initialize default agents (to be populated during app startup)
-def initialize_default_agents() -> None:
+async def initialize_default_agents() -> None:
     """
     Initialize and register default agents
     This will be called during application startup
@@ -82,16 +82,20 @@ def initialize_default_agents() -> None:
     from backend.agents.specialized.agent_b.graph import ComplianceAgent
     from backend.agents.specialized.agent_c.graph import DataAgent
 
-    # Register Parent Agent (Orchestrator)
+    # Create and register Parent Agent (Orchestrator)
     parent_agent = ParentAgent()
     AgentRegistry.register(parent_agent)
+    await parent_agent.initialize()
 
-    # Register specialist agents
+    # Create and register specialist agents
     bob = ResearchAgent()
     AgentRegistry.register(bob)
+    await bob.initialize()
 
     sue = ComplianceAgent()
     AgentRegistry.register(sue)
+    await sue.initialize()
 
     rex = DataAgent()
     AgentRegistry.register(rex)
+    await rex.initialize()

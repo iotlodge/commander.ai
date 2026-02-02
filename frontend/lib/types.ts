@@ -26,6 +26,11 @@ export interface AgentTask {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+
+  // Metrics (basic placeholders - backend instrumentation TODO)
+  tool_calls_count?: number;      // Number of tool invocations
+  agent_calls_count?: number;     // Number of agent consultations
+  total_tokens?: number;          // LLM token usage
 }
 
 // WebSocket event types

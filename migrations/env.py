@@ -21,11 +21,11 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Import all models here for autogenerate support
-# from backend.models import Base
-# target_metadata = Base.metadata
+from backend.repositories.task_repository import Base, AgentTaskModel
+# Import all model files to ensure they're registered with Base
+from backend.models.graph_models import AgentGraphModel
 
-# For now, set to None - we'll use raw SQL migrations initially
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
