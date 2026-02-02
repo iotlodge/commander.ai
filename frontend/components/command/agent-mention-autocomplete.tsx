@@ -77,22 +77,22 @@ export function AgentMentionAutocomplete({
                   onMouseDown={(e) => {
                     e.preventDefault(); // Prevent focus loss from textarea
                   }}
-                  className="cursor-pointer hover:bg-[#3a4454] data-[selected=true]:bg-white/95"
+                  className="group cursor-pointer hover:bg-[#3a4454] data-[selected=true]:bg-white/95"
                 >
                   <div className="flex items-center gap-3 w-full">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#4a9eff]/20 text-[#4a9eff] font-semibold data-[selected=true]:bg-[#4a9eff] data-[selected=true]:text-white">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#4a9eff]/20 text-[#4a9eff] font-semibold group-data-[selected=true]:bg-[#4a9eff] group-data-[selected=true]:text-white">
                       {agent.nickname.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm text-white data-[selected=true]:text-gray-900">
+                        <span className="font-medium text-sm text-white group-data-[selected=true]:text-gray-900">
                           @{agent.nickname}
                         </span>
-                        <span className="text-xs text-gray-400 data-[selected=true]:text-gray-700">
+                        <span className="text-xs text-gray-400 group-data-[selected=true]:text-gray-700">
                           {agent.specialization}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 truncate data-[selected=true]:text-gray-600">
+                      <p className="text-xs text-gray-500 truncate group-data-[selected=true]:text-gray-600">
                         {agent.description}
                       </p>
                     </div>
