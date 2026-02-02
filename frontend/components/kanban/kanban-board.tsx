@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTaskStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { TaskStatus } from "@/lib/types";
 import { KanbanColumn } from "./kanban-column";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Package, GitBranch } from "lucide-react";
+import { AgentGraphModal } from "@/components/graphs/agent-graph-modal";
+import { useGraphModal } from "@/lib/hooks/use-graph-modal";
 
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export function KanbanBoard() {
   const { tasks, getTasksByStatus, handleWebSocketEvent, addTask } = useTaskStore();
   const { isConnected, events } = useWebSocket(MVP_USER_ID);
+  const [lastProcessedIndex, setLastProcessedIndex] = useState(-1);
+  const { isOpen, openModal, closeModal } = useGraphModal();
 
   const handlePurgeCompleted = async () => {
     try {
@@ -43,13 +47,16 @@ export function KanbanBoard() {
     }
   };
 
-  // Handle WebSocket events
+  // Handle WebSocket events - Process ALL new events, not just the latest
   useEffect(() => {
-    if (events.length > 0) {
-      const latestEvent = events[events.length - 1];
-      handleWebSocketEvent(latestEvent);
+    if (events.length > lastProcessedIndex + 1) {
+      // Process all unprocessed events
+      for (let i = lastProcessedIndex + 1; i < events.length; i++) {
+        handleWebSocketEvent(events[i]);
+      }
+      setLastProcessedIndex(events.length - 1);
     }
-  }, [events, handleWebSocketEvent]);
+  }, [events, lastProcessedIndex, handleWebSocketEvent]);
 
   // Fetch initial tasks
   useEffect(() => {
@@ -94,28 +101,49 @@ export function KanbanBoard() {
             Real-time task monitoring and management
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
             onClick={handlePurgeCompleted}
             variant="outline"
             size="sm"
-            className="gap-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30"
+            className="gap-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30 h-8 text-xs"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
             Purge Completed
           </Button>
           <Button
             onClick={handlePurgeFailed}
             variant="outline"
             size="sm"
-            className="gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+            className="gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30 h-8 text-xs"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
             Purge Failed
           </Button>
+          <div className="h-6 w-px bg-gray-600 mx-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={true}
+            className="gap-1.5 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 border-gray-500/30 h-8 text-xs"
+            title="Batch multiple commands (coming soon)"
+          >
+            <Package className="h-3.5 w-3.5" />
+            Batch Tasks
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openModal}
+            className="gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30 h-8 text-xs"
+          >
+            <GitBranch className="h-3.5 w-3.5" />
+            View Agent Graphs
+          </Button>
+          <div className="h-6 w-px bg-gray-600 mx-1" />
           <Badge
             variant={isConnected ? "default" : "destructive"}
-            className={isConnected ? "bg-green-500/20 text-green-400 border-green-500/30" : ""}
+            className={isConnected ? "bg-green-500/20 text-green-400 border-green-500/30 h-8" : "h-8"}
           >
             {isConnected ? "🟢 Connected" : "🔴 Disconnected"}
           </Badge>
@@ -138,6 +166,9 @@ export function KanbanBoard() {
       <div className="flex-shrink-0 mt-4 text-xs text-gray-500">
         Total tasks: {tasks.size} | Events received: {events.length}
       </div>
+
+      {/* Graph Modal */}
+      <AgentGraphModal isOpen={isOpen} onClose={closeModal} />
     </div>
   );
 }

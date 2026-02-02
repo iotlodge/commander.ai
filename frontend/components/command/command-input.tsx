@@ -5,9 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AgentMentionAutocomplete } from "./agent-mention-autocomplete";
 import { AgentInfo } from "@/lib/types";
-import { Loader2, Send, Package, GitBranch } from "lucide-react";
-import { AgentGraphModal } from "@/components/graphs/agent-graph-modal";
-import { useGraphModal } from "@/lib/hooks/use-graph-modal";
+import { Loader2, Send } from "lucide-react";
 
 // Mock agent data - this should come from an API endpoint in production
 const MOCK_AGENTS: AgentInfo[] = [
@@ -53,7 +51,6 @@ export function CommandInput({
   const [mentionQuery, setMentionQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { isOpen, openModal, closeModal } = useGraphModal();
 
   // Detect @mentions and show autocomplete
   useEffect(() => {
@@ -132,30 +129,6 @@ export function CommandInput({
   return (
     <div className="w-full max-w-6xl mx-auto p-4 bg-[#1e2433]">
       <div className="space-y-3">
-        {/* Buttons row */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={true}
-            className="text-gray-400 border-gray-600 hover:bg-gray-700/50"
-            title="Batch multiple commands (coming soon)"
-          >
-            <Package className="h-4 w-4 mr-2" />
-            Batch Tasks
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={openModal}
-            className="text-[#4a9eff] border-[#4a9eff]/30 hover:bg-[#4a9eff]/10"
-          >
-            <GitBranch className="h-4 w-4 mr-2" />
-            View Agent Graphs
-          </Button>
-        </div>
-
         <div className="relative">
           <AgentMentionAutocomplete
             agents={MOCK_AGENTS}
@@ -222,9 +195,6 @@ export function CommandInput({
           to submit
         </div>
       </div>
-
-      {/* Graph Modal */}
-      <AgentGraphModal isOpen={isOpen} onClose={closeModal} />
     </div>
   );
 }

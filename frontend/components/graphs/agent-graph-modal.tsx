@@ -79,12 +79,21 @@ export function AgentGraphModal({ isOpen, onClose }: AgentGraphModalProps) {
     if (!graph) return;
 
     try {
-      // Initialize mermaid with dark theme
+      // Initialize mermaid with dark theme and custom text colors
       mermaid.initialize({
         startOnLoad: false,
         theme: 'dark',
         flowchart: { curve: 'basis' },
         securityLevel: 'loose',
+        themeVariables: {
+          // Make node text much darker for better readability
+          primaryTextColor: '#1a1a1a',      // Almost black for main text
+          secondaryTextColor: '#2d3748',    // Dark gray for secondary text
+          tertiaryTextColor: '#4a5568',     // Medium gray for tertiary text
+          nodeTextColor: '#1a1a1a',         // Node label text (dark)
+          labelTextColor: '#1a1a1a',        // Label text (dark)
+          edgeLabelBackground: '#ffffff',   // White background for edge labels
+        }
       });
 
       const element = document.getElementById('mermaid-diagram');
