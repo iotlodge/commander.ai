@@ -11,15 +11,24 @@ An interactive multi-agent AI system for delegating work through natural languag
 
 **commander.ai** enables seamless collaboration with AI agents through an intuitive Kanban-style interface. Submit commands via natural language, mention specific agents, and watch tasks progress in real-time as agents work together to complete your requests.
 
-### 0.1.0 UI (in progress :o)
+## Screenshots
 
-**Main Command Interface:**
-![Commander.ai Main UI](images/ui1.png)
+### Main Interface
+Real-time Kanban board with task tracking across all agent workflows:
 
-**Task Board View:**
-![Commander.ai Task Board](images/ui2.png)
+![Commander.ai Landing Page](images/landing-page.png)
 
-### Key Features
+### Agent Graph Visualization
+Interactive workflow visualization showing agent decision trees and execution paths:
+
+![Agent Graph Visualization](images/agent-graph.png)
+
+### Agent Selection
+Intelligent autocomplete with agent specializations - just click or type `@`:
+
+![Agent Autocomplete](images/agent-autocomplete.png)
+
+## Key Features
 
 ✅ **Natural Language Commands** - Type commands like `@bob research quantum computing` or `hello sue, review this policy`
 
@@ -43,10 +52,13 @@ An interactive multi-agent AI system for delegating work through natural languag
 - ✅ Backend task management API with PostgreSQL
 - ✅ WebSocket server for real-time updates
 - ✅ Command parsing with @mention detection
-- ✅ Dark-themed Kanban board UI
+- ✅ Dark-themed Kanban board UI with optimized column widths
 - ✅ Background agent execution
-- ✅ Task purge functionality
+- ✅ Task purge functionality (completed/failed)
 - ✅ Real-time UI updates via WebSocket
+- ✅ Agent graph visualization with interactive workflow display
+- ✅ Intelligent agent autocomplete (works with or without typing @)
+- ✅ Comprehensive button controls (Purge, Batch Tasks, View Graphs)
 
 **In Development:**
 - ⏳ Memory system (Short-Term + Long-Term)
