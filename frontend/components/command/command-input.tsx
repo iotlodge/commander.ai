@@ -87,20 +87,31 @@ export function CommandInput({
     const beforeCursor = text.substring(0, position);
     const mentionStart = beforeCursor.lastIndexOf("@");
 
-    if (mentionStart === -1) return;
+    let newText: string;
+    let newPosition: number;
 
-    // Replace @partial with @nickname
-    const newText =
-      text.substring(0, mentionStart) +
-      `@${nickname} ` +
-      text.substring(position);
+    if (mentionStart === -1) {
+      // No @ found - user clicked in empty field or without typing @
+      // Insert @nickname at current cursor position
+      newText =
+        text.substring(0, position) +
+        `@${nickname} ` +
+        text.substring(position);
+      newPosition = position + nickname.length + 2; // +2 for @ and space
+    } else {
+      // @ found - replace @partial with @nickname
+      newText =
+        text.substring(0, mentionStart) +
+        `@${nickname} ` +
+        text.substring(position);
+      newPosition = mentionStart + nickname.length + 2; // +2 for @ and space
+    }
 
     setInput(newText);
     setShowAutocomplete(false);
 
     // Set cursor position after the inserted mention
     setTimeout(() => {
-      const newPosition = mentionStart + nickname.length + 2; // +2 for @ and space
       textareaRef.current?.setSelectionRange(newPosition, newPosition);
       textareaRef.current?.focus();
       setCursorPosition(newPosition);
