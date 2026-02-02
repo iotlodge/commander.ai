@@ -2,11 +2,22 @@
 
 An interactive multi-agent AI system for delegating work through natural language commands. Chat with specialized AI agents by name, role, or context using @mentions or natural greetings.
 
-![Commander.ai UI](CLAUDE-ui-style2.png)
+![Commander.ai UI](architecture.png)
+
+### Cache, Short, and Long-term Memory
+![Commander.ai UI](memory.png)
 
 ## Overview
 
 **commander.ai** enables seamless collaboration with AI agents through an intuitive Kanban-style interface. Submit commands via natural language, mention specific agents, and watch tasks progress in real-time as agents work together to complete your requests.
+
+### 0.1.0 UI (in progress :o)
+
+**Main Command Interface:**
+![Commander.ai Main UI](ui1.png)
+
+**Task Board View:**
+![Commander.ai Task Board](ui2.png)
 
 ### Key Features
 

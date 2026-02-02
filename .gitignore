@@ -233,4 +233,9 @@ frontend/.vercel
 
 # TypeScript
 *.tsbuildinfo
-next-env.d.ts%.claude/
+next-env.d.ts
+
+# Logs directory
+logs/
+
+%.claude/
