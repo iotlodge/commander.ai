@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import mermaid from 'mermaid';
+import { useRouter } from 'next/navigation';
 
 interface AgentGraph {
   agent_id: string;
@@ -21,6 +22,7 @@ interface AgentGraphModalProps {
 }
 
 export function AgentGraphModal({ isOpen, onClose }: AgentGraphModalProps) {
+  const router = useRouter();
   const [graphs, setGraphs] = useState<AgentGraph[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -207,16 +209,27 @@ export function AgentGraphModal({ isOpen, onClose }: AgentGraphModalProps) {
                         {selectedGraph.node_count} nodes • {selectedGraph.edge_count} edges
                       </p>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      Updated: {new Date(selectedGraph.last_updated).toLocaleString()}
+                    <div className="flex flex-col items-end gap-2">
+                      <button
+                        onClick={() => {
+                          onClose();
+                          router.push(`/graphs/${selectedGraph.agent_nickname}`);
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-[#4a9eff] hover:bg-[#6bb3ff] text-white rounded transition-colors"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Full Screen
+                      </button>
+                      <div className="text-xs text-gray-500">
+                        Updated: {new Date(selectedGraph.last_updated).toLocaleString()}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-auto">
+                  <div className="flex-1 relative bg-white/5 rounded-lg overflow-auto">
                     <div
                       id="mermaid-diagram"
-                      className="mermaid bg-white/5 rounded-lg p-6 min-h-[500px] flex items-center justify-center"
-                      style={{ width: '100%' }}
+                      className="p-6 min-h-[500px] flex items-center justify-center"
                     />
                   </div>
                 </>
