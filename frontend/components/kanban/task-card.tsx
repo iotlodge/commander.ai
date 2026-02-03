@@ -131,17 +131,32 @@ export function TaskCard({ task }: TaskCardProps) {
         )}
         {/* TODO: Wire up backend instrumentation to track actual metrics */}
 
-        {/* Results Button for Completed/Failed Tasks */}
-        {(task.status === TaskStatus.COMPLETED || task.status === TaskStatus.FAILED) && (
+        {/* Results Button for Completed Tasks */}
+        {task.status === TaskStatus.COMPLETED && (
           <div className="pt-3 border-t border-[#3a4454]">
             <Button
               onClick={() => setShowResults(true)}
               variant="outline"
               size="sm"
-              className="w-full gap-2 text-[#4a9eff] border-[#4a9eff]/30 hover:bg-[#4a9eff]/10"
+              className="w-full gap-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30 h-8 text-xs"
             >
-              <FileText className="h-4 w-4" />
+              <FileText className="h-3.5 w-3.5" />
               View Results
+            </Button>
+          </div>
+        )}
+
+        {/* Error Button for Failed Tasks */}
+        {task.status === TaskStatus.FAILED && (
+          <div className="pt-3 border-t border-[#3a4454]">
+            <Button
+              onClick={() => setShowResults(true)}
+              variant="outline"
+              size="sm"
+              className="w-full gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30 h-8 text-xs"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              View Error
             </Button>
           </div>
         )}
