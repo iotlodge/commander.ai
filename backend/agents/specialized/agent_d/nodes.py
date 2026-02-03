@@ -32,9 +32,14 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
     # Extract quoted strings (file paths or search queries)
     quoted_strings = re.findall(r'"([^"]+)"', query)
 
-    # Extract collection name patterns like "collection_name" or "into collection_name"
-    collection_match = re.search(r'(?:into|collection)\s+([a-zA-Z0-9_-]+)', query_lower)
+    # Extract collection name patterns like "into collection_name" or "search collection_name"
+    collection_match = re.search(r'(?:into|collection|search)\s+([a-zA-Z0-9_-]+)', query_lower)
     collection_name = collection_match.group(1) if collection_match else None
+
+    # Special handling for search commands: "search collection_name for query"
+    search_pattern = re.search(r'search\s+([a-zA-Z0-9_-]+)\s+for', query_lower)
+    if search_pattern:
+        collection_name = search_pattern.group(1)
 
     # Extract file path (look for paths starting with / or containing file extensions)
     file_path = None
@@ -131,6 +136,7 @@ async def create_collection_node(state: DocumentManagerState) -> dict:
 
             if existing:
                 return {
+                    **state,
                     "final_response": f"Collection '{collection_name}' already exists.",
                     "error": "Collection already exists",
                     "current_step": "create_collection",
@@ -154,6 +160,7 @@ async def create_collection_node(state: DocumentManagerState) -> dict:
             await doc_store.disconnect()
 
             return {
+                **state,
                 "collection_id": str(collection.id),
                 "collection_name": collection.collection_name,
                 "final_response": f"✓ Created collection '{collection_name}' successfully.",
@@ -162,6 +169,7 @@ async def create_collection_node(state: DocumentManagerState) -> dict:
 
     except Exception as e:
         return {
+            **state,
             "error": str(e),
             "final_response": f"Failed to create collection: {str(e)}",
             "current_step": "create_collection",
@@ -178,6 +186,7 @@ async def delete_collection_node(state: DocumentManagerState) -> dict:
             collection_name = state.get("collection_name") or state["action_params"].get("collection_name")
             if not collection_name:
                 return {
+                    **state,
                     "error": "No collection name specified",
                     "final_response": "Please specify which collection to delete.",
                     "current_step": "delete_collection",
@@ -190,6 +199,7 @@ async def delete_collection_node(state: DocumentManagerState) -> dict:
 
             if not collection:
                 return {
+                    **state,
                     "error": "Collection not found",
                     "final_response": f"Collection '{collection_name}' not found.",
                     "current_step": "delete_collection",
@@ -205,12 +215,14 @@ async def delete_collection_node(state: DocumentManagerState) -> dict:
             await collection_repo.delete_collection(collection.id)
 
             return {
+                **state,
                 "final_response": f"✓ Deleted collection '{collection_name}' ({collection.chunk_count} chunks).",
                 "current_step": "delete_collection",
             }
 
     except Exception as e:
         return {
+            **state,
             "error": str(e),
             "final_response": f"Failed to delete collection: {str(e)}",
             "current_step": "delete_collection",
@@ -462,6 +474,7 @@ async def search_collection_node(state: DocumentManagerState) -> dict:
 
         if not collection_name:
             return {
+                **state,
                 "error": "No collection specified",
                 "final_response": "Please specify which collection to search.",
                 "current_step": "search_collection",
@@ -479,6 +492,7 @@ async def search_collection_node(state: DocumentManagerState) -> dict:
 
             if not collection:
                 return {
+                    **state,
                     "error": "Collection not found",
                     "final_response": f"Collection '{collection_name}' not found.",
                     "current_step": "search_collection",
@@ -497,6 +511,7 @@ async def search_collection_node(state: DocumentManagerState) -> dict:
 
             if not vector_results:
                 return {
+                    **state,
                     "search_results": [],
                     "final_response": f"No results found in '{collection_name}' for query: {query}",
                     "current_step": "search_collection",
@@ -525,6 +540,7 @@ async def search_collection_node(state: DocumentManagerState) -> dict:
                 response_lines.append(f"   {result['content'][:200]}...")
 
             return {
+                **state,
                 "search_results": search_results,
                 "final_response": "\n".join(response_lines),
                 "current_step": "search_collection",
@@ -532,6 +548,7 @@ async def search_collection_node(state: DocumentManagerState) -> dict:
 
     except Exception as e:
         return {
+            **state,
             "error": str(e),
             "final_response": f"Search failed: {str(e)}",
             "current_step": "search_collection",
@@ -553,6 +570,7 @@ async def search_all_node(state: DocumentManagerState) -> dict:
 
             if not collections:
                 return {
+                    **state,
                     "search_results": [],
                     "final_response": "You don't have any collections yet.",
                     "current_step": "search_all",
@@ -573,6 +591,7 @@ async def search_all_node(state: DocumentManagerState) -> dict:
 
             if not all_results:
                 return {
+                    **state,
                     "search_results": [],
                     "final_response": f"No results found across all collections for: {query}",
                     "current_step": "search_all",
