@@ -116,14 +116,26 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
         action_type = "search_collection"
         # Extract search query and collection
         search_query = query
-        for_match = re.search(r'for\s+(.+)$', query, re.IGNORECASE)
-        if for_match:
-            search_query = for_match.group(1).strip('"').strip("'")
-        elif quoted_strings:
-            search_query = quoted_strings[0]
+        target_collection = collection_name
+
+        # Pattern 1: "search for <query> in/into <collection>"
+        search_for_into = re.search(r'search\s+for\s+(.+?)\s+(?:in|into)\s+([a-zA-Z0-9_-]+)', query_lower)
+        if search_for_into:
+            search_query = search_for_into.group(1).strip('"').strip("'")
+            target_collection = search_for_into.group(2)
+        # Pattern 2: "search <collection> for <query>" (existing)
+        else:
+            for_match = re.search(r'for\s+(.+)$', query, re.IGNORECASE)
+            if for_match:
+                search_query = for_match.group(1).strip('"').strip("'")
+                # Remove any trailing "into collection_name" from query
+                search_query = re.sub(r'\s+(?:in|into)\s+[a-zA-Z0-9_-]+$', '', search_query, flags=re.IGNORECASE)
+            elif quoted_strings:
+                search_query = quoted_strings[0]
+
         params = {
             "query": search_query,
-            "collection_name": collection_name,
+            "collection_name": target_collection,
         }
 
     else:
