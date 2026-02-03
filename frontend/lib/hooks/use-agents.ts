@@ -29,11 +29,13 @@ export function useAgents() {
 
         // Fallback to hardcoded agents if API fails
         setAgents([
-          { id: "agent_a", nickname: "bob", specialization: "Research Specialist", description: "Conducts research, synthesis, and information gathering" },
+          { id: "parent", nickname: "leo", specialization: "Orchestrator", description: "Coordinates complex multi-agent tasks and intelligently delegates work" },
+          { id: "agent_a", nickname: "bob", specialization: "Research Specialist", description: "Conducts research, synthesis, and information gathering with LLM-powered analysis" },
           { id: "agent_b", nickname: "sue", specialization: "Compliance Specialist", description: "Ensures compliance with regulations and policies" },
           { id: "agent_c", nickname: "rex", specialization: "Data Analyst", description: "Analyzes data and generates insights" },
           { id: "agent_d", nickname: "alice", specialization: "Document Management", description: "Manages documents, collections, and semantic search" },
-          { id: "parent", nickname: "leo", specialization: "Orchestrator", description: "Coordinates complex multi-agent tasks" },
+          { id: "agent_e", nickname: "maya", specialization: "Reflection Specialist", description: "Reviews and critiques content with constructive feedback and quality scoring" },
+          { id: "agent_f", nickname: "kai", specialization: "Reflexion Specialist", description: "Self-reflective reasoning with iterative improvement (up to 3 iterations)" },
         ]);
       } finally {
         setIsLoading(false);
