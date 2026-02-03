@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AgentTask, TaskStatus } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,8 +8,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, FileText } from "lucide-react";
 import { useTaskStore } from "@/lib/store";
+import { TaskResultsModal } from "./task-results-modal";
 
 interface TaskCardProps {
   task: AgentTask;
@@ -34,6 +36,7 @@ async function removeTask(taskId: string) {
 
 export function TaskCard({ task }: TaskCardProps) {
   const { removeTask: removeTaskFromStore } = useTaskStore();
+  const [showResults, setShowResults] = useState(false);
 
   const handleRemove = async () => {
     await removeTask(task.id);
@@ -128,8 +131,23 @@ export function TaskCard({ task }: TaskCardProps) {
         )}
         {/* TODO: Wire up backend instrumentation to track actual metrics */}
 
+        {/* Results Button for Completed/Failed Tasks */}
+        {(task.status === TaskStatus.COMPLETED || task.status === TaskStatus.FAILED) && (
+          <div className="pt-3 border-t border-[#3a4454]">
+            <Button
+              onClick={() => setShowResults(true)}
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 text-[#4a9eff] border-[#4a9eff]/30 hover:bg-[#4a9eff]/10"
+            >
+              <FileText className="h-4 w-4" />
+              View Results
+            </Button>
+          </div>
+        )}
+
         {/* Timestamps */}
-        <div className="flex justify-between text-xs text-gray-500 pt-2 border-t border-[#3a4454]">
+        <div className="flex justify-between text-xs text-gray-500 pt-2 border-t border-[#3a4454] mt-3">
           <span>
             Created {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
           </span>
@@ -140,6 +158,13 @@ export function TaskCard({ task }: TaskCardProps) {
           )}
         </div>
       </CardContent>
+
+      {/* Results Modal */}
+      <TaskResultsModal
+        task={task}
+        isOpen={showResults}
+        onClose={() => setShowResults(false)}
+      />
     </Card>
   );
 }

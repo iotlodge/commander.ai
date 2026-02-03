@@ -83,7 +83,12 @@ export function AgentGraphModal({ isOpen, onClose }: AgentGraphModalProps) {
       mermaid.initialize({
         startOnLoad: false,
         theme: 'dark',
-        flowchart: { curve: 'basis' },
+        flowchart: {
+          curve: 'basis',
+          padding: 20,
+          nodeSpacing: 80,
+          rankSpacing: 80,
+        },
         securityLevel: 'loose',
         themeVariables: {
           // Make node text much darker for better readability
@@ -107,8 +112,17 @@ export function AgentGraphModal({ isOpen, onClose }: AgentGraphModalProps) {
         // Render the diagram
         const { svg } = await mermaid.render(uniqueId, graph.mermaid_diagram);
 
-        // Insert the rendered SVG
+        // Insert the rendered SVG with responsive sizing
         element.innerHTML = svg;
+
+        // Make the SVG responsive
+        const svgElement = element.querySelector('svg');
+        if (svgElement) {
+          svgElement.style.maxWidth = '100%';
+          svgElement.style.height = 'auto';
+          svgElement.removeAttribute('height');
+          svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        }
       }
     } catch (error) {
       console.error('Mermaid rendering failed:', error);
@@ -123,7 +137,7 @@ export function AgentGraphModal({ isOpen, onClose }: AgentGraphModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[90vh] bg-[#1e2433] border-gray-700">
+      <DialogContent className="max-w-[95vw] w-[95vw] max-h-[95vh] bg-[#1e2433] border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-white flex items-center justify-between">
             Agent Graph Visualizations
@@ -181,10 +195,10 @@ export function AgentGraphModal({ isOpen, onClose }: AgentGraphModalProps) {
             </div>
 
             {/* Graph display area */}
-            <div className="flex-1 bg-[#2a3444] rounded-lg p-6 overflow-auto">
+            <div className="flex-1 bg-[#2a3444] rounded-lg p-6 overflow-auto flex flex-col">
               {selectedGraph && (
                 <>
-                  <div className="mb-4 flex items-center justify-between">
+                  <div className="mb-4 flex items-center justify-between flex-shrink-0">
                     <div>
                       <h3 className="text-xl font-bold text-white">
                         @{selectedGraph.agent_nickname}
@@ -198,10 +212,13 @@ export function AgentGraphModal({ isOpen, onClose }: AgentGraphModalProps) {
                     </div>
                   </div>
 
-                  <div
-                    id="mermaid-diagram"
-                    className="mermaid bg-white/5 rounded-lg p-4 min-h-[400px]"
-                  />
+                  <div className="flex-1 overflow-auto">
+                    <div
+                      id="mermaid-diagram"
+                      className="mermaid bg-white/5 rounded-lg p-6 min-h-[500px] flex items-center justify-center"
+                      style={{ width: '100%' }}
+                    />
+                  </div>
                 </>
               )}
             </div>

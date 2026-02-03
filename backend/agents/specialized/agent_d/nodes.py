@@ -24,47 +24,92 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
     """
     Classify user intent and extract parameters from query
     """
-    query = state["query"].lower()
+    import re
 
-    # Simple pattern matching for action classification
-    # In production, use LLM for intent classification
+    query = state["query"]
+    query_lower = query.lower()
 
-    if "load" in query or "upload" in query or "add document" in query:
+    # Extract quoted strings (file paths or search queries)
+    quoted_strings = re.findall(r'"([^"]+)"', query)
+
+    # Extract collection name patterns like "collection_name" or "into collection_name"
+    collection_match = re.search(r'(?:into|collection)\s+([a-zA-Z0-9_-]+)', query_lower)
+    collection_name = collection_match.group(1) if collection_match else None
+
+    # Extract file path (look for paths starting with / or containing file extensions)
+    file_path = None
+    for part in query.split():
+        if part.startswith('/') or part.startswith('~') or any(ext in part for ext in ['.pdf', '.docx', '.txt', '.md', '.rtf']):
+            file_path = part.strip('"').strip("'")
+            break
+
+    # If no file path found in split, check quoted strings
+    if not file_path and quoted_strings:
+        for quoted in quoted_strings:
+            if '/' in quoted or any(ext in quoted for ext in ['.pdf', '.docx', '.txt', '.md', '.rtf']):
+                file_path = quoted
+                break
+
+    # Classify action based on keywords
+    if "load" in query_lower or "upload" in query_lower or "add document" in query_lower:
         action_type = "load_file"
-        # Extract file path and collection name from query
-        # Simplified - in production, use NER or LLM
         params = {
-            "file_path": None,  # Will be extracted from conversation_context
-            "collection_name": None,
+            "file_path": file_path,
+            "collection_name": collection_name or "default",
         }
 
-    elif "create collection" in query or "new collection" in query:
+    elif "create collection" in query_lower or "new collection" in query_lower:
         action_type = "create_collection"
-        params = {}
+        # Extract collection name after "create collection"
+        match = re.search(r'(?:create|new)\s+collection\s+([a-zA-Z0-9_-]+)', query_lower)
+        collection_name = match.group(1) if match else "default"
+        params = {"collection_name": collection_name}
 
-    elif "delete collection" in query or "remove collection" in query:
+    elif "delete collection" in query_lower or "remove collection" in query_lower:
         action_type = "delete_collection"
-        params = {}
+        # Extract collection name after "delete collection"
+        match = re.search(r'(?:delete|remove)\s+collection\s+([a-zA-Z0-9_-]+)', query_lower)
+        collection_name = match.group(1) if match else None
+        params = {"collection_name": collection_name}
 
-    elif "list collection" in query or "show collection" in query or "my collection" in query:
+    elif "list collection" in query_lower or "show collection" in query_lower or "my collection" in query_lower:
         action_type = "list_collections"
         params = {}
 
-    elif "search all" in query or "search everything" in query:
+    elif "search all" in query_lower or "search everything" in query_lower:
         action_type = "search_all"
-        params = {"query": state["query"]}
+        # Extract search query (everything after "for" or quoted string)
+        search_query = query
+        for_match = re.search(r'for\s+(.+)$', query, re.IGNORECASE)
+        if for_match:
+            search_query = for_match.group(1).strip('"').strip("'")
+        elif quoted_strings:
+            search_query = quoted_strings[0]
+        params = {"query": search_query}
 
-    elif "search" in query:
+    elif "search" in query_lower:
         action_type = "search_collection"
-        params = {"query": state["query"]}
+        # Extract search query and collection
+        search_query = query
+        for_match = re.search(r'for\s+(.+)$', query, re.IGNORECASE)
+        if for_match:
+            search_query = for_match.group(1).strip('"').strip("'")
+        elif quoted_strings:
+            search_query = quoted_strings[0]
+        params = {
+            "query": search_query,
+            "collection_name": collection_name,
+        }
 
     else:
-        action_type = "search_all"
-        params = {"query": state["query"]}
+        action_type = "list_collections"
+        params = {}
 
     return {
         "action_type": action_type,
         "action_params": params,
+        "collection_name": params.get("collection_name"),
+        "file_path": params.get("file_path"),
         "current_step": "parse_input",
     }
 
@@ -76,8 +121,8 @@ async def create_collection_node(state: DocumentManagerState) -> dict:
         async with session_factory() as session:
             collection_repo = CollectionRepository(session)
 
-            # Extract collection name from query or context
-            collection_name = state.get("collection_name") or "default_collection"
+            # Extract collection name from state (set by parse_input_node)
+            collection_name = state.get("collection_name") or state["action_params"].get("collection_name") or "default_collection"
 
             # Check if collection already exists
             existing = await collection_repo.get_collection_by_name(
@@ -130,7 +175,7 @@ async def delete_collection_node(state: DocumentManagerState) -> dict:
         async with session_factory() as session:
             collection_repo = CollectionRepository(session)
 
-            collection_name = state.get("collection_name")
+            collection_name = state.get("collection_name") or state["action_params"].get("collection_name")
             if not collection_name:
                 return {
                     "error": "No collection name specified",
@@ -315,12 +360,22 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
         chunks = state.get("chunks")
         if not chunks:
             return {
+                **state,
                 "error": "No chunks to store",
+                "final_response": "Failed to store chunks: No chunks generated from document",
                 "current_step": "store_chunks",
             }
 
-        collection_name = state.get("collection_name", "default")
-        file_path = state.get("file_path", "")
+        collection_name = (
+            state.get("collection_name") or
+            state["action_params"].get("collection_name") or
+            "default"
+        )
+        file_path = (
+            state.get("file_path") or
+            state["action_params"].get("file_path") or
+            ""
+        )
         file_name = Path(file_path).name if file_path else "unknown"
 
         session_factory = get_session_factory()
@@ -403,7 +458,7 @@ async def search_collection_node(state: DocumentManagerState) -> dict:
     """Search specific collection"""
     try:
         query = state["action_params"].get("query", state["query"])
-        collection_name = state.get("collection_name")
+        collection_name = state.get("collection_name") or state["action_params"].get("collection_name")
 
         if not collection_name:
             return {
