@@ -29,7 +29,11 @@ class DocumentManagerState(TypedDict):
     raw_content: str | None
     chunks: list[dict] | None
 
-    # Search results
+    # Web search
+    search_query: str | None
+    web_documents: list[dict] | None  # Tavily search results formatted for storage
+
+    # Search results (semantic search in collections)
     search_results: list[dict] | None
 
     # Output

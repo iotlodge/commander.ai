@@ -18,6 +18,7 @@ from backend.tools.document_loaders import (
     TextLoader,
     DocumentChunker,
 )
+from backend.tools.web_search import TavilyClient
 
 
 async def parse_input_node(state: DocumentManagerState) -> dict:
@@ -80,6 +81,25 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
     elif "list collection" in query_lower or "show collection" in query_lower or "my collection" in query_lower:
         action_type = "list_collections"
         params = {}
+
+    elif "search web" in query_lower or "web search" in query_lower or "search online" in query_lower:
+        action_type = "search_web"
+        # Extract search query (everything after "for" or quoted string)
+        search_query = query
+        for_match = re.search(r'(?:for|about)\s+(.+?)(?:\s+(?:into|in)\s+|$)', query, re.IGNORECASE)
+        if for_match:
+            search_query = for_match.group(1).strip('"').strip("'")
+        elif quoted_strings:
+            search_query = quoted_strings[0]
+
+        # Check if storing into collection
+        store_match = re.search(r'(?:into|in)\s+([a-zA-Z0-9_-]+)', query_lower)
+        store_collection = store_match.group(1) if store_match else None
+
+        params = {
+            "query": search_query,
+            "collection_name": store_collection,
+        }
 
     elif "search all" in query_lower or "search everything" in query_lower:
         action_type = "search_all"
@@ -654,6 +674,97 @@ async def search_all_node(state: DocumentManagerState) -> dict:
         }
 
 
+async def fetch_web_node(state: DocumentManagerState) -> dict:
+    """Fetch web content using Tavily API"""
+    try:
+        search_query = state["action_params"].get("query", state.get("search_query", ""))
+
+        if not search_query:
+            return {
+                **state,
+                "error": "No search query provided",
+                "final_response": "Please provide a search query for web search.",
+                "current_step": "fetch_web",
+            }
+
+        # Initialize Tavily client
+        tavily = TavilyClient()
+        await tavily.connect()
+
+        # Search and format results for document storage
+        web_documents = await tavily.search_and_format(
+            query=search_query,
+            max_results=None  # Use default from settings
+        )
+
+        await tavily.disconnect()
+
+        if not web_documents:
+            return {
+                **state,
+                "web_documents": [],
+                "final_response": f"No web results found for: {search_query}",
+                "current_step": "fetch_web",
+            }
+
+        return {
+            **state,
+            "search_query": search_query,
+            "web_documents": web_documents,
+            "current_step": "fetch_web",
+        }
+
+    except Exception as e:
+        return {
+            **state,
+            "error": str(e),
+            "final_response": f"Web search failed: {str(e)}",
+            "current_step": "fetch_web",
+        }
+
+
+async def process_web_documents_node(state: DocumentManagerState) -> dict:
+    """Chunk web documents for storage"""
+    try:
+        web_documents = state.get("web_documents", [])
+
+        if not web_documents:
+            return {
+                **state,
+                "error": "No web documents to process",
+                "final_response": "No web content retrieved to process.",
+                "current_step": "process_web",
+            }
+
+        # Chunk all web documents
+        chunker = DocumentChunker()
+        all_chunks = []
+
+        for doc_idx, doc in enumerate(web_documents):
+            doc_chunks = await chunker.chunk_document(
+                content=doc["content"],
+                metadata={
+                    **doc["metadata"],
+                    "document_index": doc_idx
+                }
+            )
+            all_chunks.extend(doc_chunks)
+
+        return {
+            **state,
+            "chunks": all_chunks,
+            "current_step": "process_web",
+        }
+
+    except Exception as e:
+        return {
+            **state,
+            "error": str(e),
+            "final_response": f"Failed to process web documents: {str(e)}",
+            "current_step": "process_web",
+        }
+
+
 async def finalize_response_node(state: DocumentManagerState) -> dict:
     """Format and return final response"""
     if state.get("error"):
@@ -676,6 +787,7 @@ def route_action(state: DocumentManagerState) -> str:
 
     action_map = {
         "load_file": "load_file",
+        "search_web": "search_web",
         "create_collection": "create_collection",
         "delete_collection": "delete_collection",
         "list_collections": "list_collections",

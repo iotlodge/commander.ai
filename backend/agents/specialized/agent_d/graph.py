@@ -22,6 +22,8 @@ from backend.agents.specialized.agent_d.nodes import (
     store_chunks_node,
     search_collection_node,
     search_all_node,
+    fetch_web_node,
+    process_web_documents_node,
     finalize_response_node,
     route_action,
 )
@@ -33,6 +35,7 @@ class DocumentManagerAgent(BaseAgent):
 
     Responsibilities:
     - Load documents from local files (.pdf, .docx, .md, .txt)
+    - Search web content using Tavily API
     - Chunk and embed content for semantic search
     - Manage user-scoped document collections
     - Perform semantic search within collections or across all collections
@@ -56,6 +59,7 @@ class DocumentManagerAgent(BaseAgent):
         Graph Flow:
         parse_input → route_action → [
             load_file → chunk_and_embed → store_chunks → finalize
+            search_web → process_web_documents → store_chunks → finalize
             search_collection → finalize
             search_all → finalize
             create_collection → finalize
@@ -75,6 +79,8 @@ class DocumentManagerAgent(BaseAgent):
         graph.add_node("store_chunks", store_chunks_node)
         graph.add_node("search_collection", search_collection_node)
         graph.add_node("search_all", search_all_node)
+        graph.add_node("search_web", fetch_web_node)
+        graph.add_node("process_web_documents", process_web_documents_node)
         graph.add_node("finalize_response", finalize_response_node)
 
         # Set entry point
@@ -86,6 +92,7 @@ class DocumentManagerAgent(BaseAgent):
             route_action,
             {
                 "load_file": "load_file",
+                "search_web": "search_web",
                 "create_collection": "create_collection",
                 "delete_collection": "delete_collection",
                 "list_collections": "list_collections",
@@ -98,6 +105,10 @@ class DocumentManagerAgent(BaseAgent):
         graph.add_edge("load_file", "chunk_and_embed")
         graph.add_edge("chunk_and_embed", "store_chunks")
         graph.add_edge("store_chunks", "finalize_response")
+
+        # Web search workflow
+        graph.add_edge("search_web", "process_web_documents")
+        graph.add_edge("process_web_documents", "store_chunks")
 
         # Collection management workflows
         graph.add_edge("create_collection", "finalize_response")
@@ -137,6 +148,8 @@ class DocumentManagerAgent(BaseAgent):
             "file_path": None,
             "raw_content": None,
             "chunks": None,
+            "search_query": None,
+            "web_documents": None,
             "search_results": None,
             "final_response": None,
             "error": None,
