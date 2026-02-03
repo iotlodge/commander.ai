@@ -101,42 +101,59 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
             "collection_name": store_collection,
         }
 
-    elif "search all" in query_lower or "search everything" in query_lower:
-        action_type = "search_all"
-        # Extract search query (everything after "for" or quoted string)
-        search_query = query
-        for_match = re.search(r'for\s+(.+)$', query, re.IGNORECASE)
-        if for_match:
-            search_query = for_match.group(1).strip('"').strip("'")
-        elif quoted_strings:
-            search_query = quoted_strings[0]
-        params = {"query": search_query}
-
     elif "search" in query_lower:
-        action_type = "search_collection"
-        # Extract search query and collection
+        # Determine search type based on query structure
         search_query = query
-        target_collection = collection_name
+        target_collections = None
+        target_collection = None
 
-        # Pattern 1: "search for <query> in/into <collection>"
-        search_for_into = re.search(r'search\s+for\s+(.+?)\s+(?:in|into)\s+([a-zA-Z0-9_-]+)', query_lower)
-        if search_for_into:
-            search_query = search_for_into.group(1).strip('"').strip("'")
-            target_collection = search_for_into.group(2)
-        # Pattern 2: "search <collection> for <query>" (existing)
+        # Pattern 1: "search for <query> in [collection1, collection2]" - Multiple collections
+        multi_collection_match = re.search(r'search\s+for\s+(.+?)\s+in\s+\[([^\]]+)\]', query, re.IGNORECASE)
+        if multi_collection_match:
+            action_type = "search_multiple"
+            search_query = multi_collection_match.group(1).strip('"').strip("'")
+            collections_str = multi_collection_match.group(2)
+            target_collections = [c.strip() for c in collections_str.split(',')]
+            params = {
+                "query": search_query,
+                "collection_names": target_collections,
+            }
+
+        # Pattern 2: "search for <query> in/into <collection>" - Single collection
+        elif re.search(r'search\s+for\s+.+?\s+(?:in|into)\s+[a-zA-Z0-9_-]+', query_lower):
+            action_type = "search_collection"
+            search_for_into = re.search(r'search\s+for\s+(.+?)\s+(?:in|into)\s+([a-zA-Z0-9_-]+)', query_lower)
+            if search_for_into:
+                search_query = search_for_into.group(1).strip('"').strip("'")
+                target_collection = search_for_into.group(2)
+            params = {
+                "query": search_query,
+                "collection_name": target_collection,
+            }
+
+        # Pattern 3: "search for <query>" (no collection specified) - Search ALL collections
+        elif re.match(r'search\s+for\s+', query_lower):
+            action_type = "search_all"
+            for_match = re.search(r'search\s+for\s+(.+)$', query, re.IGNORECASE)
+            if for_match:
+                search_query = for_match.group(1).strip('"').strip("'")
+            elif quoted_strings:
+                search_query = quoted_strings[0]
+            params = {"query": search_query}
+
+        # Pattern 4: "search <collection> for <query>" - Single collection (original syntax)
         else:
+            action_type = "search_collection"
             for_match = re.search(r'for\s+(.+)$', query, re.IGNORECASE)
             if for_match:
                 search_query = for_match.group(1).strip('"').strip("'")
-                # Remove any trailing "into collection_name" from query
-                search_query = re.sub(r'\s+(?:in|into)\s+[a-zA-Z0-9_-]+$', '', search_query, flags=re.IGNORECASE)
             elif quoted_strings:
                 search_query = quoted_strings[0]
-
-        params = {
-            "query": search_query,
-            "collection_name": target_collection,
-        }
+            target_collection = collection_name
+            params = {
+                "query": search_query,
+                "collection_name": target_collection,
+            }
 
     else:
         action_type = "list_collections"
@@ -686,6 +703,114 @@ async def search_all_node(state: DocumentManagerState) -> dict:
         }
 
 
+async def search_multiple_node(state: DocumentManagerState) -> dict:
+    """Search specific multiple collections"""
+    try:
+        query = state["action_params"].get("query", state["query"])
+        collection_names = state["action_params"].get("collection_names", [])
+
+        if not collection_names:
+            return {
+                **state,
+                "error": "No collections specified",
+                "final_response": "Please specify collections to search.",
+                "current_step": "search_multiple",
+            }
+
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            collection_repo = CollectionRepository(session)
+            chunk_repo = ChunkRepository(session)
+
+            # Get specified collections
+            collections = []
+            missing_collections = []
+            for name in collection_names:
+                collection = await collection_repo.get_collection_by_name(
+                    user_id=state["user_id"], collection_name=name
+                )
+                if collection:
+                    collections.append(collection)
+                else:
+                    missing_collections.append(name)
+
+            if not collections:
+                return {
+                    **state,
+                    "search_results": [],
+                    "final_response": f"None of the specified collections exist: {', '.join(collection_names)}",
+                    "current_step": "search_multiple",
+                }
+
+            # Search across specified collections
+            qdrant_collection_names = [c.qdrant_collection_name for c in collections]
+
+            doc_store = DocumentStore()
+            await doc_store.connect()
+            all_results = await doc_store.search_all_collections(
+                collection_names=qdrant_collection_names,
+                user_id=state["user_id"],
+                query=query,
+                limit=10,
+            )
+            await doc_store.disconnect()
+
+            if not all_results:
+                return {
+                    **state,
+                    "search_results": [],
+                    "final_response": f"No results found in {', '.join([c.collection_name for c in collections])} for: {query}",
+                    "current_step": "search_multiple",
+                }
+
+            # Fetch chunk details
+            search_results = []
+            for qdrant_collection_name, vector_id, score in all_results:
+                chunk = await chunk_repo.get_chunk_by_vector_id(vector_id)
+                if chunk:
+                    # Find collection name
+                    coll = next(
+                        (c for c in collections if c.qdrant_collection_name == qdrant_collection_name),
+                        None,
+                    )
+                    collection_name = coll.collection_name if coll else "unknown"
+
+                    search_results.append(
+                        {
+                            "content": chunk.content[:500],
+                            "score": score,
+                            "file_name": chunk.file_name,
+                            "chunk_index": chunk.chunk_index,
+                            "collection_name": collection_name,
+                        }
+                    )
+
+            # Format response
+            found_in = ', '.join([c.collection_name for c in collections])
+            warning = f"\n(Note: Collections not found: {', '.join(missing_collections)})" if missing_collections else ""
+            response_lines = [f"Found {len(search_results)} results in [{found_in}]:{warning}"]
+            for idx, result in enumerate(search_results[:5], 1):
+                response_lines.append(
+                    f"\n{idx}. [{result['collection_name']} / {result['file_name']} - chunk {result['chunk_index']}] (score: {result['score']:.2f})"
+                )
+                response_lines.append(f"   {result['content'][:200]}...")
+
+            return {
+                **state,
+                "search_results": search_results,
+                "final_response": "\n".join(response_lines),
+                "current_step": "search_multiple",
+            }
+
+    except Exception as e:
+        return {
+            **state,
+            "error": str(e),
+            "final_response": f"Search failed: {str(e)}",
+            "current_step": "search_multiple",
+        }
+
+
 async def fetch_web_node(state: DocumentManagerState) -> dict:
     """Fetch web content using Tavily API"""
     try:
@@ -804,6 +929,7 @@ def route_action(state: DocumentManagerState) -> str:
         "delete_collection": "delete_collection",
         "list_collections": "list_collections",
         "search_collection": "search_collection",
+        "search_multiple": "search_multiple",
         "search_all": "search_all",
     }
 

@@ -21,6 +21,7 @@ from backend.agents.specialized.agent_d.nodes import (
     chunk_and_embed_node,
     store_chunks_node,
     search_collection_node,
+    search_multiple_node,
     search_all_node,
     fetch_web_node,
     process_web_documents_node,
@@ -78,6 +79,7 @@ class DocumentManagerAgent(BaseAgent):
         graph.add_node("chunk_and_embed", chunk_and_embed_node)
         graph.add_node("store_chunks", store_chunks_node)
         graph.add_node("search_collection", search_collection_node)
+        graph.add_node("search_multiple", search_multiple_node)
         graph.add_node("search_all", search_all_node)
         graph.add_node("search_web", fetch_web_node)
         graph.add_node("process_web_documents", process_web_documents_node)
@@ -97,6 +99,7 @@ class DocumentManagerAgent(BaseAgent):
                 "delete_collection": "delete_collection",
                 "list_collections": "list_collections",
                 "search_collection": "search_collection",
+                "search_multiple": "search_multiple",
                 "search_all": "search_all",
             },
         )
@@ -117,6 +120,7 @@ class DocumentManagerAgent(BaseAgent):
 
         # Search workflows
         graph.add_edge("search_collection", "finalize_response")
+        graph.add_edge("search_multiple", "finalize_response")
         graph.add_edge("search_all", "finalize_response")
 
         # All paths end at finalize_response
