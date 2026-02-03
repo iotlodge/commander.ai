@@ -86,6 +86,7 @@ class ParentAgent(BaseAgent):
             ),
             "task_type": None,
             "subtasks": [],
+            "decomposition_reasoning": None,
             "specialist_assignments": {},
             "specialist_results": {},
             "final_response": None,

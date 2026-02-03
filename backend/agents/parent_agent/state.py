@@ -21,6 +21,7 @@ class ParentAgentState(TypedDict):
     # Decomposition
     task_type: str | None  # "research", "compliance", "data_analysis", "multi_specialist"
     subtasks: list[dict[str, Any]]  # List of subtasks with assigned agents
+    decomposition_reasoning: str | None  # LLM reasoning for decomposition
 
     # Delegation
     specialist_assignments: dict[str, str]  # agent_nickname -> subtask

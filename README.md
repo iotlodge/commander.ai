@@ -379,7 +379,4 @@ This is a personal project, but suggestions and feedback are welcome!
 
 **Status**: 🚧 Active Development - Phase 4A Complete
 
-For detailed implementation plans and decisions, see:
-- [PLAN.md](PLAN.md) - Complete project roadmap
-- [AGENTS.md](AGENTS.md) - Agent specifications
-- [CLAUDE-patterns.md](CLAUDE-patterns.md) - Code patterns and conventions
+

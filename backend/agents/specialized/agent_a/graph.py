@@ -12,13 +12,17 @@ from backend.agents.base.agent_interface import (
     AgentExecutionResult,
 )
 from backend.agents.specialized.agent_a.state import ResearchAgentState
+from backend.agents.specialized.agent_a.llm_research import (
+    llm_web_search,
+    llm_synthesize_research,
+    llm_check_compliance_keywords,
+)
 from backend.memory.schemas import MemoryType
 
 
 async def search_node(state: ResearchAgentState) -> dict:
     """
-    Simulate web search (placeholder for actual search implementation)
-    TODO: Integrate Tavily or other search API
+    Perform web search using Tavily API or LLM knowledge
     """
     query = state["query"]
 
@@ -26,15 +30,8 @@ async def search_node(state: ResearchAgentState) -> dict:
     if callback := state.get("task_callback"):
         await callback.on_progress_update(25, "searching")
 
-    # Placeholder search results
-    search_results = [
-        {
-            "title": f"Research result for: {query}",
-            "snippet": f"This is placeholder research content about {query}. "
-            f"In production, this would use Tavily API or web scraping.",
-            "url": "https://example.com",
-        }
-    ]
+    # Use LLM-powered web search
+    search_results = await llm_web_search(query)
 
     return {
         **state,
@@ -45,20 +42,21 @@ async def search_node(state: ResearchAgentState) -> dict:
 
 async def synthesize_node(state: ResearchAgentState) -> dict:
     """
-    Synthesize search results into coherent response
-    TODO: Use LLM for synthesis in production
+    Synthesize search results into coherent response using LLM
     """
+    query = state["query"]
     results = state["search_results"]
 
     # Report progress if callback exists
     if callback := state.get("task_callback"):
         await callback.on_progress_update(50, "synthesizing")
 
-    # Simple synthesis for MVP
-    synthesis = f"Based on my research about '{state['query']}':\n\n"
-
-    for i, result in enumerate(results, 1):
-        synthesis += f"{i}. {result['snippet']}\n"
+    # Use LLM to synthesize research
+    synthesis = await llm_synthesize_research(
+        query=query,
+        search_results=results,
+        context=state.get("conversation_context")
+    )
 
     return {
         **state,
@@ -69,37 +67,22 @@ async def synthesize_node(state: ResearchAgentState) -> dict:
 
 async def check_compliance_need_node(state: ResearchAgentState) -> dict:
     """
-    Check if research involves compliance keywords
+    Use LLM to intelligently check if research involves compliance concerns
     """
     # Report progress if callback exists
     if callback := state.get("task_callback"):
         await callback.on_progress_update(70, "checking_compliance")
 
-    compliance_keywords = [
-        "privacy",
-        "personal data",
-        "gdpr",
-        "hipaa",
-        "pii",
-        "data protection",
-        "consent",
-        "regulation",
-        "compliance",
-    ]
+    # Combine query and synthesis for analysis
+    text_to_check = f"{state['query']}\n\n{state.get('synthesis', '')}"
 
-    query_lower = state["query"].lower()
-    synthesis_lower = state.get("synthesis", "").lower()
-
-    found_keywords = [
-        kw for kw in compliance_keywords if kw in query_lower or kw in synthesis_lower
-    ]
-
-    needs_review = len(found_keywords) > 0
+    # Use LLM-powered compliance detection
+    needs_review, concerns = await llm_check_compliance_keywords(text_to_check)
 
     return {
         **state,
         "needs_compliance_review": needs_review,
-        "compliance_keywords_found": found_keywords,
+        "compliance_keywords_found": concerns,
         "current_step": "compliance_checked",
     }
 
