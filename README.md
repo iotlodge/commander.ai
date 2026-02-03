@@ -165,10 +165,15 @@ Type commands in the input box at the bottom of the screen:
 @bob research the latest AI safety developments
 @sue check compliance for GDPR policy
 @rex analyze this dataset
+
+# Alice - Document Manager examples:
 @alice create collection research_papers
 @alice load ~/Documents/paper.pdf into research_papers
 @alice search web for machine learning trends into ml_research
-@alice search research_papers for "neural networks"
+@alice search for "neural networks"                          # Search ALL collections
+@alice search for "neural networks" in research_papers       # Search ONE collection
+@alice search for "neural networks" in [papers, articles]    # Search MULTIPLE collections
+@alice search research_papers for "neural networks"          # Alternative syntax
 ```
 
 **Natural Greeting:**
