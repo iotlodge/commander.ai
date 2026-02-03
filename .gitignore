@@ -23,6 +23,7 @@ eggs/
 .eggs/
 # lib/
 lib64/
+todo/
 parts/
 sdist/
 var/
@@ -32,6 +33,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+Specialized_AGENT_REQUEST.md
 
 # PyInstaller
 #   Usually these files are written by a python script from a template

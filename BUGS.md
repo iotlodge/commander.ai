@@ -10,7 +10,7 @@
 3. ✅ FIXED (commit 750c9be) - Can you make these bottons a bit smaller, colored and maybe try them at top, aligned horizontally with the Purge buttons
    - Reduced button size (h-8, text-xs), added visual separators
 4. ✅ FIXED - The Board's minimum width is still just a bit too wide (scrollbar appears [needs to be about 5-10% less overall]).  Try making each of the columns width (cards if necessary) smaller or adjust so columns resize without a board scrollbar
-   - Reduced column width from 320px to 285px (11% reduction)
+   - Reduced column width from 320px to 315px
 5. Reference BUG_image:
    6. ✅ FIXED (commits d3dbff1) - Bug A: when the agent is highlighted, the font should be more readable (almost disappears)
       - Used Tailwind group modifier: group-data-[selected=true]:text-gray-900
