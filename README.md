@@ -28,7 +28,7 @@ Intelligent autocomplete with agent specializations - just click or type `@`:
 
 ![Agent Autocomplete](images/agent-autocomplete.png)
 
-## Key Features
+Key Features
 
 ✅ **Natural Language Commands** - Type commands like `@bob research quantum computing` or `hello sue, review this policy`
 
@@ -165,6 +165,10 @@ Type commands in the input box at the bottom of the screen:
 @bob research the latest AI safety developments
 @sue check compliance for GDPR policy
 @rex analyze this dataset
+@alice create collection research_papers
+@alice load ~/Documents/paper.pdf into research_papers
+@alice search web for machine learning trends into ml_research
+@alice search research_papers for "neural networks"
 ```
 
 **Natural Greeting:**
@@ -244,9 +248,9 @@ REDIS_URL=redis://localhost:6379/0
 QDRANT_URL=http://localhost:6333
 
 # API Keys
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-TAVILY_API_KEY=tvly-...
+OPENAI_API_KEY=sk-...           # Required for embeddings and LLM
+ANTHROPIC_API_KEY=sk-ant-...    # Optional: for Claude models
+TAVILY_API_KEY=tvly-...         # Required for @alice web search
 
 # Application
 APP_SECRET_KEY=dev-secret-key-change-in-production
