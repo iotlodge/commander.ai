@@ -67,6 +67,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         });
         break;
 
+      case "task_completed":
+        console.log("  → Task completed with result:", event.task_id, event.status);
+        updateTask(event.task_id, {
+          status: event.status,
+          result: event.result || null,
+          error_message: event.error_message || null,
+          completed_at: event.timestamp,
+        });
+        break;
+
       case "consultation_started":
         console.log("  → Starting consultation:", event.task_id);
         updateTask(event.task_id, {

@@ -74,6 +74,17 @@ class TaskStatusChangeEvent(BaseModel):
     timestamp: datetime
 
 
+class TaskCompletedEvent(BaseModel):
+    """WebSocket event for task completion with full data"""
+
+    type: str = "task_completed"
+    task_id: UUID
+    status: TaskStatus  # COMPLETED or FAILED
+    result: str | None = None
+    error_message: str | None = None
+    timestamp: datetime
+
+
 class TaskProgressEvent(BaseModel):
     """WebSocket event for task progress update"""
 

@@ -93,19 +93,17 @@ async def execute_agent_task(task_id: UUID) -> None:
                 )
                 logger.info(f"Task {task_id} completed successfully")
 
-                # Broadcast completion event
-                from backend.models.task_models import TaskStatusChangeEvent
+                # Broadcast completion event with full data
+                from backend.models.task_models import TaskCompletedEvent
                 from datetime import datetime
-                updated_task = await repo.get_task(task_id)
-                if updated_task:
-                    await ws_manager.broadcast_task_event(
-                        TaskStatusChangeEvent(
-                            task_id=task_id,
-                            old_status=TaskStatus.IN_PROGRESS,
-                            new_status=TaskStatus.COMPLETED,
-                            timestamp=datetime.utcnow()
-                        )
+                await ws_manager.broadcast_task_event(
+                    TaskCompletedEvent(
+                        task_id=task_id,
+                        status=TaskStatus.COMPLETED,
+                        result=result.response,
+                        timestamp=datetime.utcnow()
                     )
+                )
             else:
                 await repo.update_task(
                     task_id,
@@ -116,14 +114,14 @@ async def execute_agent_task(task_id: UUID) -> None:
                 )
                 logger.error(f"Task {task_id} failed: {result.error}")
 
-                # Broadcast failure event
-                from backend.models.task_models import TaskStatusChangeEvent
+                # Broadcast failure event with full data
+                from backend.models.task_models import TaskCompletedEvent
                 from datetime import datetime
                 await ws_manager.broadcast_task_event(
-                    TaskStatusChangeEvent(
+                    TaskCompletedEvent(
                         task_id=task_id,
-                        old_status=TaskStatus.IN_PROGRESS,
-                        new_status=TaskStatus.FAILED,
+                        status=TaskStatus.FAILED,
+                        error_message=result.error or "Unknown error",
                         timestamp=datetime.utcnow()
                     )
                 )

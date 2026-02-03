@@ -71,9 +71,19 @@ export interface TaskDeletedEvent {
   timestamp: string;
 }
 
+export interface TaskCompletedEvent {
+  type: "task_completed";
+  task_id: string;
+  status: TaskStatus;
+  result?: string | null;
+  error_message?: string | null;
+  timestamp: string;
+}
+
 export type WebSocketEvent =
   | TaskStatusChangeEvent
   | TaskProgressEvent
+  | TaskCompletedEvent
   | ConsultationStartedEvent
   | ConsultationCompletedEvent
   | TaskDeletedEvent;
