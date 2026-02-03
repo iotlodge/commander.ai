@@ -23,6 +23,20 @@ Interactive workflow visualization showing agent decision trees and execution pa
 
 ![Agent Graph Visualization](images/agent-graph.png)
 
+### Full-Screen Graph Viewer
+Dedicated full-page viewer with zoom and pan controls for complex agent workflows - view intricate graphs like @alice's 15-node document management system:
+
+<p align="center">
+  <img src="images/@aliceGraph.png" alt="Full-Screen Graph Viewer - @alice" width="800">
+</p>
+
+**Features:**
+- 🔍 Zoom up to 8x for detailed node inspection
+- 🖱️ Click-and-drag panning for navigation
+- 🎯 Fit-to-screen button for instant overview
+- ⌨️ Mouse wheel zoom support
+- 📊 Optimized spacing for complex graphs (10+ nodes)
+
 ### Agent Selection
 Intelligent autocomplete with agent specializations - just click or type `@`:
 
@@ -57,6 +71,7 @@ Key Features
 - ✅ Task purge functionality (completed/failed)
 - ✅ Real-time UI updates via WebSocket
 - ✅ Agent graph visualization with interactive workflow display
+- ✅ Full-screen graph viewer with zoom/pan controls for complex workflows
 - ✅ Intelligent agent autocomplete (works with or without typing @)
 - ✅ Comprehensive button controls (Purge, Batch Tasks, View Graphs)
 

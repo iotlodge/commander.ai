@@ -72,15 +72,18 @@ export function FullGraphViewer({ agentId }: FullGraphViewerProps) {
     if (!graph) return;
 
     try {
-      // Initialize mermaid
+      // Initialize mermaid with larger spacing for complex graphs
+      const nodeCount = graph.node_count || 0;
+      const isComplexGraph = nodeCount > 10;
+
       mermaid.initialize({
         startOnLoad: false,
         theme: 'dark',
         flowchart: {
           curve: 'basis',
-          padding: 30,
-          nodeSpacing: 100,
-          rankSpacing: 100,
+          padding: isComplexGraph ? 40 : 30,
+          nodeSpacing: isComplexGraph ? 150 : 100,
+          rankSpacing: isComplexGraph ? 150 : 100,
         },
         securityLevel: 'loose',
         themeVariables: {
@@ -130,11 +133,11 @@ export function FullGraphViewer({ agentId }: FullGraphViewerProps) {
   }
 
   function handleZoomIn() {
-    setScale(prev => Math.min(prev + 0.2, 3));
+    setScale(prev => Math.min(prev + 0.2, 8));
   }
 
   function handleZoomOut() {
-    setScale(prev => Math.max(prev - 0.2, 0.3));
+    setScale(prev => Math.max(prev - 0.2, 0.2));
   }
 
   function handleFitToScreen() {
@@ -182,7 +185,7 @@ export function FullGraphViewer({ agentId }: FullGraphViewerProps) {
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setScale(prev => Math.max(0.3, Math.min(3, prev + delta)));
+    setScale(prev => Math.max(0.2, Math.min(8, prev + delta)));
   }
 
   if (loading) {
