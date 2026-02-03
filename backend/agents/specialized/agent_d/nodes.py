@@ -242,6 +242,7 @@ async def list_collections_node(state: DocumentManagerState) -> dict:
 
             if not collections:
                 return {
+                    **state,
                     "collection_list": [],
                     "final_response": "You don't have any collections yet. Create one with 'create collection <name>'.",
                     "current_step": "list_collections",
@@ -264,6 +265,7 @@ async def list_collections_node(state: DocumentManagerState) -> dict:
                 )
 
             return {
+                **state,
                 "collection_list": collection_list,
                 "final_response": "\n".join(response_lines),
                 "current_step": "list_collections",
@@ -271,6 +273,7 @@ async def list_collections_node(state: DocumentManagerState) -> dict:
 
     except Exception as e:
         return {
+            **state,
             "error": str(e),
             "final_response": f"Failed to list collections: {str(e)}",
             "current_step": "list_collections",
@@ -283,6 +286,7 @@ async def load_file_node(state: DocumentManagerState) -> dict:
         file_path = state.get("file_path")
         if not file_path:
             return {
+                **state,
                 "error": "No file path provided",
                 "final_response": "Please provide a file path to load.",
                 "current_step": "load_file",
@@ -291,6 +295,7 @@ async def load_file_node(state: DocumentManagerState) -> dict:
         # Check if file exists
         if not os.path.exists(file_path):
             return {
+                **state,
                 "error": "File not found",
                 "final_response": f"File not found: {file_path}",
                 "current_step": "load_file",
@@ -307,6 +312,7 @@ async def load_file_node(state: DocumentManagerState) -> dict:
             loader = TextLoader()
         else:
             return {
+                **state,
                 "error": "Unsupported file type",
                 "final_response": f"Unsupported file type: {file_ext}. Supported: .pdf, .docx, .txt, .md, .rtf",
                 "current_step": "load_file",
@@ -323,6 +329,7 @@ async def load_file_node(state: DocumentManagerState) -> dict:
 
     except Exception as e:
         return {
+            **state,
             "error": str(e),
             "final_response": f"Failed to load file: {str(e)}",
             "current_step": "load_file",
@@ -335,6 +342,7 @@ async def chunk_and_embed_node(state: DocumentManagerState) -> dict:
         content = state.get("raw_content")
         if not content:
             return {
+                **state,
                 "error": "No content to chunk",
                 "current_step": "chunk_and_embed",
             }
@@ -360,6 +368,7 @@ async def chunk_and_embed_node(state: DocumentManagerState) -> dict:
 
     except Exception as e:
         return {
+            **state,
             "error": str(e),
             "final_response": f"Failed to chunk document: {str(e)}",
             "current_step": "chunk_and_embed",
@@ -453,6 +462,7 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
             )
 
             return {
+                **state,
                 "collection_id": str(collection.id),
                 "final_response": f"✓ Loaded '{file_name}' into collection '{collection_name}' ({len(chunk_creates)} chunks).",
                 "current_step": "store_chunks",
@@ -460,6 +470,7 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
 
     except Exception as e:
         return {
+            **state,
             "error": str(e),
             "final_response": f"Failed to store chunks: {str(e)}",
             "current_step": "store_chunks",
@@ -628,6 +639,7 @@ async def search_all_node(state: DocumentManagerState) -> dict:
                 response_lines.append(f"   {result['content'][:200]}...")
 
             return {
+                **state,
                 "search_results": search_results,
                 "final_response": "\n".join(response_lines),
                 "current_step": "search_all",
@@ -635,6 +647,7 @@ async def search_all_node(state: DocumentManagerState) -> dict:
 
     except Exception as e:
         return {
+            **state,
             "error": str(e),
             "final_response": f"Search failed: {str(e)}",
             "current_step": "search_all",
@@ -645,11 +658,13 @@ async def finalize_response_node(state: DocumentManagerState) -> dict:
     """Format and return final response"""
     if state.get("error"):
         return {
+            **state,
             "final_response": state.get("final_response", f"Error: {state['error']}"),
             "current_step": "finalize",
         }
 
     return {
+        **state,
         "final_response": state.get("final_response", "Task completed."),
         "current_step": "finalize",
     }
