@@ -1,22 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { AgentInfo } from "@/lib/types";
 
 // MVP hardcoded user ID (same as in task store)
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
-
-interface AgentInfo {
-  id: string;
-  nickname: string;
-}
-
-// Mock agent data - should match backend agents
-const AGENTS: AgentInfo[] = [
-  { id: "agent_a", nickname: "bob" },
-  { id: "agent_b", nickname: "sue" },
-  { id: "agent_c", nickname: "rex" },
-  { id: "parent", nickname: "leo" },
-];
 
 interface TaskCreateRequest {
   user_id: string;
@@ -25,7 +13,11 @@ interface TaskCreateRequest {
   command_text: string;
 }
 
-export function useCommandSubmit() {
+interface UseCommandSubmitProps {
+  agents: AgentInfo[];
+}
+
+export function useCommandSubmit({ agents }: UseCommandSubmitProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +34,7 @@ export function useCommandSubmit() {
     // Map nicknames to agent IDs
     const mentionedAgentIds: string[] = [];
     mentions.forEach((nickname) => {
-      const agent = AGENTS.find(
+      const agent = agents.find(
         (a) => a.nickname.toLowerCase() === nickname.toLowerCase()
       );
       if (agent) {
@@ -57,7 +49,7 @@ export function useCommandSubmit() {
 
     if (greetingMatch) {
       const nickname = greetingMatch[2];
-      const agent = AGENTS.find(
+      const agent = agents.find(
         (a) => a.nickname.toLowerCase() === nickname.toLowerCase()
       );
       if (agent && !mentionedAgentIds.includes(agent.id)) {

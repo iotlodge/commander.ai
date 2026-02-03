@@ -41,7 +41,7 @@ export function KanbanColumn({ status, tasks, count }: KanbanColumnProps) {
   const config = statusConfig[status];
 
   return (
-    <div className="flex-shrink-0 w-[285px] h-full flex flex-col">
+    <div className="flex-shrink-0 w-[315px] h-full flex flex-col">
       <div className={`rounded-lg border-2 ${config.color} p-4 h-full flex flex-col`}>
         {/* Column Header */}
         <div className="flex-shrink-0 flex items-center justify-between mb-4">

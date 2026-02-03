@@ -61,6 +61,16 @@ class Settings(BaseSettings):
     # MVP Configuration
     mvp_user_id: str = "00000000-0000-0000-0000-000000000001"
 
+    # Document Processing Configuration
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+    max_file_size_mb: int = 50
+    supported_file_types: list[str] = [".pdf", ".docx", ".md", ".txt", ".rtf"]
+
+    # Tavily Configuration (for future use)
+    tavily_api_key: str = ""
+    tavily_max_results: int = 10
+
     # CORS Configuration
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
     cors_allow_credentials: bool = True

@@ -81,6 +81,7 @@ async def initialize_default_agents() -> None:
     from backend.agents.specialized.agent_a.graph import ResearchAgent
     from backend.agents.specialized.agent_b.graph import ComplianceAgent
     from backend.agents.specialized.agent_c.graph import DataAgent
+    from backend.agents.specialized.agent_d.graph import DocumentManagerAgent
 
     # Create and register Parent Agent (Orchestrator)
     parent_agent = ParentAgent()
@@ -99,3 +100,7 @@ async def initialize_default_agents() -> None:
     rex = DataAgent()
     AgentRegistry.register(rex)
     await rex.initialize()
+
+    alice = DocumentManagerAgent()
+    AgentRegistry.register(alice)
+    await alice.initialize()

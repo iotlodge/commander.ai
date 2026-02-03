@@ -7,44 +7,18 @@ import { AgentMentionAutocomplete } from "./agent-mention-autocomplete";
 import { AgentInfo } from "@/lib/types";
 import { Loader2, Send } from "lucide-react";
 
-// Mock agent data - this should come from an API endpoint in production
-const MOCK_AGENTS: AgentInfo[] = [
-  {
-    id: "agent_a",
-    nickname: "bob",
-    specialization: "Research Specialist",
-    description: "Deep research and information synthesis",
-  },
-  {
-    id: "agent_b",
-    nickname: "sue",
-    specialization: "Compliance Specialist",
-    description: "Regulatory compliance and policy adherence",
-  },
-  {
-    id: "agent_c",
-    nickname: "rex",
-    specialization: "Data Analyst",
-    description: "Data analysis and visualization",
-  },
-  {
-    id: "parent",
-    nickname: "leo",
-    specialization: "Orchestrator",
-    description: "Workflow coordination and task delegation",
-  },
-];
-
 interface CommandInputProps {
   onSubmit?: (command: string) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
+  agents?: AgentInfo[];
 }
 
 export function CommandInput({
   onSubmit,
   isLoading = false,
   error = null,
+  agents = [],
 }: CommandInputProps) {
   const [input, setInput] = useState("");
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -142,7 +116,7 @@ export function CommandInput({
       <div className="space-y-3">
         <div className="relative">
           <AgentMentionAutocomplete
-            agents={MOCK_AGENTS}
+            agents={agents}
             open={showAutocomplete}
             onOpenChange={setShowAutocomplete}
             onAgentSelect={handleAgentSelect}
