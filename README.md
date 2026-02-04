@@ -34,6 +34,27 @@ Every conversation is remembered. Every insight is retained. Commander.ai uses a
 
 ---
 
+## 🔬 Kai Model Comparison
+
+Commander.ai has been tested across multiple AI model variants to optimize performance and cost. Here's how different configurations perform:
+
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="images/kai-60.jpeg" width="240" alt="Kai 60"></td>
+      <td><img src="images/kai-70.jpeg" width="240" alt="Kai 70"></td>
+      <td><img src="images/kai-70b.jpeg" width="240" alt="Kai 70B"></td>
+      <td><img src="images/kai-complete.jpeg" width="240" alt="Kai Complete"></td>
+    </tr>
+  </table>
+</div>
+
+<p align="center">
+  <img src="images/kia-results.png" width="900" alt="Kai Model Results Comparison">
+</p>
+
+---
+
 ## 🎬 See It In Action
 
 ### Real-Time Kanban Board
