@@ -71,6 +71,21 @@ class Settings(BaseSettings):
     tavily_api_key: str = ""
     tavily_max_results: int = 10
 
+    # Data Analysis & Visualization Configuration
+    chart_output_dir: str = "output/charts"
+    chart_default_width: int = 10  # inches
+    chart_default_height: int = 6  # inches
+    chart_dpi: int = 100
+    chart_format: str = "png"  # png, jpg, svg, pdf
+    chart_style: str = "whitegrid"  # darkgrid, whitegrid, dark, white, ticks
+    chart_palette: str = "husl"
+    chart_cleanup_days: int = 7
+
+    # Statistical Analysis Configuration
+    stats_confidence_level: float = 0.95
+    stats_outlier_threshold: float = 1.5  # IQR multiplier
+    stats_significance_level: float = 0.05  # p-value threshold
+
     # CORS Configuration
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
     cors_allow_credentials: bool = True

@@ -5,6 +5,8 @@ Rex (Data Analyst) State Definition
 from typing import Any, TypedDict
 from uuid import UUID
 
+from backend.core.token_tracker import ExecutionMetrics
+
 
 class DataAgentState(TypedDict):
     """State for Rex - Data Analyst"""
@@ -21,6 +23,9 @@ class DataAgentState(TypedDict):
     data_source: str | None
     analysis_type: str | None  # "descriptive", "statistical", "visualization"
     findings: list[str]
+    chart_paths: list[str]  # Paths to generated charts
+    dataframe: dict[str, Any] | None  # Serialized DataFrame
+    metrics: ExecutionMetrics | None  # Tool usage tracking
 
     # Output
     final_response: str | None

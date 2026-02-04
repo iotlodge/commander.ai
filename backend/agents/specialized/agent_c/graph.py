@@ -3,15 +3,20 @@ Rex (Data Analyst) Agent Implementation
 Performs data analysis, visualization, and statistical insights
 """
 
-from langgraph.graph import StateGraph, END
+import numpy as np
+import pandas as pd
+from langgraph.graph import END, StateGraph
 
 from backend.agents.base.agent_interface import (
-    BaseAgent,
-    AgentMetadata,
     AgentExecutionContext,
     AgentExecutionResult,
+    AgentMetadata,
+    BaseAgent,
 )
 from backend.agents.specialized.agent_c.state import DataAgentState
+from backend.core.config import get_settings
+from backend.core.token_tracker import ExecutionMetrics
+from backend.tools.data_analysis import ChartGenerator, StatisticsAnalyzer
 
 
 async def identify_analysis_type_node(state: DataAgentState) -> dict:
@@ -36,36 +41,155 @@ async def identify_analysis_type_node(state: DataAgentState) -> dict:
 
 async def analyze_data_node(state: DataAgentState) -> dict:
     """
-    Perform data analysis
-    TODO: Integrate pandas, matplotlib in production
+    Perform data analysis using tools
     """
     findings = []
+    chart_paths = []
+    metrics = state.get("metrics") or ExecutionMetrics()
 
-    # Placeholder analysis
-    if state["analysis_type"] == "visualization":
-        findings.append("Generated bar chart showing data distribution")
-        findings.append("Created trend line for time series data")
+    try:
+        # Initialize tools
+        stats_tool = StatisticsAnalyzer()
+        chart_tool = ChartGenerator(output_dir=get_settings().chart_output_dir)
 
-    elif state["analysis_type"] == "statistical":
-        findings.append("Mean: 42.5, Median: 40.0, Std Dev: 5.2")
-        findings.append("Strong positive correlation detected (r=0.85)")
+        # Load data (from state or create sample)
+        if state.get("dataframe"):
+            df = pd.DataFrame(state["dataframe"])
+        elif state.get("data_source"):
+            # Future: load from CSV, Excel, database
+            df = pd.read_csv(state["data_source"])
+        else:
+            # Sample data for testing
+            df = pd.DataFrame(
+                {
+                    "x": np.arange(1, 51),
+                    "y": np.random.randn(50).cumsum(),
+                    "category": np.random.choice(["A", "B", "C"], 50),
+                }
+            )
 
-    else:
-        findings.append("Dataset contains 1,000 records across 5 variables")
-        findings.append("No missing values detected")
-        findings.append("Data appears normally distributed")
+        # Validate data
+        if df.empty:
+            return {
+                **state,
+                "error": "Data source is empty",
+                "findings": [],
+                "metrics": metrics,
+                "current_step": "analyzed",
+            }
 
-    return {
-        **state,
-        "findings": findings,
-        "current_step": "analyzed",
-    }
+        # Route based on analysis type
+        if state["analysis_type"] == "statistical":
+            # Descriptive statistics
+            metrics.add_tool_call("StatisticsAnalyzer.describe_dataframe", success=True)
+            desc = await stats_tool.describe_dataframe(df)
+            findings.append(f"Dataset: {desc['shape'][0]} rows × {desc['shape'][1]} columns")
+
+            # Get numeric columns
+            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+
+            if len(numeric_cols) > 0:
+                # Calculate statistics for first numeric column
+                metrics.add_tool_call("StatisticsAnalyzer.calculate_statistics", success=True)
+                stats = await stats_tool.calculate_statistics(
+                    df[numeric_cols[0]], metrics=["mean", "median", "std", "min", "max"]
+                )
+
+                for stat in stats:
+                    findings.append(f"{numeric_cols[0]} - {stat.metric}: {stat.value:.2f}")
+
+                # Correlation matrix if multiple numeric columns
+                if len(numeric_cols) >= 2:
+                    metrics.add_tool_call("StatisticsAnalyzer.correlation_matrix", success=True)
+                    corr = await stats_tool.correlation_matrix(df[numeric_cols], method="pearson")
+
+                    if corr["strong_correlations"]:
+                        findings.append(
+                            f"Strong correlations detected: {len(corr['strong_correlations'])} pairs"
+                        )
+            else:
+                findings.append("No numeric columns available for statistical analysis")
+
+        elif state["analysis_type"] == "visualization":
+            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+
+            if len(numeric_cols) >= 2:
+                # Scatter plot
+                metrics.add_tool_call("ChartGenerator.scatter_plot", success=True)
+                scatter_result = await chart_tool.scatter_plot(
+                    data=df,
+                    x=numeric_cols[0],
+                    y=numeric_cols[1],
+                    hue="category" if "category" in df.columns else None,
+                    title=f"{numeric_cols[0]} vs {numeric_cols[1]}",
+                    save=True,
+                    return_base64=False,
+                )
+                findings.append(f"Created scatter plot: {scatter_result.file_path}")
+                chart_paths.append(scatter_result.file_path)
+
+                # Line plot for trends
+                metrics.add_tool_call("ChartGenerator.line_plot", success=True)
+                line_result = await chart_tool.line_plot(
+                    data=df,
+                    x=numeric_cols[0],
+                    y=numeric_cols[1],
+                    title="Trend Analysis",
+                    markers=True,
+                    save=True,
+                )
+                findings.append(f"Created line plot: {line_result.file_path}")
+                chart_paths.append(line_result.file_path)
+
+                # Histogram
+                metrics.add_tool_call("ChartGenerator.histogram", success=True)
+                hist_result = await chart_tool.histogram(
+                    data=df,
+                    column=numeric_cols[1],
+                    kde=True,
+                    bins="auto",
+                    title=f"Distribution of {numeric_cols[1]}",
+                    save=True,
+                )
+                findings.append(f"Created histogram: {hist_result.file_path}")
+                chart_paths.append(hist_result.file_path)
+            else:
+                findings.append("Insufficient numeric columns for visualization")
+
+        else:  # descriptive
+            metrics.add_tool_call("StatisticsAnalyzer.describe_dataframe", success=True)
+            desc = await stats_tool.describe_dataframe(df)
+
+            findings.append(f"Shape: {desc['shape'][0]} rows × {desc['shape'][1]} columns")
+            findings.append(f"Columns: {', '.join(desc['columns'])}")
+            findings.append(f"Data types: {len(desc['dtypes'])} columns analyzed")
+
+            if desc["missing_values"]:
+                total_missing = sum(desc["missing_values"].values())
+                findings.append(f"Missing values: {total_missing} total")
+
+        return {
+            **state,
+            "findings": findings,
+            "chart_paths": chart_paths,
+            "metrics": metrics,
+            "current_step": "analyzed",
+        }
+
+    except Exception as e:
+        metrics.add_tool_call("data_analysis", success=False)
+        return {
+            **state,
+            "findings": [f"Analysis failed: {str(e)}"],
+            "error": str(e),
+            "chart_paths": [],
+            "metrics": metrics,
+            "current_step": "analyzed",
+        }
 
 
 async def finalize_analysis_node(state: DataAgentState) -> dict:
-    """
-    Create final analysis report
-    """
+    """Create final analysis report"""
     response_parts = []
 
     response_parts.append(f"**Data Analysis Report** ({state['analysis_type'].title()})\n")
@@ -74,7 +198,11 @@ async def finalize_analysis_node(state: DataAgentState) -> dict:
     for i, finding in enumerate(state["findings"], 1):
         response_parts.append(f"{i}. {finding}")
 
-    response_parts.append("\n*Note: This is a placeholder analysis. Production version will use pandas and matplotlib.*")
+    # Include chart paths if any were generated
+    if state.get("chart_paths"):
+        response_parts.append("\n**Generated Charts:**")
+        for path in state["chart_paths"]:
+            response_parts.append(f"- {path}")
 
     final_response = "\n".join(response_parts)
 
@@ -141,6 +269,9 @@ class DataAgent(BaseAgent):
             "data_source": None,
             "analysis_type": None,
             "findings": [],
+            "chart_paths": [],
+            "dataframe": None,
+            "metrics": None,
             "final_response": None,
             "error": None,
             "current_step": "starting",
@@ -164,6 +295,7 @@ class DataAgent(BaseAgent):
                 metadata={
                     "analysis_type": final_state.get("analysis_type"),
                     "findings_count": len(final_state.get("findings", [])),
+                    "chart_count": len(final_state.get("chart_paths", [])),
                 },
             )
 
