@@ -60,7 +60,7 @@ Commander.ai has been tested across multiple AI model variants to optimize perfo
 ### Real-Time Kanban Board
 Watch your tasks flow through the system. See exactly which agent is doing what, when:
 
-![Commander.ai Landing Page](images/landing-page.png)
+![Commander.ai Landing Page](images/landing-page.png?v=2025-02)
 
 ### Agent Intelligence Visualized
 Ever wondered how AI agents actually think? See their decision trees and execution paths:
