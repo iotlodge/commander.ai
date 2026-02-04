@@ -33,6 +33,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.claude/
 Specialized_AGENT_REQUEST.md
 
 # PyInstaller
@@ -239,5 +240,3 @@ next-env.d.ts
 
 # Logs directory
 logs/
-
-%.claude/
