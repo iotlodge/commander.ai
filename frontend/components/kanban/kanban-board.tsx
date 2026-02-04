@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useTaskStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { TaskStatus } from "@/lib/types";
@@ -96,8 +97,15 @@ export function KanbanBoard() {
       {/* Header */}
       <div className="flex-shrink-0 mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Agent Interaction</h1>
-          <p className="text-sm text-gray-400">
+          <Image
+            src="/ui_logo.png"
+            alt="Commander.ai"
+            width={300}
+            height={75}
+            className="object-contain"
+            priority
+          />
+          <p className="text-sm text-gray-400 mt-1">
             Real-time task monitoring and management
           </p>
         </div>
