@@ -62,8 +62,24 @@ export function TaskCard({ task }: TaskCardProps) {
 
     const start = new Date(task.started_at);
     const end = task.completed_at ? new Date(task.completed_at) : currentTime;
+    const diffMs = end.getTime() - start.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
 
-    return formatDistance(start, end, { includeSeconds: true });
+    // Format duration for better precision on short executions
+    if (diffSec < 1) {
+      return "less than a second";
+    } else if (diffSec < 60) {
+      return `${diffSec} second${diffSec !== 1 ? 's' : ''}`;
+    } else if (diffSec < 3600) {
+      const minutes = Math.floor(diffSec / 60);
+      const seconds = diffSec % 60;
+      return seconds > 0
+        ? `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`
+        : `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    } else {
+      // For longer durations, use date-fns formatDistance
+      return formatDistance(start, end, { includeSeconds: true });
+    }
   };
 
   const duration = getDuration();
@@ -194,11 +210,6 @@ export function TaskCard({ task }: TaskCardProps) {
           ) : (
             <span>
               Created {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
-            </span>
-          )}
-          {task.completed_at && (
-            <span>
-              Completed {formatDistanceToNow(new Date(task.completed_at), { addSuffix: true })}
             </span>
           )}
         </div>
