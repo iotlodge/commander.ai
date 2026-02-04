@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, FileText, CheckCircle, AlertCircle, Copy, Check } from 'lucide-react';
+import { X, FileText, CheckCircle, AlertCircle, Copy, Check, Maximize2, Minimize2 } from 'lucide-react';
 import { AgentTask, TaskStatus } from '@/lib/types';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 
 interface TaskResultsModalProps {
   task: AgentTask | null;
@@ -14,6 +15,7 @@ interface TaskResultsModalProps {
 
 export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProps) {
   const [copied, setCopied] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   if (!task) return null;
 
@@ -34,7 +36,7 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[85vh] bg-[#1e2433] border-gray-700 overflow-hidden flex flex-col">
+      <DialogContent className={`${isMaximized ? 'w-[95vw] max-w-[95vw] max-h-[92vh] sm:max-w-[95vw]' : 'w-full max-w-6xl max-h-[85vh] sm:max-w-6xl'} bg-[#1e2433] border-gray-700 overflow-hidden flex flex-col transition-all duration-200`}>
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl font-bold text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -66,6 +68,19 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
                   )}
                 </Button>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+                className="hover:bg-gray-700/50"
+                title={isMaximized ? "Restore size" : "Maximize"}
+              >
+                {isMaximized ? (
+                  <Minimize2 className="h-5 w-5" />
+                ) : (
+                  <Maximize2 className="h-5 w-5" />
+                )}
+              </Button>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 <X className="h-5 w-5" />
               </Button>
@@ -103,10 +118,12 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
                 <CheckCircle className="h-4 w-4 text-green-400" />
                 Result
               </h3>
-              <div className="bg-[#1e2433] rounded-md p-4 border border-[#3a4454]">
-                <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono">
-                  {task.result}
-                </pre>
+              <div className="bg-[#1e2433] rounded-md border border-[#3a4454]">
+                <MarkdownRenderer
+                  content={task.result}
+                  variant="default"
+                  className="p-4"
+                />
               </div>
             </div>
           )}
@@ -118,10 +135,12 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
                 <AlertCircle className="h-4 w-4" />
                 Error
               </h3>
-              <div className="bg-[#1e2433] rounded-md p-4 border border-red-500/20">
-                <pre className="text-sm text-red-300 whitespace-pre-wrap font-mono">
-                  {task.error_message}
-                </pre>
+              <div className="bg-[#1e2433] rounded-md border border-red-500/20">
+                <MarkdownRenderer
+                  content={task.error_message}
+                  variant="error"
+                  className="p-4"
+                />
               </div>
             </div>
           )}

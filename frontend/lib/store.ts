@@ -110,7 +110,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         break;
 
       default:
-        console.warn("  ⚠️ Unknown event type:", event.type);
+        console.warn("  ⚠️ Unknown event type:", (event as any).type);
     }
   },
 
