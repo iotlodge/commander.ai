@@ -34,7 +34,7 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[85vh] bg-[#1e2433] border-gray-700 overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[85vh] bg-[#1e2433] border-gray-700 overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl font-bold text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -84,11 +84,7 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#3a4454]">
-              <div>
-                <p className="text-xs text-gray-500">Agent</p>
-                <p className="text-sm text-white">@{task.agent_nickname}</p>
-              </div>
+            <div className="pt-3 border-t border-[#3a4454]">
               <div>
                 <p className="text-xs text-gray-500">Status</p>
                 <p className={`text-sm font-medium ${

@@ -122,7 +122,9 @@ export function TaskCard({ task }: TaskCardProps) {
       </CardHeader>
 
       <CardContent>
-        <p className="text-sm mb-3 text-gray-300">{task.command_text}</p>
+        <p className="text-sm mb-3 text-gray-300">
+          {task.command_text.replace(/^@\w+\s*/, '')}
+        </p>
 
         {/* Progress bar */}
         {task.status === TaskStatus.IN_PROGRESS && (

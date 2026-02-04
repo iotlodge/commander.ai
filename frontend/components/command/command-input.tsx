@@ -142,7 +142,18 @@ export function CommandInput({
         <div className="flex items-center justify-between gap-4">
           <div className="text-xs text-gray-400">
             <span className="hidden sm:inline">
-              Tip: <span className="text-[#4a9eff]">@bob</span> for research, <span className="text-[#4a9eff]">@sue</span> for compliance, <span className="text-[#4a9eff]">@rex</span> for data, <span className="text-[#4a9eff]">@leo</span> for orchestration
+              Tip: {agents.length > 0 ? (
+                agents.map((agent, idx) => (
+                  <span key={agent.id}>
+                    {idx > 0 && ', '}
+                    <span className="text-[#4a9eff]">@{agent.nickname}</span>
+                    {' for '}
+                    {agent.specialization.toLowerCase()}
+                  </span>
+                ))
+              ) : (
+                <span>Use @ to mention agents</span>
+              )}
             </span>
             <span className="sm:hidden">Use @ to mention agents</span>
           </div>
