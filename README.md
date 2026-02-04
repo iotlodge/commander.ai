@@ -271,10 +271,6 @@ Commander.ai provides **complete visibility** into agent execution with live met
 
 ### Live Metrics During Execution
 
-Watch your agents work with **real-time updates** as they execute:
-
-![Agent Progress with Live Metrics](images/agent-progress.png)
-
 **What you see:**
 - 🔢 **LLM Calls**: Number of AI model invocations (updates after each call)
 - 🤝 **Agent Calls**: Nested agent consultations (tracks delegation depth)
@@ -287,12 +283,6 @@ Watch your agents work with **real-time updates** as they execute:
 - Duration updates **every second** while task is running
 - See exactly which iteration @kai is on (e.g., "self_critique_iteration_2")
 - Track token usage per LLM call with detailed breakdowns
-
-### Comprehensive Results Window
-
-After completion, view detailed execution analytics:
-
-![Results Window with Metrics](images/resultswindow.png)
 
 **Features:**
 - 📋 **Full Response**: Complete agent output with markdown formatting
