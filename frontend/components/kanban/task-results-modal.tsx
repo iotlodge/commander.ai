@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, FileText, CheckCircle, AlertCircle, Copy, Check } from 'lucide-react';
 import { AgentTask, TaskStatus } from '@/lib/types';
 
 interface TaskResultsModalProps {
@@ -12,11 +13,24 @@ interface TaskResultsModalProps {
 }
 
 export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProps) {
+  const [copied, setCopied] = useState(false);
+
   if (!task) return null;
 
   const isSuccess = task.status === TaskStatus.COMPLETED;
   const hasResult = task.result && task.result.trim().length > 0;
   const hasError = task.error_message && task.error_message.trim().length > 0;
+
+  const handleCopy = async () => {
+    const textToCopy = task.result || task.error_message || '';
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -31,9 +45,31 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
               )}
               <span>Task Results</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {(hasResult || hasError) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  className="gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/30"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -111,21 +147,21 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
             <h3 className="text-sm font-semibold text-gray-400 mb-3">Performance Metrics</h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
-                <div className="text-xs text-gray-500 mb-1">Tool Calls</div>
+                <div className="text-xs text-gray-500 mb-1">LLM Calls</div>
                 <div className="text-lg font-semibold text-[#4a9eff]">
-                  {task.tool_calls_count ?? 0}
+                  {task.metadata?.execution_metrics?.llm_calls ?? 0}
                 </div>
               </div>
               <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
                 <div className="text-xs text-gray-500 mb-1">Agent Calls</div>
                 <div className="text-lg font-semibold text-purple-400">
-                  {task.agent_calls_count ?? 0}
+                  {task.metadata?.execution_metrics?.agent_calls ?? 0}
                 </div>
               </div>
               <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
-                <div className="text-xs text-gray-500 mb-1">Tokens</div>
+                <div className="text-xs text-gray-500 mb-1">Total Tokens</div>
                 <div className="text-lg font-semibold text-green-400">
-                  {task.total_tokens?.toLocaleString() ?? 0}
+                  {task.metadata?.execution_metrics?.tokens?.total?.toLocaleString() ?? 0}
                 </div>
               </div>
             </div>

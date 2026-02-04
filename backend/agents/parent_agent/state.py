@@ -34,3 +34,4 @@ class ParentAgentState(TypedDict):
     # Metadata
     current_step: str  # Track progress
     requires_consultation: bool  # If multiple specialists needed
+    metrics: Any | None  # ExecutionMetrics for tracking token usage

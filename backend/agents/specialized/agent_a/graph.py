@@ -31,7 +31,7 @@ async def search_node(state: ResearchAgentState) -> dict:
         await callback.on_progress_update(25, "searching")
 
     # Use LLM-powered web search
-    search_results = await llm_web_search(query)
+    search_results = await llm_web_search(query, metrics=state.get("metrics"))
 
     return {
         **state,
@@ -55,7 +55,8 @@ async def synthesize_node(state: ResearchAgentState) -> dict:
     synthesis = await llm_synthesize_research(
         query=query,
         search_results=results,
-        context=state.get("conversation_context")
+        context=state.get("conversation_context"),
+        metrics=state.get("metrics")
     )
 
     return {
@@ -77,7 +78,7 @@ async def check_compliance_need_node(state: ResearchAgentState) -> dict:
     text_to_check = f"{state['query']}\n\n{state.get('synthesis', '')}"
 
     # Use LLM-powered compliance detection
-    needs_review, concerns = await llm_check_compliance_keywords(text_to_check)
+    needs_review, concerns = await llm_check_compliance_keywords(text_to_check, metrics=state.get("metrics"))
 
     return {
         **state,
@@ -206,6 +207,7 @@ class ResearchAgent(BaseAgent):
             "error": None,
             "current_step": "starting",
             "task_callback": context.task_callback,  # Pass through callback
+            "metrics": context.metrics,
         }
 
         config = {

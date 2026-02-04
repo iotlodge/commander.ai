@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AgentTask, TaskStatus } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, formatDistance } from "date-fns";
 import { cn } from "@/lib/utils";
 import { X, FileText } from "lucide-react";
 import { useTaskStore } from "@/lib/store";
@@ -37,11 +37,36 @@ async function removeTask(taskId: string) {
 export function TaskCard({ task }: TaskCardProps) {
   const { removeTask: removeTaskFromStore } = useTaskStore();
   const [showResults, setShowResults] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for live duration display
+  useEffect(() => {
+    if (task.status === TaskStatus.IN_PROGRESS && task.started_at) {
+      const interval = setInterval(() => {
+        setCurrentTime(new Date());
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [task.status, task.started_at]);
 
   const handleRemove = async () => {
     await removeTask(task.id);
     removeTaskFromStore(task.id);
   };
+
+  // Calculate execution duration
+  const getDuration = () => {
+    if (task.status === TaskStatus.QUEUED || !task.started_at) {
+      return null;
+    }
+
+    const start = new Date(task.started_at);
+    const end = task.completed_at ? new Date(task.completed_at) : currentTime;
+
+    return formatDistance(start, end, { includeSeconds: true });
+  };
+
+  const duration = getDuration();
 
   return (
     <Card className="mb-3 hover:shadow-lg transition-shadow bg-[#1e2433] border-[#3a4454]">
@@ -106,30 +131,29 @@ export function TaskCard({ task }: TaskCardProps) {
           </Badge>
         )}
 
-        {/* Metrics Section - Basic placeholders */}
+        {/* Metrics Section - Live from execution_metrics */}
         {(task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.COMPLETED) && (
           <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-[#3a4454]">
             <div className="text-center">
-              <div className="text-xs text-gray-500">Tool Calls</div>
+              <div className="text-xs text-gray-500">LLM Calls</div>
               <div className="text-sm font-semibold text-gray-300">
-                {task.tool_calls_count ?? 0}
+                {task.metadata?.execution_metrics?.llm_calls ?? 0}
               </div>
             </div>
             <div className="text-center">
               <div className="text-xs text-gray-500">Agent Calls</div>
               <div className="text-sm font-semibold text-gray-300">
-                {task.agent_calls_count ?? 0}
+                {task.metadata?.execution_metrics?.agent_calls ?? 0}
               </div>
             </div>
             <div className="text-center">
               <div className="text-xs text-gray-500">Tokens</div>
               <div className="text-sm font-semibold text-gray-300">
-                {task.total_tokens?.toLocaleString() ?? 0}
+                {task.metadata?.execution_metrics?.tokens?.total?.toLocaleString() ?? 0}
               </div>
             </div>
           </div>
         )}
-        {/* TODO: Wire up backend instrumentation to track actual metrics */}
 
         {/* Results Button for Completed Tasks */}
         {task.status === TaskStatus.COMPLETED && (
@@ -163,9 +187,15 @@ export function TaskCard({ task }: TaskCardProps) {
 
         {/* Timestamps */}
         <div className="flex justify-between text-xs text-gray-500 pt-2 border-t border-[#3a4454] mt-3">
-          <span>
-            Created {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
-          </span>
+          {duration ? (
+            <span className="text-blue-400 font-medium">
+              Duration: {duration}
+            </span>
+          ) : (
+            <span>
+              Created {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
+            </span>
+          )}
           {task.completed_at && (
             <span>
               Completed {formatDistanceToNow(new Date(task.completed_at), { addSuffix: true })}

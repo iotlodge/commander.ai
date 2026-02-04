@@ -36,3 +36,4 @@ class ReflexionAgentState(TypedDict):
     current_step: str
     should_iterate: bool  # Whether to continue iterating
     task_callback: Any  # TaskProgressCallback
+    metrics: Any  # ExecutionMetrics for tracking token usage

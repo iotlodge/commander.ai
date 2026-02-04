@@ -34,3 +34,4 @@ class ResearchAgentState(TypedDict):
     # Metadata
     current_step: str
     task_callback: Any | None  # TaskProgressCallback (avoid circular import)
+    metrics: Any | None  # ExecutionMetrics for tracking token usage

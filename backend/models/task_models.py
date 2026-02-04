@@ -82,6 +82,7 @@ class TaskCompletedEvent(BaseModel):
     status: TaskStatus  # COMPLETED or FAILED
     result: str | None = None
     error_message: str | None = None
+    metadata: dict = Field(default_factory=dict)
     timestamp: datetime
 
 
@@ -119,4 +120,13 @@ class TaskDeletedEvent(BaseModel):
 
     type: str = "task_deleted"
     task_id: UUID
+    timestamp: datetime
+
+
+class TaskMetadataUpdatedEvent(BaseModel):
+    """WebSocket event when task metadata is updated"""
+
+    type: str = "task_metadata_updated"
+    task_id: UUID
+    metadata: dict
     timestamp: datetime

@@ -73,8 +73,21 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           status: event.status,
           result: event.result || null,
           error_message: event.error_message || null,
+          metadata: event.metadata || {},
           completed_at: event.timestamp,
         });
+        break;
+
+      case "task_metadata_updated":
+        console.log("  → Metadata updated:", event.task_id);
+        console.log("     Metadata content:", JSON.stringify(event.metadata, null, 2));
+        const currentTask = tasks.get(event.task_id);
+        console.log("     Current task before update:", currentTask?.metadata);
+        updateTask(event.task_id, {
+          metadata: event.metadata || {},
+        });
+        const updatedTask = get().tasks.get(event.task_id);
+        console.log("     Task after update:", updatedTask?.metadata);
         break;
 
       case "consultation_started":

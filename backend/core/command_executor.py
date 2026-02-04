@@ -93,6 +93,9 @@ async def execute_agent_task(task_id: UUID) -> None:
                 )
                 logger.info(f"Task {task_id} completed successfully")
 
+                # Fetch updated task to get metadata
+                updated_task = await repo.get_task(task_id)
+
                 # Broadcast completion event with full data
                 from backend.models.task_models import TaskCompletedEvent
                 from datetime import datetime
@@ -101,6 +104,7 @@ async def execute_agent_task(task_id: UUID) -> None:
                         task_id=task_id,
                         status=TaskStatus.COMPLETED,
                         result=result.response,
+                        metadata=updated_task.metadata if updated_task else {},
                         timestamp=datetime.utcnow()
                     )
                 )
@@ -114,6 +118,9 @@ async def execute_agent_task(task_id: UUID) -> None:
                 )
                 logger.error(f"Task {task_id} failed: {result.error}")
 
+                # Fetch updated task to get metadata
+                updated_task = await repo.get_task(task_id)
+
                 # Broadcast failure event with full data
                 from backend.models.task_models import TaskCompletedEvent
                 from datetime import datetime
@@ -122,6 +129,7 @@ async def execute_agent_task(task_id: UUID) -> None:
                         task_id=task_id,
                         status=TaskStatus.FAILED,
                         error_message=result.error or "Unknown error",
+                        metadata=updated_task.metadata if updated_task else {},
                         timestamp=datetime.utcnow()
                     )
                 )

@@ -8,14 +8,16 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.core.config import get_settings
+from backend.core.token_tracker import ExecutionMetrics, extract_token_usage_from_response
 
 
-async def llm_web_search(query: str) -> list[dict[str, Any]]:
+async def llm_web_search(query: str, metrics: ExecutionMetrics | None = None) -> list[dict[str, Any]]:
     """
     Perform web search using Tavily API (if configured) or simulate
 
     Args:
         query: Search query
+        metrics: Optional execution metrics tracker
 
     Returns:
         List of search results with title, snippet, url
@@ -71,6 +73,16 @@ Provide 3-5 key points about this topic based on your knowledge."""
 
     response = await llm.ainvoke(messages)
 
+    # Track token usage
+    if metrics:
+        prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+        metrics.add_llm_call(
+            model="gpt-4o-mini",
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            purpose="web_search_fallback"
+        )
+
     # Format as simulated search result
     return [
         {
@@ -85,7 +97,8 @@ Provide 3-5 key points about this topic based on your knowledge."""
 async def llm_synthesize_research(
     query: str,
     search_results: list[dict[str, Any]],
-    context: dict[str, Any] | None = None
+    context: dict[str, Any] | None = None,
+    metrics: ExecutionMetrics | None = None
 ) -> str:
     """
     Use LLM to synthesize search results into coherent research response
@@ -94,6 +107,7 @@ async def llm_synthesize_research(
         query: Original research query
         search_results: List of search results to synthesize
         context: Optional conversation context
+        metrics: Optional execution metrics tracker
 
     Returns:
         Synthesized research response
@@ -143,15 +157,26 @@ Synthesize these sources into a comprehensive research response. Structure your 
 
     response = await llm.ainvoke(messages)
 
+    # Track token usage
+    if metrics:
+        prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+        metrics.add_llm_call(
+            model="gpt-4o-mini",
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            purpose="research_synthesis"
+        )
+
     return response.content
 
 
-async def llm_check_compliance_keywords(text: str) -> tuple[bool, list[str]]:
+async def llm_check_compliance_keywords(text: str, metrics: ExecutionMetrics | None = None) -> tuple[bool, list[str]]:
     """
     Use LLM to intelligently detect compliance/regulatory concerns
 
     Args:
         text: Text to analyze for compliance concerns
+        metrics: Optional execution metrics tracker
 
     Returns:
         Tuple of (needs_review: bool, concerns: list[str])
@@ -193,6 +218,16 @@ Provide your analysis in JSON format."""
 
     try:
         response = await llm.ainvoke(messages)
+
+        # Track token usage
+        if metrics:
+            prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+            metrics.add_llm_call(
+                model="gpt-4o-mini",
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                purpose="compliance_check"
+            )
 
         # Parse JSON response
         import json

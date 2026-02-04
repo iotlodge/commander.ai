@@ -244,6 +244,102 @@ research "Designing a Quantum Accelerator" investigate ['quantum computing funda
 
 ---
 
+## 📊 Real-Time Execution Metrics & Cost Tracking
+
+Commander.ai provides **complete visibility** into agent execution with live metrics tracking. Monitor LLM usage, token consumption, and execution time in real-time - perfect for optimizing performance and controlling costs.
+
+### Live Metrics During Execution
+
+Watch your agents work with **real-time updates** as they execute:
+
+![Agent Progress with Live Metrics](images/agent-progress.png)
+
+**What you see:**
+- 🔢 **LLM Calls**: Number of AI model invocations (updates after each call)
+- 🤝 **Agent Calls**: Nested agent consultations (tracks delegation depth)
+- 🎯 **Tokens**: Total token consumption (prompt + completion)
+- ⏱️ **Duration**: Live execution time in human-friendly format
+- 📈 **Progress**: Visual progress bar with current node/step
+
+**Real-time updates mean:**
+- Metrics increment **during execution**, not just at completion
+- Duration updates **every second** while task is running
+- See exactly which iteration @kai is on (e.g., "self_critique_iteration_2")
+- Track token usage per LLM call with detailed breakdowns
+
+### Comprehensive Results Window
+
+After completion, view detailed execution analytics:
+
+![Results Window with Metrics](images/resultswindow.png)
+
+**Features:**
+- 📋 **Full Response**: Complete agent output with markdown formatting
+- 📊 **Performance Metrics**: Total LLM calls, agent calls, and token usage
+- 📄 **Metadata**: Execution details, iterations, and quality scores
+- 📋 **One-Click Copy**: Copy results to clipboard instantly
+- 🎨 **Syntax Highlighting**: Code blocks and structured data beautifully formatted
+
+### Token Tracking Examples
+
+**Simple Query (@bob research):**
+```
+LLM Calls: 3
+├─ web_search_fallback: 362 tokens
+├─ research_synthesis: 1,247 tokens
+└─ compliance_check: 189 tokens
+Total: 1,798 tokens
+Duration: 8 seconds
+```
+
+**Iterative Reasoning (@kai solve):**
+```
+LLM Calls: 6 (3 iterations)
+├─ Iteration 1:
+│  ├─ initial_reasoning: 397 tokens
+│  ├─ self_critique: 655 tokens
+│  └─ refine_reasoning: 667 tokens
+├─ Iteration 2:
+│  ├─ self_critique: 541 tokens
+│  └─ refine_reasoning: 856 tokens
+└─ Iteration 3:
+   └─ self_critique: 855 tokens
+Total: 3,971 tokens
+Duration: 34 seconds
+```
+
+**Multi-Agent Orchestration (@leo):**
+```
+Agent Calls: 3 (parallel execution)
+├─ @bob: 1,798 tokens (4 LLM calls)
+├─ @maya: 2,341 tokens (3 LLM calls)
+└─ @rex: 892 tokens (2 LLM calls)
+LLM Calls: 11 (9 from agents + 2 aggregation)
+Total: 6,247 tokens
+Duration: 12 seconds (parallel speedup!)
+```
+
+### Cost Optimization Insights
+
+Use metrics to optimize your workflows:
+
+- **Token counts per agent** - Identify expensive operations
+- **Execution duration** - Find bottlenecks in your flow
+- **Agent call depth** - Optimize delegation strategies
+- **LLM call purposes** - See exactly what each call does
+
+**Example: Reducing costs for @kai**
+```bash
+# Before optimization
+@kai solve: complex problem
+→ 3 iterations, 6 LLM calls, 4,200 tokens
+
+# After setting max_iterations=2
+→ 2 iterations, 4 LLM calls, 2,800 tokens (33% savings!)
+```
+
+---
+
 ## 🏗️ Architecture That Scales
 
 ### Intelligent Task Flow

@@ -8,13 +8,15 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.core.config import get_settings
+from backend.core.token_tracker import ExecutionMetrics, extract_token_usage_from_response
 
 
 async def llm_aggregate_results(
     original_query: str,
     specialist_results: dict[str, dict[str, Any]],
     task_type: str,
-    decomposition_reasoning: str | None = None
+    decomposition_reasoning: str | None = None,
+    metrics: ExecutionMetrics | None = None
 ) -> str:
     """
     Use LLM to intelligently aggregate results from multiple agents
@@ -102,6 +104,17 @@ Ensure the final response directly addresses the original query."""
 
     try:
         response = await llm.ainvoke(messages)
+
+        # Track token usage
+        if metrics:
+            prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+            metrics.add_llm_call(
+                model="gpt-4o-mini",
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                purpose="result_aggregation"
+            )
+
         return response.content
 
     except Exception as e:

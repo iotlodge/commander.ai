@@ -93,6 +93,7 @@ class ParentAgent(BaseAgent):
             "error": None,
             "current_step": "starting",
             "requires_consultation": False,
+            "metrics": context.metrics,
         }
 
         # Execute graph

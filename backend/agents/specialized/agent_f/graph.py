@@ -15,6 +15,7 @@ from backend.agents.base.agent_interface import (
 )
 from backend.agents.specialized.agent_f.state import ReflexionAgentState
 from backend.core.config import get_settings
+from backend.core.token_tracker import extract_token_usage_from_response
 
 
 async def initial_reasoning_node(state: ReflexionAgentState) -> dict:
@@ -53,6 +54,22 @@ Provide your initial reasoning and solution."""
     ]
 
     response = await llm.ainvoke(messages)
+
+    # Track token usage
+    if metrics := state.get("metrics"):
+        prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+        metrics.add_llm_call(
+            model="gpt-4o-mini",
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            purpose="initial_reasoning"
+        )
+
+        # Broadcast metrics update in real-time
+        if callback := state.get("task_callback"):
+            await callback.update_metadata({
+                "execution_metrics": metrics.to_dict(include_details=True)
+            })
 
     # Store in trace
     reasoning_trace = state.get("reasoning_trace", [])
@@ -123,6 +140,22 @@ Perform self-critique in JSON format."""
 
     try:
         response = await llm.ainvoke(messages)
+
+        # Track token usage
+        if metrics := state.get("metrics"):
+            prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+            metrics.add_llm_call(
+                model="gpt-4o-mini",
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                purpose=f"self_critique_iteration_{state.get('iteration', 1)}"
+            )
+
+            # Broadcast metrics update in real-time
+            if callback := state.get("task_callback"):
+                await callback.update_metadata({
+                    "execution_metrics": metrics.to_dict(include_details=True)
+                })
 
         # Parse JSON
         import json
@@ -222,6 +255,22 @@ Generate refined reasoning that addresses these issues."""
     ]
 
     response = await llm.ainvoke(messages)
+
+    # Track token usage
+    if metrics := state.get("metrics"):
+        prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+        metrics.add_llm_call(
+            model="gpt-4o-mini",
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            purpose=f"refine_reasoning_iteration_{state.get('iteration', 1)}"
+        )
+
+        # Broadcast metrics update in real-time
+        if callback := state.get("task_callback"):
+            await callback.update_metadata({
+                "execution_metrics": metrics.to_dict(include_details=True)
+            })
 
     # Update iteration counter
     new_iteration = state.get("iteration", 1) + 1
@@ -375,6 +424,7 @@ class ReflexionAgent(BaseAgent):
             "current_step": "starting",
             "should_iterate": True,
             "task_callback": context.task_callback,
+            "metrics": context.metrics,
         }
 
         config = {

@@ -21,6 +21,7 @@ from backend.memory.schemas import (
 )
 from backend.repositories.graph_repository import GraphRepository
 from backend.repositories.task_repository import get_session_factory
+from backend.core.token_tracker import ExecutionMetrics
 
 
 @dataclass
@@ -43,6 +44,7 @@ class AgentExecutionContext(BaseModel):
     conversation_context: ConversationContext | None = None
     task_callback: Any = None  # TaskProgressCallback | None (avoid circular import)
     metadata: dict[str, Any] = {}
+    metrics: ExecutionMetrics | None = None  # Track token usage and calls
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -55,6 +57,7 @@ class AgentExecutionResult(BaseModel):
     final_state: dict[str, Any] = {}
     error: str | None = None
     metadata: dict[str, Any] = {}
+    metrics: ExecutionMetrics | None = None  # Token usage and call metrics
 
 
 class MemoryAwareMixin:
@@ -230,6 +233,10 @@ class BaseAgent(ABC, MemoryAwareMixin):
         This is the main entry point for agent invocation
         """
         try:
+            # Initialize metrics tracking if not provided
+            if context.metrics is None:
+                context.metrics = ExecutionMetrics()
+
             # Notify task started
             if context.task_callback:
                 from backend.models.task_models import TaskStatus
@@ -275,6 +282,15 @@ class BaseAgent(ABC, MemoryAwareMixin):
                 )
             except Exception:
                 pass  # Memory system not fully initialized - skip for MVP
+
+            # Add metrics to result
+            result.metrics = context.metrics
+
+            # Save metrics to task metadata
+            if context.task_callback and context.metrics:
+                await context.task_callback.update_metadata({
+                    "execution_metrics": context.metrics.to_dict(include_details=True)
+                })
 
             # Notify completion
             if context.task_callback:

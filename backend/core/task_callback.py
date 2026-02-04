@@ -6,7 +6,7 @@ from datetime import datetime
 
 from backend.models.task_models import (
     TaskStatus, TaskStatusChangeEvent, TaskProgressEvent,
-    ConsultationStartedEvent, ConsultationCompletedEvent
+    ConsultationStartedEvent, ConsultationCompletedEvent, TaskMetadataUpdatedEvent
 )
 from backend.repositories.task_repository import TaskRepository
 from backend.api.websocket import TaskWebSocketManager
@@ -85,6 +85,18 @@ class TaskProgressCallback:
         """Called when consultation completes"""
         event = ConsultationCompletedEvent(
             task_id=self.task_id,
+            timestamp=datetime.utcnow()
+        )
+        await self.ws_manager.broadcast_task_event(event)
+
+    async def update_metadata(self, metadata: dict):
+        """Update task metadata (e.g., execution metrics)"""
+        await self.repo.update_task_metadata(self.task_id, metadata)
+
+        # Broadcast metadata update event
+        event = TaskMetadataUpdatedEvent(
+            task_id=self.task_id,
+            metadata=metadata,
             timestamp=datetime.utcnow()
         )
         await self.ws_manager.broadcast_task_event(event)

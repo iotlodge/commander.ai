@@ -8,9 +8,10 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.core.config import get_settings
+from backend.core.token_tracker import ExecutionMetrics, extract_token_usage_from_response
 
 
-async def llm_decompose_task(query: str, user_context: dict[str, Any] | None = None) -> dict[str, Any]:
+async def llm_decompose_task(query: str, user_context: dict[str, Any] | None = None, metrics: ExecutionMetrics | None = None) -> dict[str, Any]:
     """
     Use LLM to intelligently decompose a research task into subtasks
 
@@ -106,6 +107,16 @@ Provide your decomposition in JSON format."""
     try:
         # Get LLM response
         response = await llm.ainvoke(messages)
+
+        # Track token usage
+        if metrics:
+            prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+            metrics.add_llm_call(
+                model="gpt-4o-mini",
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                purpose="task_decomposition"
+            )
 
         # Parse JSON response
         import json

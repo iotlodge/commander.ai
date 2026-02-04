@@ -154,6 +154,25 @@ class TaskRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
+    async def update_task_metadata(self, task_id: UUID, metadata: dict) -> None:
+        """Update task metadata (merges with existing metadata)"""
+        # Get current metadata
+        task = await self.get_task(task_id)
+        if not task:
+            return
+
+        # Merge new metadata with existing
+        current_metadata = task.metadata or {}
+        updated_metadata = {**current_metadata, **metadata}
+
+        stmt = (
+            update(AgentTaskModel)
+            .where(AgentTaskModel.id == task_id)
+            .values(meta_data=updated_metadata)
+        )
+        await self.session.execute(stmt)
+        await self.session.commit()
+
     async def delete_tasks_by_status(self, user_id: UUID, status: TaskStatus) -> list[UUID]:
         """Delete all tasks with given status for a user, return deleted task IDs"""
         # Get task IDs before deletion

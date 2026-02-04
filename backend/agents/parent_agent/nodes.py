@@ -34,7 +34,8 @@ async def decompose_task_node(state: ParentAgentState) -> dict[str, Any]:
     try:
         decomposition = await llm_decompose_task(
             query=query,
-            user_context=state.get("conversation_context")
+            user_context=state.get("conversation_context"),
+            metrics=state.get("metrics")
         )
 
         task_type = decomposition.get("task_type", "research")
@@ -110,6 +111,7 @@ async def delegate_to_specialists_node(state: ParentAgentState) -> dict[str, Any
     Uses asyncio.gather() for concurrent execution
     """
     import asyncio
+    from backend.core.token_tracker import ExecutionMetrics
 
     async def execute_agent(agent_nickname: str, subtask_query: str) -> tuple[str, dict]:
         """Execute single agent and return results"""
@@ -122,17 +124,29 @@ async def delegate_to_specialists_node(state: ParentAgentState) -> dict[str, Any
                 "error": f"Agent {agent_nickname} not found",
             }
 
-        # Create execution context
+        # Create child execution context with fresh metrics
+        child_metrics = ExecutionMetrics()
         context = AgentExecutionContext(
             user_id=state["user_id"],
             thread_id=state["thread_id"],
             command=subtask_query,
             conversation_context=state.get("conversation_context"),
+            metrics=child_metrics,
         )
 
         # Execute specialist agent
         try:
             result: AgentExecutionResult = await agent.execute(subtask_query, context)
+
+            # Track agent call in parent metrics
+            if parent_metrics := state.get("metrics"):
+                parent_metrics.add_agent_call(
+                    agent_id=agent.agent_id,
+                    agent_nickname=agent_nickname,
+                    success=result.success,
+                    child_metrics=result.metrics
+                )
+
             return agent_nickname, {
                 "success": result.success,
                 "response": result.response,
@@ -204,7 +218,8 @@ async def aggregate_results_node(state: ParentAgentState) -> dict[str, Any]:
             original_query=state["query"],
             specialist_results=results,
             task_type=state.get("task_type", "unknown"),
-            decomposition_reasoning=state.get("decomposition_reasoning")
+            decomposition_reasoning=state.get("decomposition_reasoning"),
+            metrics=state.get("metrics")
         )
 
         # Add disclaimer if some specialists failed

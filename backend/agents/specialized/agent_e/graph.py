@@ -15,6 +15,7 @@ from backend.agents.base.agent_interface import (
 )
 from backend.agents.specialized.agent_e.state import ReflectionAgentState
 from backend.core.config import get_settings
+from backend.core.token_tracker import extract_token_usage_from_response
 
 
 async def analyze_content_node(state: ReflectionAgentState) -> dict:
@@ -61,6 +62,16 @@ Provide your initial analysis covering:
     ]
 
     response = await llm.ainvoke(messages)
+
+    # Track token usage
+    if metrics := state.get("metrics"):
+        prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+        metrics.add_llm_call(
+            model="gpt-4o-mini",
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            purpose="content_analysis"
+        )
 
     return {
         **state,
@@ -116,6 +127,16 @@ Identify specific issues in JSON format."""
 
     try:
         response = await llm.ainvoke(messages)
+
+        # Track token usage
+        if metrics := state.get("metrics"):
+            prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+            metrics.add_llm_call(
+                model="gpt-4o-mini",
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                purpose="identify_issues"
+            )
 
         # Parse JSON
         import json
@@ -195,6 +216,16 @@ Generate an improved version that addresses these issues while maintaining the c
     ]
 
     response = await llm.ainvoke(messages)
+
+    # Track token usage
+    if metrics := state.get("metrics"):
+        prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+        metrics.add_llm_call(
+            model="gpt-4o-mini",
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            purpose="generate_improvements"
+        )
 
     return {
         **state,
@@ -312,6 +343,7 @@ class ReflectionAgent(BaseAgent):
             "error": None,
             "current_step": "starting",
             "task_callback": context.task_callback,
+            "metrics": context.metrics,
         }
 
         config = {

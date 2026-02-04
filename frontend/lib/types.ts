@@ -77,6 +77,14 @@ export interface TaskCompletedEvent {
   status: TaskStatus;
   result?: string | null;
   error_message?: string | null;
+  metadata?: Record<string, any>;
+  timestamp: string;
+}
+
+export interface TaskMetadataUpdatedEvent {
+  type: "task_metadata_updated";
+  task_id: string;
+  metadata: Record<string, any>;
   timestamp: string;
 }
 
@@ -84,6 +92,7 @@ export type WebSocketEvent =
   | TaskStatusChangeEvent
   | TaskProgressEvent
   | TaskCompletedEvent
+  | TaskMetadataUpdatedEvent
   | ConsultationStartedEvent
   | ConsultationCompletedEvent
   | TaskDeletedEvent;

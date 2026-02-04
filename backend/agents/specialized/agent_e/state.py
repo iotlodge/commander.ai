@@ -30,3 +30,4 @@ class ReflectionAgentState(TypedDict):
     # Metadata
     current_step: str
     task_callback: Any  # TaskProgressCallback
+    metrics: Any | None  # ExecutionMetrics for tracking token usage
