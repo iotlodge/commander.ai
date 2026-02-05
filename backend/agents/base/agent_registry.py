@@ -84,6 +84,7 @@ async def initialize_default_agents() -> None:
     from backend.agents.specialized.agent_d.graph import DocumentManagerAgent
     from backend.agents.specialized.agent_e.graph import ReflectionAgent
     from backend.agents.specialized.agent_f.graph import ReflexionAgent
+    from backend.agents.specialized.agent_g.graph import ChatAgent
 
     # Create and register Parent Agent (Orchestrator)
     parent_agent = ParentAgent()
@@ -114,3 +115,7 @@ async def initialize_default_agents() -> None:
     kai = ReflexionAgent()
     AgentRegistry.register(kai)
     await kai.initialize()
+
+    chat = ChatAgent()
+    AgentRegistry.register(chat)
+    await chat.initialize()

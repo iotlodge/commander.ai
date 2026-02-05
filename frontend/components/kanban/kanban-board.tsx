@@ -8,9 +8,10 @@ import { TaskStatus } from "@/lib/types";
 import { KanbanColumn } from "./kanban-column";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Package, GitBranch } from "lucide-react";
+import { Trash2, Package, GitBranch, MessageSquare } from "lucide-react";
 import { AgentGraphModal } from "@/components/graphs/agent-graph-modal";
 import { useGraphModal } from "@/lib/hooks/use-graph-modal";
+import { ChatModal } from "@/components/chat/chat-modal";
 
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -19,6 +20,7 @@ export function KanbanBoard() {
   const { isConnected, events } = useWebSocket(MVP_USER_ID);
   const [lastProcessedIndex, setLastProcessedIndex] = useState(-1);
   const { isOpen, openModal, closeModal } = useGraphModal();
+  const [showChatModal, setShowChatModal] = useState(false);
 
   const handlePurgeCompleted = async () => {
     try {
@@ -148,6 +150,15 @@ export function KanbanBoard() {
             <GitBranch className="h-3.5 w-3.5" />
             View Agent Graphs
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowChatModal(true)}
+            className="gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/30 h-8 text-xs"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            Chat with LLM
+          </Button>
           <div className="h-6 w-px bg-gray-600 mx-1" />
           <Badge
             variant={isConnected ? "default" : "destructive"}
@@ -177,6 +188,12 @@ export function KanbanBoard() {
 
       {/* Graph Modal */}
       <AgentGraphModal isOpen={isOpen} onClose={closeModal} />
+
+      {/* Chat Modal */}
+      <ChatModal
+        isOpen={showChatModal}
+        onClose={() => setShowChatModal(false)}
+      />
     </div>
   );
 }
