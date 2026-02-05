@@ -33,6 +33,9 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+PHASE*.md
+TEST_RESULTS*.md
+CHANGES.md
 .claude/
 Specialized_AGENT_REQUEST.md
 
