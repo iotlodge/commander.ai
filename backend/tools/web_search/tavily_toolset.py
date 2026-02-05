@@ -219,13 +219,20 @@ class TavilyToolset:
             best_match_id, similarity = results[0]
 
             # TODO: Retrieve full chunk with metadata from database
-            # For now, return None (cache miss) until database integration
-            logger.debug(f"Cache hit with similarity {similarity}, but chunk retrieval not implemented")
+            # For now, return None (cache miss) to force fresh search
+            # Cache storage works, but retrieval needs full implementation
+            logger.debug(f"Cache hit with similarity {similarity:.2f}, but full retrieval not yet implemented")
             return None
 
         except Exception as e:
-            logger.error(f"Cache check failed: {e}", exc_info=True)
-            raise TavilyCacheError(f"Failed to check cache: {e}")
+            # If collection doesn't exist or other cache errors, treat as cache miss
+            if "doesn't exist" in str(e) or "not found" in str(e).lower():
+                logger.debug(f"Cache collection not found for user {user_id}, treating as cache miss")
+                return None
+
+            # For other errors, log but don't fail - treat as cache miss
+            logger.warning(f"Cache check failed, treating as cache miss: {e}")
+            return None
 
     async def _store_to_cache(
         self,
