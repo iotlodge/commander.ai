@@ -73,11 +73,17 @@ class DocumentStore:
             logger.debug("DocumentStore already connected, reusing connection")
             return
 
-        self.qdrant_client = AsyncQdrantClient(
-            url=self.settings.qdrant_url,
-            api_key=self.settings.qdrant_api_key,
-        )
-        logger.info("DocumentStore Qdrant client connected")
+        try:
+            logger.info(f"Connecting to Qdrant at {self.settings.qdrant_url}")
+            self.qdrant_client = AsyncQdrantClient(
+                url=self.settings.qdrant_url,
+                api_key=self.settings.qdrant_api_key,
+            )
+            logger.info("DocumentStore Qdrant client connected successfully")
+        except Exception as e:
+            logger.error(f"Failed to connect to Qdrant: {e}", exc_info=True)
+            self.qdrant_client = None
+            raise
 
     async def disconnect(self) -> None:
         """
@@ -100,7 +106,17 @@ class DocumentStore:
         Args:
             qdrant_collection_name: Name for the Qdrant collection
             user_id: User ID for metadata filtering
+
+        Raises:
+            RuntimeError: If qdrant_client is not initialized (call connect() first)
         """
+        if self.qdrant_client is None:
+            raise RuntimeError(
+                "DocumentStore.qdrant_client is None. "
+                "Ensure connect() has been called before creating collections. "
+                "Use get_document_store() singleton for proper initialization."
+            )
+
         # Check if collection already exists
         collections = await self.qdrant_client.get_collections()
         collection_names = [c.name for c in collections.collections]
@@ -150,7 +166,17 @@ class DocumentStore:
         Args:
             qdrant_collection_name: Target Qdrant collection
             chunks: List of chunks to store (must have vector_id set)
+
+        Raises:
+            RuntimeError: If qdrant_client is not initialized (call connect() first)
         """
+        if self.qdrant_client is None:
+            raise RuntimeError(
+                "DocumentStore.qdrant_client is None. "
+                "Ensure connect() has been called before storing chunks. "
+                "Use get_document_store() singleton for proper initialization."
+            )
+
         points = []
         for chunk in chunks:
             # Generate embedding for chunk content

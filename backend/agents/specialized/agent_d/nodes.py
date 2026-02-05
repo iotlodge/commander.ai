@@ -234,7 +234,7 @@ async def create_collection_node(state: DocumentManagerState) -> dict:
                 qdrant_collection_name=collection.qdrant_collection_name,
                 user_id=state["user_id"],
             )
-            await doc_store.disconnect()
+            # Note: Do not disconnect singleton - shared across all agents
 
             return {
                 **state,
@@ -423,7 +423,12 @@ async def chunk_and_embed_node(state: DocumentManagerState) -> dict:
             }
 
         file_path = state.get("file_path", "")
-        file_name = Path(file_path).name if file_path else "unknown"
+        # For web searches, use search query as file name
+        search_query = state.get("search_query", "")
+        if search_query:
+            file_name = f"web_search_{search_query[:50]}"  # Truncate long queries
+        else:
+            file_name = Path(file_path).name if file_path else "unknown"
 
         # Chunk document
         chunker = DocumentChunker()
@@ -472,7 +477,12 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
             state["action_params"].get("file_path") or
             ""
         )
-        file_name = Path(file_path).name if file_path else "unknown"
+        # For web searches, use search query as file name
+        search_query = state.get("search_query", "")
+        if search_query:
+            file_name = f"web_search_{search_query[:50]}"  # Truncate long queries
+        else:
+            file_name = Path(file_path).name if file_path else "unknown"
 
         session_factory = get_session_factory()
         async with session_factory() as session:
@@ -499,7 +509,7 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
                     qdrant_collection_name=collection.qdrant_collection_name,
                     user_id=state["user_id"],
                 )
-                await doc_store.disconnect()
+                # Note: Do not disconnect singleton - shared across all agents
 
             # Prepare chunks for storage
             chunk_creates = []
@@ -527,17 +537,41 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
                 qdrant_collection_name=collection.qdrant_collection_name,
                 chunks=chunk_creates,
             )
-            await doc_store.disconnect()
+            # Note: Do not disconnect singleton - shared across all agents
 
             # Update collection chunk count
             await collection_repo.increment_chunk_count(
                 collection_id=collection.id, increment=len(chunk_creates)
             )
 
+            # Format final response with search results if available
+            base_message = f"✓ Loaded '{file_name}' into collection '{collection_name}' ({len(chunk_creates)} chunks)."
+
+            # If this was a web search, include formatted results
+            web_documents = state.get("web_documents", [])
+            if web_documents:
+                results_summary = "\n\n**Search Results:**\n"
+                for idx, doc in enumerate(web_documents[:5], 1):  # Show top 5
+                    metadata = doc.get("metadata", {})
+                    title = metadata.get("title", "No title")
+                    url = metadata.get("url", "")
+                    score = metadata.get("score", 0.0)
+                    results_summary += f"\n{idx}. **{title}**"
+                    if score:
+                        results_summary += f" (relevance: {score:.2f})"
+                    results_summary += f"\n   {url}\n"
+
+                if len(web_documents) > 5:
+                    results_summary += f"\n_...and {len(web_documents) - 5} more results_"
+
+                final_response = base_message + results_summary
+            else:
+                final_response = base_message
+
             return {
                 **state,
                 "collection_id": str(collection.id),
-                "final_response": f"✓ Loaded '{file_name}' into collection '{collection_name}' ({len(chunk_creates)} chunks).",
+                "final_response": final_response,
                 "current_step": "store_chunks",
             }
 
@@ -590,7 +624,7 @@ async def search_collection_node(state: DocumentManagerState) -> dict:
                 query=query,
                 limit=10,
             )
-            await doc_store.disconnect()
+            # Note: Do not disconnect singleton - shared across all agents
 
             if not vector_results:
                 return {
@@ -669,7 +703,7 @@ async def search_all_node(state: DocumentManagerState) -> dict:
                 query=query,
                 limit=10,
             )
-            await doc_store.disconnect()
+            # Note: Do not disconnect singleton - shared across all agents
 
             if not all_results:
                 return {
@@ -774,7 +808,7 @@ async def search_multiple_node(state: DocumentManagerState) -> dict:
                 query=query,
                 limit=10,
             )
-            await doc_store.disconnect()
+            # Note: Do not disconnect singleton - shared across all agents
 
             if not all_results:
                 return {
