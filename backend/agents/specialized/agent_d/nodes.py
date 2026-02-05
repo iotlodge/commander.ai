@@ -7,7 +7,8 @@ from pathlib import Path
 from uuid import uuid4
 
 from backend.agents.specialized.agent_d.state import DocumentManagerState
-from backend.memory.document_store import DocumentStore
+from backend.core.config import get_settings
+from backend.core.dependencies import get_document_store
 from backend.models.document_models import CollectionCreate, ChunkCreate
 from backend.repositories.collection_repository import CollectionRepository
 from backend.repositories.chunk_repository import ChunkRepository
@@ -18,7 +19,7 @@ from backend.tools.document_loaders import (
     TextLoader,
     DocumentChunker,
 )
-from backend.tools.web_search import TavilyClient
+from backend.tools.web_search.tavily_toolset import TavilyToolset
 
 
 async def parse_input_node(state: DocumentManagerState) -> dict:
@@ -81,6 +82,34 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
     elif "list collection" in query_lower or "show collection" in query_lower or "my collection" in query_lower:
         action_type = "list_collections"
         params = {}
+
+    elif "crawl" in query_lower or "crawl site" in query_lower or "crawl website" in query_lower:
+        action_type = "crawl_site"
+        # Extract URL
+        url_match = re.search(r'https?://[^\s]+', query)
+        base_url = url_match.group(0) if url_match else None
+        params = {
+            "base_url": base_url,
+            "collection_name": collection_name,
+        }
+
+    elif "extract" in query_lower and ("url" in query_lower or "http" in query):
+        action_type = "extract_urls"
+        # Extract all URLs from query
+        urls = re.findall(r'https?://[^\s]+', query)
+        params = {
+            "urls": urls,
+            "collection_name": collection_name,
+        }
+
+    elif "map site" in query_lower or "map website" in query_lower:
+        action_type = "map_site"
+        # Extract URL
+        url_match = re.search(r'https?://[^\s]+', query)
+        base_url = url_match.group(0) if url_match else None
+        params = {
+            "base_url": base_url,
+        }
 
     elif "search web" in query_lower or "web search" in query_lower or "search online" in query_lower:
         action_type = "search_web"
@@ -199,9 +228,8 @@ async def create_collection_node(state: DocumentManagerState) -> dict:
             )
             collection = await collection_repo.create_collection(collection_create)
 
-            # Create Qdrant collection
-            doc_store = DocumentStore()
-            await doc_store.connect()
+            # Create Qdrant collection using singleton
+            doc_store = await get_document_store()
             await doc_store.create_collection(
                 qdrant_collection_name=collection.qdrant_collection_name,
                 user_id=state["user_id"],
@@ -254,11 +282,9 @@ async def delete_collection_node(state: DocumentManagerState) -> dict:
                     "current_step": "delete_collection",
                 }
 
-            # Delete from Qdrant
-            doc_store = DocumentStore()
-            await doc_store.connect()
+            # Delete from Qdrant using singleton
+            doc_store = await get_document_store()
             await doc_store.delete_collection(collection.qdrant_collection_name)
-            await doc_store.disconnect()
 
             # Delete from database (cascades to chunks)
             await collection_repo.delete_collection(collection.id)
@@ -467,9 +493,8 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
                 )
                 collection = await collection_repo.create_collection(collection_create)
 
-                # Create Qdrant collection
-                doc_store = DocumentStore()
-                await doc_store.connect()
+                # Create Qdrant collection using singleton
+                doc_store = await get_document_store()
                 await doc_store.create_collection(
                     qdrant_collection_name=collection.qdrant_collection_name,
                     user_id=state["user_id"],
@@ -496,9 +521,8 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
             # Store in database
             stored_chunks = await chunk_repo.create_chunks(chunk_creates)
 
-            # Store embeddings in Qdrant
-            doc_store = DocumentStore()
-            await doc_store.connect()
+            # Store embeddings in Qdrant using singleton
+            doc_store = await get_document_store()
             await doc_store.store_chunks(
                 qdrant_collection_name=collection.qdrant_collection_name,
                 chunks=chunk_creates,
@@ -558,9 +582,8 @@ async def search_collection_node(state: DocumentManagerState) -> dict:
                     "current_step": "search_collection",
                 }
 
-            # Search in Qdrant
-            doc_store = DocumentStore()
-            await doc_store.connect()
+            # Search in Qdrant using singleton
+            doc_store = await get_document_store()
             vector_results = await doc_store.search_collection(
                 qdrant_collection_name=collection.qdrant_collection_name,
                 user_id=state["user_id"],
@@ -636,11 +659,10 @@ async def search_all_node(state: DocumentManagerState) -> dict:
                     "current_step": "search_all",
                 }
 
-            # Search across all collections
+            # Search across all collections using singleton
             qdrant_collection_names = [c.qdrant_collection_name for c in collections]
 
-            doc_store = DocumentStore()
-            await doc_store.connect()
+            doc_store = await get_document_store()
             all_results = await doc_store.search_all_collections(
                 collection_names=qdrant_collection_names,
                 user_id=state["user_id"],
@@ -742,11 +764,10 @@ async def search_multiple_node(state: DocumentManagerState) -> dict:
                     "current_step": "search_multiple",
                 }
 
-            # Search across specified collections
+            # Search across specified collections using singleton
             qdrant_collection_names = [c.qdrant_collection_name for c in collections]
 
-            doc_store = DocumentStore()
-            await doc_store.connect()
+            doc_store = await get_document_store()
             all_results = await doc_store.search_all_collections(
                 collection_names=qdrant_collection_names,
                 user_id=state["user_id"],
@@ -812,7 +833,7 @@ async def search_multiple_node(state: DocumentManagerState) -> dict:
 
 
 async def fetch_web_node(state: DocumentManagerState) -> dict:
-    """Fetch web content using Tavily API"""
+    """Fetch web content using Tavily API with cache-first pattern"""
     try:
         search_query = state["action_params"].get("query", state.get("search_query", ""))
 
@@ -824,19 +845,26 @@ async def fetch_web_node(state: DocumentManagerState) -> dict:
                 "current_step": "fetch_web",
             }
 
-        # Initialize Tavily client
-        tavily = TavilyClient()
-        await tavily.connect()
+        # Get settings and document store
+        settings = get_settings()
+        doc_store = await get_document_store()
 
-        # Search and format results for document storage
-        web_documents = await tavily.search_and_format(
-            query=search_query,
-            max_results=None  # Use default from settings
+        # Initialize TavilyToolset with cache-first pattern
+        tavily = TavilyToolset(
+            api_key=settings.tavily_api_key,
+            document_store=doc_store,
+            enable_caching=True,
         )
 
-        await tavily.disconnect()
+        # Search with cache-first pattern
+        result = await tavily.search(
+            query=search_query,
+            user_id=state["user_id"],
+            max_results=settings.tavily_max_results,
+            use_cache=True,
+        )
 
-        if not web_documents:
+        if not result.results:
             return {
                 **state,
                 "web_documents": [],
@@ -844,10 +872,32 @@ async def fetch_web_node(state: DocumentManagerState) -> dict:
                 "current_step": "fetch_web",
             }
 
+        # Format results for document storage
+        web_documents = []
+        for idx, search_result in enumerate(result.results):
+            # Combine title and content for better context
+            content = f"# {search_result['title']}\n\n{search_result['content']}\n\nSource: {search_result['url']}"
+
+            web_documents.append({
+                "content": content,
+                "metadata": {
+                    "source_type": "web",
+                    "url": search_result["url"],
+                    "title": search_result["title"],
+                    "query": search_query,
+                    "score": search_result.get("score", 0.0),
+                    "result_index": idx,
+                    "cache_source": result.source,  # "api" or "cache"
+                }
+            })
+
+        cache_info = f" (from {result.source})" if result.source == "cache" else ""
+
         return {
             **state,
             "search_query": search_query,
             "web_documents": web_documents,
+            "final_response": f"Found {len(web_documents)} web results{cache_info}",
             "current_step": "fetch_web",
         }
 
@@ -857,6 +907,181 @@ async def fetch_web_node(state: DocumentManagerState) -> dict:
             "error": str(e),
             "final_response": f"Web search failed: {str(e)}",
             "current_step": "fetch_web",
+        }
+
+
+async def crawl_site_node(state: DocumentManagerState) -> dict:
+    """Crawl website using Tavily crawl operation"""
+    try:
+        base_url = state["action_params"].get("base_url")
+
+        if not base_url:
+            return {
+                **state,
+                "error": "No base URL provided",
+                "final_response": "Please provide a base URL to crawl.",
+                "current_step": "crawl_site",
+            }
+
+        # Get settings and document store
+        settings = get_settings()
+        doc_store = await get_document_store()
+
+        # Initialize TavilyToolset
+        tavily = TavilyToolset(
+            api_key=settings.tavily_api_key,
+            document_store=doc_store,
+            enable_caching=True,
+        )
+
+        # Crawl website
+        result = await tavily.crawl(
+            base_url=base_url,
+            user_id=state["user_id"],
+            max_depth=2,
+            max_breadth=20,
+            limit=50,
+        )
+
+        # Format results for document storage
+        web_documents = []
+        for idx, page in enumerate(result.results):
+            web_documents.append({
+                "content": page.get("content", ""),
+                "metadata": {
+                    "source_type": "web_crawl",
+                    "url": page.get("url", ""),
+                    "title": page.get("title", ""),
+                    "base_url": base_url,
+                    "result_index": idx,
+                }
+            })
+
+        return {
+            **state,
+            "web_documents": web_documents,
+            "final_response": f"Crawled {len(web_documents)} pages from {base_url}",
+            "current_step": "crawl_site",
+        }
+
+    except Exception as e:
+        return {
+            **state,
+            "error": str(e),
+            "final_response": f"Website crawl failed: {str(e)}",
+            "current_step": "crawl_site",
+        }
+
+
+async def extract_urls_node(state: DocumentManagerState) -> dict:
+    """Extract content from specific URLs using Tavily extract operation"""
+    try:
+        urls = state["action_params"].get("urls", [])
+
+        if not urls:
+            return {
+                **state,
+                "error": "No URLs provided",
+                "final_response": "Please provide URLs to extract content from.",
+                "current_step": "extract_urls",
+            }
+
+        # Get settings and document store
+        settings = get_settings()
+        doc_store = await get_document_store()
+
+        # Initialize TavilyToolset
+        tavily = TavilyToolset(
+            api_key=settings.tavily_api_key,
+            document_store=doc_store,
+            enable_caching=True,
+        )
+
+        # Extract content from URLs
+        results = await tavily.extract(
+            urls=urls,
+            user_id=state["user_id"],
+            extract_depth="advanced",
+        )
+
+        # Format results for document storage
+        web_documents = []
+        for idx, extracted in enumerate(results):
+            web_documents.append({
+                "content": extracted.content,
+                "metadata": {
+                    "source_type": "web_extract",
+                    "url": extracted.url,
+                    "title": extracted.title,
+                    "result_index": idx,
+                }
+            })
+
+        return {
+            **state,
+            "web_documents": web_documents,
+            "final_response": f"Extracted content from {len(web_documents)} URLs",
+            "current_step": "extract_urls",
+        }
+
+    except Exception as e:
+        return {
+            **state,
+            "error": str(e),
+            "final_response": f"URL extraction failed: {str(e)}",
+            "current_step": "extract_urls",
+        }
+
+
+async def map_site_node(state: DocumentManagerState) -> dict:
+    """Map website structure using Tavily map operation"""
+    try:
+        base_url = state["action_params"].get("base_url")
+
+        if not base_url:
+            return {
+                **state,
+                "error": "No base URL provided",
+                "final_response": "Please provide a base URL to map.",
+                "current_step": "map_site",
+            }
+
+        # Get settings and document store
+        settings = get_settings()
+        doc_store = await get_document_store()
+
+        # Initialize TavilyToolset
+        tavily = TavilyToolset(
+            api_key=settings.tavily_api_key,
+            document_store=doc_store,
+            enable_caching=True,
+        )
+
+        # Map website
+        result = await tavily.map_site(
+            base_url=base_url,
+            user_id=state["user_id"],
+            max_depth=2,
+            max_breadth=20,
+            limit=50,
+        )
+
+        # Format response
+        url_list = "\n".join([f"  - {url}" for url in result.urls])
+        response = f"Site Map for {base_url}:\n\n{url_list}\n\nTotal URLs: {len(result.urls)}"
+
+        return {
+            **state,
+            "final_response": response,
+            "current_step": "map_site",
+        }
+
+    except Exception as e:
+        return {
+            **state,
+            "error": str(e),
+            "final_response": f"Site mapping failed: {str(e)}",
+            "current_step": "map_site",
         }
 
 

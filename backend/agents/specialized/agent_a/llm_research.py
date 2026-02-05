@@ -1,55 +1,127 @@
 """
 LLM-Powered Research Utilities for Bob (Research Specialist)
 Uses OpenAI GPT-4o-mini for research analysis and synthesis
+Web search powered by TavilyToolset with cache-first pattern
 """
 
+import logging
 from typing import Any
+from uuid import UUID
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.core.config import get_settings
+from backend.core.dependencies import get_document_store
 from backend.core.token_tracker import ExecutionMetrics, extract_token_usage_from_response
+from backend.tools.web_search.tavily_toolset import TavilyToolset
+from backend.tools.web_search.exceptions import (
+    TavilyAPIError,
+    TavilyRateLimitError,
+    TavilyTimeoutError,
+)
+
+logger = logging.getLogger(__name__)
 
 
-async def llm_web_search(query: str, metrics: ExecutionMetrics | None = None) -> list[dict[str, Any]]:
+async def llm_web_search(
+    query: str,
+    user_id: UUID,
+    metrics: ExecutionMetrics | None = None,
+    use_cache: bool = True,
+) -> list[dict[str, Any]]:
     """
-    Perform web search using Tavily API (if configured) or simulate
+    Perform web search using Tavily API with cache-first pattern
 
     Args:
         query: Search query
+        user_id: User ID for cache scoping
         metrics: Optional execution metrics tracker
+        use_cache: Whether to use cache-first pattern (default: True)
 
     Returns:
-        List of search results with title, snippet, url
+        List of search results with title, snippet, url, score
     """
     settings = get_settings()
 
     # Try Tavily if API key is configured
     if settings.tavily_api_key:
         try:
-            from langchain_community.tools.tavily_search import TavilySearchResults
+            # Get document store singleton
+            doc_store = await get_document_store()
 
-            search = TavilySearchResults(
+            # Initialize TavilyToolset with cache-first pattern
+            tavily = TavilyToolset(
                 api_key=settings.tavily_api_key,
-                max_results=settings.tavily_max_results,
+                document_store=doc_store,
+                enable_caching=True,
             )
 
-            results = await search.ainvoke({"query": query})
+            # Search with cache-first pattern
+            result = await tavily.search(
+                query=query,
+                user_id=user_id,
+                max_results=settings.tavily_max_results,
+                use_cache=use_cache,
+                search_depth="basic",
+            )
 
             # Format results
             formatted_results = []
-            for result in results:
+            for search_result in result.results:
                 formatted_results.append({
-                    "title": result.get("title", "No title"),
-                    "snippet": result.get("content", "No content"),
-                    "url": result.get("url", ""),
-                    "score": result.get("score", 0.0),
+                    "title": search_result.get("title", "No title"),
+                    "snippet": search_result.get("content", "No content"),
+                    "url": search_result.get("url", ""),
+                    "score": search_result.get("score", 0.0),
                 })
+
+            # Log cache hit/miss
+            cache_info = f"(from {result.source})" if result.source else ""
+            logger.info(
+                f"Web search completed: {len(formatted_results)} results {cache_info} "
+                f"in {result.execution_time_ms:.2f}ms"
+            )
 
             return formatted_results
 
+        except TavilyRateLimitError as e:
+            logger.warning(f"Tavily rate limit exceeded: {e}. Trying cache-only mode.")
+            # Try cache-only as fallback
+            try:
+                tavily = TavilyToolset(
+                    api_key=settings.tavily_api_key,
+                    document_store=await get_document_store(),
+                    enable_caching=True,
+                )
+                cached_result = await tavily._check_cache(query, user_id, ttl_hours=24)
+                if cached_result:
+                    logger.info("Using cached results due to rate limit")
+                    formatted_results = []
+                    for r in cached_result.results:
+                        formatted_results.append({
+                            "title": r.get("title", "No title"),
+                            "snippet": r.get("content", "No content"),
+                            "url": r.get("url", ""),
+                            "score": r.get("score", 0.0),
+                        })
+                    return formatted_results
+            except Exception as cache_error:
+                logger.error(f"Cache fallback also failed: {cache_error}")
+
+        except TavilyTimeoutError as e:
+            logger.error(f"Tavily search timeout: {e}. Falling back to LLM knowledge.")
+
+        except TavilyAPIError as e:
+            logger.error(f"Tavily API error: {e}. Falling back to LLM knowledge.")
+
         except Exception as e:
-            print(f"Tavily search failed: {e}. Using LLM knowledge.")
+            logger.error(
+                f"Unexpected error during Tavily search: {e}. Falling back to LLM knowledge.",
+                exc_info=True
+            )
+
+    else:
+        logger.info("Tavily API key not configured, using LLM knowledge fallback")
 
     # Fallback: Use LLM's knowledge (no real web search)
     llm = ChatOpenAI(
@@ -246,7 +318,7 @@ Provide your analysis in JSON format."""
         return needs_review, concerns
 
     except Exception as e:
-        print(f"LLM compliance check failed: {e}. Using fallback.")
+        logger.error(f"LLM compliance check failed: {e}. Using keyword fallback.", exc_info=True)
 
         # Fallback: simple keyword matching
         compliance_keywords = [

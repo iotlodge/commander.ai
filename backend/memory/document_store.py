@@ -1,8 +1,20 @@
 """
 Document Store implementation using Qdrant for multi-collection management
 Handles document vector storage and semantic search across collections
+
+IMPORTANT: Use the singleton pattern via get_document_store() instead of
+creating instances directly to prevent connection pool exhaustion.
+
+Recommended:
+    from backend.core.dependencies import get_document_store
+    doc_store = await get_document_store()
+
+Discouraged:
+    doc_store = DocumentStore()  # Creates new connection pool!
+    await doc_store.connect()
 """
 
+import logging
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -20,30 +32,64 @@ from qdrant_client.models import (
 from backend.core.config import get_settings
 from backend.models.document_models import DocumentChunk, ChunkCreate, SearchResult
 
+logger = logging.getLogger(__name__)
+
+# Track instance count for debugging
+_instance_count = 0
+
 
 class DocumentStore:
     """
     Multi-collection document vector store using Qdrant
     Manages user-scoped document collections for semantic search
+
+    IMPORTANT: Prefer using the singleton pattern via get_document_store()
+    to avoid creating multiple instances and exhausting connection pools.
     """
 
     def __init__(self):
+        global _instance_count
+        _instance_count += 1
+
+        if _instance_count > 1:
+            logger.warning(
+                f"Multiple DocumentStore instances detected ({_instance_count}). "
+                "Consider using get_document_store() singleton to reduce resource usage."
+            )
+
         self.settings = get_settings()
         self.qdrant_client: AsyncQdrantClient | None = None
         self.openai_client = AsyncOpenAI(api_key=self.settings.openai_api_key)
         self.embedding_dimension = 1536  # OpenAI ada-002 dimension
 
     async def connect(self) -> None:
-        """Initialize Qdrant client"""
+        """
+        Initialize Qdrant client with connection pooling
+
+        Note: If using singleton pattern (recommended), connection is managed
+        by the singleton instance and should not be disconnected manually.
+        """
+        if self.qdrant_client is not None:
+            logger.debug("DocumentStore already connected, reusing connection")
+            return
+
         self.qdrant_client = AsyncQdrantClient(
             url=self.settings.qdrant_url,
             api_key=self.settings.qdrant_api_key,
         )
+        logger.info("DocumentStore Qdrant client connected")
 
     async def disconnect(self) -> None:
-        """Close Qdrant client"""
+        """
+        Close Qdrant client
+
+        Note: If using singleton pattern, this should only be called during
+        application shutdown via shutdown_document_store().
+        """
         if self.qdrant_client:
             await self.qdrant_client.close()
+            self.qdrant_client = None
+            logger.info("DocumentStore Qdrant client disconnected")
 
     async def create_collection(
         self, qdrant_collection_name: str, user_id: UUID

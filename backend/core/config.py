@@ -67,9 +67,19 @@ class Settings(BaseSettings):
     max_file_size_mb: int = 50
     supported_file_types: list[str] = [".pdf", ".docx", ".md", ".txt", ".rtf"]
 
-    # Tavily Configuration (for future use)
+    # Tavily Configuration
     tavily_api_key: str = ""
     tavily_max_results: int = 10
+    tavily_rate_limit_per_minute: int = 60
+    tavily_timeout_seconds: int = 30
+    tavily_retry_attempts: int = 3
+
+    # Web Cache Configuration
+    web_cache_enabled: bool = True
+    web_cache_ttl_hours: int = 24
+    web_cache_news_ttl_hours: int = 1
+    web_cache_similarity_threshold: float = 0.85
+    web_cache_collection_prefix: str = "web_cache"
 
     # Data Analysis & Visualization Configuration
     chart_output_dir: str = "output/charts"

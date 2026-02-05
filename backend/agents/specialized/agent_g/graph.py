@@ -35,18 +35,20 @@ async def receive_message_node(state: ChatAgentState) -> dict:
 
 async def generate_response_node(state: ChatAgentState) -> dict:
     """
-    Generate chat response using LLM
+    Generate chat response using LLM with web search capability
     """
     # Report progress if callback exists
     if callback := state.get("task_callback"):
         await callback.on_progress_update(60, "generating_response")
 
     query = state["query"]
+    user_id = state["user_id"]
     conversation_history = state.get("messages", [])
 
-    # Generate response using LLM
+    # Generate response using LLM with TavilyToolset web search
     response = await llm_generate_chat_response(
         current_message=query,
+        user_id=user_id,
         conversation_history=conversation_history,
         metrics=state.get("metrics")
     )

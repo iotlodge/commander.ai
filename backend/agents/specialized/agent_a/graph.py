@@ -22,16 +22,22 @@ from backend.memory.schemas import MemoryType
 
 async def search_node(state: ResearchAgentState) -> dict:
     """
-    Perform web search using Tavily API or LLM knowledge
+    Perform web search using Tavily API with cache-first pattern
     """
     query = state["query"]
+    user_id = state["user_id"]
 
     # Report progress if callback exists
     if callback := state.get("task_callback"):
         await callback.on_progress_update(25, "searching")
 
-    # Use LLM-powered web search
-    search_results = await llm_web_search(query, metrics=state.get("metrics"))
+    # Use TavilyToolset with cache-first pattern
+    search_results = await llm_web_search(
+        query=query,
+        user_id=user_id,
+        metrics=state.get("metrics"),
+        use_cache=True,
+    )
 
     return {
         **state,
@@ -137,6 +143,13 @@ class ResearchAgent(BaseAgent):
     """
     Bob - Research Specialist
     Conducts research and synthesis with conditional compliance consultation
+
+    Features:
+    - Web search powered by TavilyToolset with cache-first pattern
+    - Rate limiting (60 calls/min) and retry logic
+    - Automatic cache hit/miss tracking
+    - LLM-powered research synthesis
+    - Intelligent compliance detection with Sue consultation
     """
 
     def __init__(self):
@@ -153,7 +166,13 @@ class ResearchAgent(BaseAgent):
         Create research graph with conditional Sue consultation
 
         Flow:
-        search → synthesize → check_compliance → [consult_sue?] → finalize → END
+        search (cache-first) → synthesize → check_compliance → [consult_sue?] → finalize → END
+
+        Search node uses TavilyToolset:
+        - Checks cache first (0.85 similarity threshold)
+        - Falls back to Tavily API if cache miss
+        - Stores results with 24h TTL
+        - Falls back to LLM knowledge if API fails
         """
         graph = StateGraph(ResearchAgentState)
 

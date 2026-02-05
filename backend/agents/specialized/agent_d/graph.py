@@ -24,6 +24,9 @@ from backend.agents.specialized.agent_d.nodes import (
     search_multiple_node,
     search_all_node,
     fetch_web_node,
+    crawl_site_node,
+    extract_urls_node,
+    map_site_node,
     process_web_documents_node,
     finalize_response_node,
     route_action,
@@ -36,7 +39,9 @@ class DocumentManagerAgent(BaseAgent):
 
     Responsibilities:
     - Load documents from local files (.pdf, .docx, .md, .txt)
-    - Search web content using Tavily API
+    - Search web content using Tavily API with cache-first pattern
+    - Crawl websites and extract content from URLs
+    - Map website structure
     - Chunk and embed content for semantic search
     - Manage user-scoped document collections
     - Perform semantic search within collections or across all collections
@@ -61,6 +66,9 @@ class DocumentManagerAgent(BaseAgent):
         parse_input → route_action → [
             load_file → chunk_and_embed → store_chunks → finalize
             search_web → process_web_documents → store_chunks → finalize
+            crawl_site → process_web_documents → store_chunks → finalize
+            extract_urls → process_web_documents → store_chunks → finalize
+            map_site → finalize
             search_collection → finalize
             search_all → finalize
             create_collection → finalize
@@ -82,6 +90,9 @@ class DocumentManagerAgent(BaseAgent):
         graph.add_node("search_multiple", search_multiple_node)
         graph.add_node("search_all", search_all_node)
         graph.add_node("search_web", fetch_web_node)
+        graph.add_node("crawl_site", crawl_site_node)
+        graph.add_node("extract_urls", extract_urls_node)
+        graph.add_node("map_site", map_site_node)
         graph.add_node("process_web_documents", process_web_documents_node)
         graph.add_node("finalize_response", finalize_response_node)
 
@@ -95,6 +106,9 @@ class DocumentManagerAgent(BaseAgent):
             {
                 "load_file": "load_file",
                 "search_web": "search_web",
+                "crawl_site": "crawl_site",
+                "extract_urls": "extract_urls",
+                "map_site": "map_site",
                 "create_collection": "create_collection",
                 "delete_collection": "delete_collection",
                 "list_collections": "list_collections",
@@ -109,9 +123,14 @@ class DocumentManagerAgent(BaseAgent):
         graph.add_edge("chunk_and_embed", "store_chunks")
         graph.add_edge("store_chunks", "finalize_response")
 
-        # Web search workflow
+        # Web search workflows
         graph.add_edge("search_web", "process_web_documents")
+        graph.add_edge("crawl_site", "process_web_documents")
+        graph.add_edge("extract_urls", "process_web_documents")
         graph.add_edge("process_web_documents", "store_chunks")
+
+        # Map site workflow (no storage, just response)
+        graph.add_edge("map_site", "finalize_response")
 
         # Collection management workflows
         graph.add_edge("create_collection", "finalize_response")
