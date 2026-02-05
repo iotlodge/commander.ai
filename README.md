@@ -20,13 +20,11 @@ Most AI assistants give you one perspective. Commander.ai gives you a **team of 
 - 🎯 Intelligent orchestration - the system decides the best approach
 - 📊 Real-time visibility into what's happening
 
-![Commander.ai Architecture](images/architecture.png)
+![Commander.ai Landing Page](images/landing-page.png?v=2025-02)
 
 ### Memory System: Context That Persists
 
 Every conversation is remembered. Every insight is retained. Commander.ai uses a three-tier memory architecture:
-
-![Memory Architecture](images/memory.png)
 
 - **🔥 Hot Layer (Redis)**: Active conversations, instant access
 - **💾 Warm Layer (PostgreSQL)**: Complete conversation history
@@ -34,70 +32,16 @@ Every conversation is remembered. Every insight is retained. Commander.ai uses a
 
 ---
 
-## 🔬 Kai Model Comparison
-
-Commander.ai has been tested across multiple AI model variants to optimize performance and cost. Here's how different configurations perform:
-
-<div align="center">
-  <table>
-    <tr>
-      <td><img src="images/kai-60.jpeg" width="240" alt="Kai 60"></td>
-      <td><img src="images/kai-70.jpeg" width="240" alt="Kai 70"></td>
-      <td><img src="images/kai-70b.jpeg" width="240" alt="Kai 70B"></td>
-      <td><img src="images/kai-complete.jpeg" width="240" alt="Kai Complete"></td>
-    </tr>
-  </table>
-</div>
-
-<p align="center">
-  <img src="images/kia-results.png" width="900" alt="Kai Model Results Comparison">
-</p>
-
----
-
-## 🎬 See It In Action
-
-### Real-Time Kanban Board
-Watch your tasks flow through the system. See exactly which agent is doing what, when:
-
-![Commander.ai Landing Page](images/landing-page.png?v=2025-02)
-
-### Agent Intelligence Visualized
-Ever wondered how AI agents actually think? See their decision trees and execution paths:
-
-![Agent Graph Visualization](images/agent-graph.png)
-
-### Deep Dive into Complex Workflows
-Some agents have sophisticated reasoning paths. Zoom in to see how @alice manages her 15-node document workflow:
-
-<p align="center">
-  <img src="images/@aliceGraph.png" alt="Full-Screen Graph Viewer - @alice" width="800">
-</p>
-
-**Graph Viewer Features:**
-- 🔍 Zoom up to 8x for detailed node inspection
-- 🖱️ Click-and-drag panning for navigation
-- 🎯 Fit-to-screen button for instant overview
-- ⌨️ Mouse wheel zoom support
-- 📊 Optimized spacing for complex graphs (10+ nodes)
-
-### Intelligent Agent Selection
-Type `@` and get instant autocomplete with agent specializations:
-
-![Agent Autocomplete](images/agent-autocomplete.png)
-
----
-
 ## 🤖 Meet Your AI Team
 
-### Core Orchestration
+### Conversational Agent
 
-**🎭 @leo** - *The Orchestrator*
-- Uses GPT-4o-mini to analyze your requests
-- Decomposes complex tasks into specialized subtasks
-- Coordinates parallel agent execution
-- Synthesizes results into coherent final answers
-- *Think of Leo as your project manager*
+**💬 @chat** - *Interactive Chat Assistant*
+- Natural conversation with GPT-4o-mini
+- Web search integration via Tavily
+- Context-aware responses
+- Maintains conversation history
+- *Your go-to for quick questions and casual chat*
 
 ### Specialist Agents
 
@@ -106,6 +50,7 @@ Type `@` and get instant autocomplete with agent specializations:
 - Intelligent content analysis
 - Automatic compliance flagging
 - Multi-source information synthesis
+- Cache-first search (24h TTL for general, 1h for news)
 - *Bob is your investigative journalist*
 
 **⚖️ @sue** - *Compliance Specialist*
@@ -117,19 +62,21 @@ Type `@` and get instant autocomplete with agent specializations:
 
 **📊 @rex** - *Data Analyst*
 - Statistical analysis
-- Data visualization
+- Data visualization (matplotlib charts)
 - Pattern detection
 - Trend analysis
 - *Rex turns data into insights*
 
 **📚 @alice** - *Document Manager*
 - PDF and document processing
-- Collection management
+- Collection management (create, delete, list)
+- **Web search with persistent storage** (NEW!)
 - Semantic search across documents
 - Multi-document analysis
+- Vector embeddings via Qdrant
 - *Alice is your librarian with superpowers*
 
-### Reasoning Specialists (NEW! 🎉)
+### Reasoning Specialists
 
 **✨ @maya** - *Reflection Specialist*
 - Reviews and critiques content
@@ -163,7 +110,7 @@ Python 3.12+, Node.js 18+, Docker (recommended)
    git clone https://github.com/iotlodge/commander.ai.git
    cd commander.ai
    cp .env.example .env
-   # Add your OPENAI_API_KEY to .env
+   # Add your OPENAI_API_KEY and TAVILY_API_KEY to .env
    ```
 
 2. **Start infrastructure**
@@ -187,8 +134,6 @@ Python 3.12+, Node.js 18+, Docker (recommended)
 
 5. **Open browser** → http://localhost:3000
 
-**Optional but recommended:** Add `TAVILY_API_KEY` for web search capabilities.
-
 ---
 
 ## 💬 How to Talk to Your AI Team
@@ -196,195 +141,307 @@ Python 3.12+, Node.js 18+, Docker (recommended)
 ### Simple Commands
 
 ```bash
+# Chat naturally
+@chat what's the weather like in Paris?
+
 # Direct to an agent
 @bob research the latest quantum computing breakthroughs
 
 # Natural conversation
 hey sue, review this privacy policy for GDPR compliance
 
-# Get document help
+# Web search with storage
+@alice search web for "PayPal company news that is negative" into paypal_research
+
+# Document search
 @alice search for "machine learning" in research_papers
 ```
 
-### Complex Multi-Agent Workflows
+### Alice's Web Search Workflow
 
-Here's where it gets interesting. Leo (the orchestrator) uses GPT-4o-mini to intelligently decompose your request:
+When you ask Alice to search the web, here's what happens:
 
-```bash
-research "Designing a Quantum Accelerator" investigate ['quantum computing fundamentals', 'accelerator architectures', 'power efficiency', 'cooling systems']
+```
+User: @alice search web for "quantum computing breakthroughs" into quantum_research
+    ↓
+1️⃣ Parse Input (extract query + collection name)
+    ↓
+2️⃣ Fetch Web Content (TavilyToolset with cache-first)
+    ├─ Check cache (Qdrant web_cache_{user_id} collection)
+    ├─ If stale/miss: Call Tavily API (rate-limited, retries)
+    └─ Store results in cache with timestamp metadata
+    ↓
+3️⃣ Chunk Documents (DocumentChunker)
+    ├─ Split content into semantic chunks
+    ├─ Preserve metadata (URL, title, score, query)
+    └─ Generate embeddings (OpenAI ada-002)
+    ↓
+4️⃣ Store in Collection (PostgreSQL + Qdrant)
+    ├─ Create collection if doesn't exist
+    ├─ Deduplicate by content hash
+    ├─ Store in PostgreSQL (document_chunks table)
+    └─ Store vectors in Qdrant (semantic search)
+    ↓
+5️⃣ Return Formatted Results
+    ✓ Success message with chunk count
+    📊 Top 5 results with titles, URLs, relevance scores
+    🔗 Source links for user verification
 ```
 
-**What happens behind the scenes:**
+**Cache Behavior:**
+- General searches: **24 hour TTL**
+- News searches: **1 hour TTL**
+- Content hashing prevents duplicates
+- Rate limiting: 60 API calls/minute
+- Automatic retry with exponential backoff
 
-1. 🧠 Leo analyzes your request with LLM reasoning
-2. 🎯 Decomposes it into focused subtasks
-3. 🚀 Launches multiple agents **in parallel**
-4. 📊 Each agent investigates their area deeply
-5. ✨ Leo synthesizes all findings into one coherent report
+---
 
-### Advanced Use Cases
+## 🏗️ Architecture Deep Dive
 
-**Content Review & Improvement**
-```bash
-@maya review this report: [paste your content]
+### Project Structure
 
-# Maya will:
-# - Analyze overall quality
-# - Identify issues (critical/important/minor)
-# - Suggest specific improvements
-# - Generate a refined version
-# - Provide a quality score
+```
+commander.ai/
+├── backend/
+│   ├── agents/
+│   │   ├── base/              # Agent interface & registry
+│   │   ├── parent_agent/      # @leo orchestrator (future)
+│   │   └── specialized/
+│   │       ├── agent_a/       # @bob (Research)
+│   │       ├── agent_b/       # @sue (Compliance)
+│   │       ├── agent_c/       # @rex (Data Analysis)
+│   │       ├── agent_d/       # @alice (Document Manager)
+│   │       │   ├── graph.py           # LangGraph workflow
+│   │       │   ├── nodes.py           # 15 workflow nodes
+│   │       │   ├── state.py           # State management
+│   │       │   └── llm_classifier.py  # Intent classification
+│   │       ├── agent_e/       # @maya (Reflection)
+│   │       ├── agent_f/       # @kai (Reflexion)
+│   │       └── agent_g/       # @chat (Chat Assistant)
+│   ├── memory/
+│   │   ├── document_store.py  # Qdrant + embeddings (SINGLETON!)
+│   │   └── document_models.py # Data models
+│   ├── models/
+│   │   ├── collections.py     # Collection ORM
+│   │   └── document_chunks.py # Chunk ORM
+│   ├── repositories/          # Database access layer
+│   ├── tools/
+│   │   ├── web_search/
+│   │   │   ├── tavily_toolset.py  # Unified Tavily API
+│   │   │   └── exceptions.py      # Custom exceptions
+│   │   ├── data_analysis/     # Charts, stats
+│   │   └── document_processing/ # PDF, chunking
+│   ├── core/
+│   │   ├── config.py          # Settings (Pydantic)
+│   │   └── dependencies.py    # Singleton management
+│   └── api/                   # FastAPI app + WebSocket
+└── frontend/                  # Next.js 14 App Router
 ```
 
-**Self-Reflective Problem Solving**
-```bash
-@kai solve: How can we optimize database queries for a social media platform with 1M+ concurrent users?
+### Alice's 15-Node Workflow Graph
 
-# Kai will:
-# - Generate initial reasoning
-# - Self-critique the approach
-# - Identify flaws in logic
-# - Refine reasoning iteratively
-# - Show you the evolution of thinking
+Alice uses LangGraph to orchestrate complex document operations:
+
+```
+parse_input_node (classify intent)
+    ↓
+├─→ create_collection_node
+├─→ delete_collection_node
+├─→ list_collections_node
+├─→ load_file_node → chunk_and_embed_node → store_chunks_node
+├─→ fetch_web_node → chunk_and_embed_node → store_chunks_node
+├─→ search_collection_node
+├─→ search_all_collections_node
+├─→ crawl_site_node (Tavily crawl)
+├─→ extract_urls_node (Tavily extract)
+└─→ map_site_node (Tavily site map)
+    ↓
+format_response_node (final output)
 ```
 
-**Document Management**
+### DocumentStore Singleton Pattern ⚠️
+
+**CRITICAL**: `DocumentStore` uses a singleton pattern to prevent connection pool exhaustion:
+
+```python
+# ✅ CORRECT - Use singleton
+from backend.core.dependencies import get_document_store
+
+doc_store = await get_document_store()
+# Use doc_store (no disconnect needed - shared instance!)
+
+# ❌ WRONG - Creates new connection pool
+doc_store = DocumentStore()
+await doc_store.connect()
+await doc_store.disconnect()  # Breaks singleton for all agents!
+```
+
+**Why singleton?**
+- Qdrant connection pooling (shared across agents)
+- Prevents resource exhaustion
+- Only disconnected during app shutdown
+- TavilyToolset, alice, and other agents share the same instance
+
+---
+
+## 🔧 Integrating a New Agent
+
+### Step 1: Create Agent Directory
+
 ```bash
-# Create a collection
-@alice create collection research_papers
+mkdir -p backend/agents/specialized/agent_h
+cd backend/agents/specialized/agent_h
+touch __init__.py graph.py state.py nodes.py
+```
 
-# Load documents
-@alice load ~/Documents/quantum_paper.pdf into research_papers
+### Step 2: Define Agent State
 
-# Semantic search
-@alice search for "error correction algorithms" in research_papers
+```python
+# state.py
+from typing import TypedDict, Annotated, Sequence
+from operator import add
 
-# Cross-collection search
-@alice search for "quantum gates" in [papers, articles, books]
+class MyAgentState(TypedDict):
+    """State for your custom agent"""
+    query: str
+    user_id: str
+    results: list[str]
+    error: str | None
+    # Add custom fields as needed
+```
+
+### Step 3: Implement Workflow Nodes
+
+```python
+# nodes.py
+async def process_query_node(state: MyAgentState) -> dict:
+    """Process user query"""
+    # Your logic here
+    return {
+        **state,
+        "results": ["processed results"],
+    }
+
+async def format_response_node(state: MyAgentState) -> dict:
+    """Format final response"""
+    return {
+        **state,
+        "final_response": "Formatted output for user",
+    }
+```
+
+### Step 4: Build LangGraph Workflow
+
+```python
+# graph.py
+from langgraph.graph import StateGraph, END
+from backend.agents.base.agent_interface import (
+    BaseAgent,
+    AgentMetadata,
+    AgentExecutionContext,
+    AgentExecutionResult,
+)
+from backend.agents.specialized.agent_h.state import MyAgentState
+from backend.agents.specialized.agent_h.nodes import (
+    process_query_node,
+    format_response_node,
+)
+
+class MyCustomAgent(BaseAgent):
+    """Your Custom Agent"""
+
+    def __init__(self):
+        metadata = AgentMetadata(
+            id="agent_h",
+            nickname="yourname",  # e.g., "vision" for image analysis
+            specialization="Your Specialization",
+            description="What this agent does",
+        )
+        super().__init__(metadata)
+
+    def _build_graph(self) -> StateGraph:
+        """Build the agent workflow"""
+        graph = StateGraph(MyAgentState)
+
+        # Add nodes
+        graph.add_node("process_query", process_query_node)
+        graph.add_node("format_response", format_response_node)
+
+        # Define edges
+        graph.set_entry_point("process_query")
+        graph.add_edge("process_query", "format_response")
+        graph.add_edge("format_response", END)
+
+        return graph
+
+    async def execute(
+        self, context: AgentExecutionContext
+    ) -> AgentExecutionResult:
+        """Execute the agent"""
+        # Standard execution logic
+        initial_state = MyAgentState(
+            query=context.command,
+            user_id=str(context.user_id),
+            results=[],
+            error=None,
+        )
+
+        # Run graph
+        result = await self.graph.ainvoke(initial_state)
+
+        return AgentExecutionResult(
+            agent_id=self.metadata.id,
+            user_id=context.user_id,
+            result=result.get("final_response", ""),
+            metadata={},
+        )
+```
+
+### Step 5: Register Agent
+
+```python
+# backend/agents/base/agent_registry.py
+from backend.agents.specialized.agent_h.graph import MyCustomAgent
+
+# Add to registry
+_registry["agent_h"] = MyCustomAgent()
+```
+
+### Step 6: Test
+
+```bash
+# In UI
+@yourname do something amazing
+
+# Or via API
+curl -X POST http://localhost:8000/api/v1/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"command": "@yourname test query", "user_id": "..."}'
 ```
 
 ---
 
-## 📊 Real-Time Execution Metrics & Cost Tracking
+## 📊 Real-Time Execution Metrics
 
-Commander.ai provides **complete visibility** into agent execution with live metrics tracking. Monitor LLM usage, token consumption, and execution time in real-time - perfect for optimizing performance and controlling costs.
-
-### Live Metrics During Execution
+Commander.ai provides **complete visibility** into agent execution with live metrics tracking:
 
 **What you see:**
-- 🔢 **LLM Calls**: Number of AI model invocations (updates after each call)
-- 🤝 **Agent Calls**: Nested agent consultations (tracks delegation depth)
+- 🔢 **LLM Calls**: Number of AI model invocations
+- 🤝 **Agent Calls**: Nested agent consultations
 - 🎯 **Tokens**: Total token consumption (prompt + completion)
-- ⏱️ **Duration**: Live execution time in human-friendly format
-- 📈 **Progress**: Visual progress bar with current node/step
+- ⏱️ **Duration**: Live execution time
+- 📈 **Progress**: Visual progress bar with current node
 
-**Real-time updates mean:**
-- Metrics increment **during execution**, not just at completion
-- Duration updates **every second** while task is running
-- See exactly which iteration @kai is on (e.g., "self_critique_iteration_2")
-- Track token usage per LLM call with detailed breakdowns
-
-**Features:**
-- 📋 **Full Response**: Complete agent output with markdown formatting
-- 📊 **Performance Metrics**: Total LLM calls, agent calls, and token usage
-- 📄 **Metadata**: Execution details, iterations, and quality scores
-- 📋 **One-Click Copy**: Copy results to clipboard instantly
-- 🎨 **Syntax Highlighting**: Code blocks and structured data beautifully formatted
-
-### Token Tracking Examples
-
-**Simple Query (@bob research):**
+**Token Tracking Example (Alice web search):**
 ```
-LLM Calls: 3
-├─ web_search_fallback: 362 tokens
-├─ research_synthesis: 1,247 tokens
-└─ compliance_check: 189 tokens
-Total: 1,798 tokens
-Duration: 8 seconds
+LLM Calls: 4
+├─ embedding_generation: 856 tokens (3 calls)
+├─ tavily_search_fallback: 362 tokens (1 call)
+Total: 1,218 tokens
+Duration: 12 seconds
+Cache: HIT (saved API call!)
 ```
-
-**Iterative Reasoning (@kai solve):**
-```
-LLM Calls: 6 (3 iterations)
-├─ Iteration 1:
-│  ├─ initial_reasoning: 397 tokens
-│  ├─ self_critique: 655 tokens
-│  └─ refine_reasoning: 667 tokens
-├─ Iteration 2:
-│  ├─ self_critique: 541 tokens
-│  └─ refine_reasoning: 856 tokens
-└─ Iteration 3:
-   └─ self_critique: 855 tokens
-Total: 3,971 tokens
-Duration: 34 seconds
-```
-
-**Multi-Agent Orchestration (@leo):**
-```
-Agent Calls: 3 (parallel execution)
-├─ @bob: 1,798 tokens (4 LLM calls)
-├─ @maya: 2,341 tokens (3 LLM calls)
-└─ @rex: 892 tokens (2 LLM calls)
-LLM Calls: 11 (9 from agents + 2 aggregation)
-Total: 6,247 tokens
-Duration: 12 seconds (parallel speedup!)
-```
-
-### Cost Optimization Insights
-
-Use metrics to optimize your workflows:
-
-- **Token counts per agent** - Identify expensive operations
-- **Execution duration** - Find bottlenecks in your flow
-- **Agent call depth** - Optimize delegation strategies
-- **LLM call purposes** - See exactly what each call does
-
-**Example: Reducing costs for @kai**
-```bash
-# Before optimization
-@kai solve: complex problem
-→ 3 iterations, 6 LLM calls, 4,200 tokens
-
-# After setting max_iterations=2
-→ 2 iterations, 4 LLM calls, 2,800 tokens (33% savings!)
-```
-
----
-
-## 🏗️ Architecture That Scales
-
-### Intelligent Task Flow
-
-```
-User Query
-    ↓
-🎭 @leo (Orchestrator)
-    ├─→ GPT-4o-mini analyzes request
-    ├─→ Decomposes into subtasks
-    └─→ Assigns to specialists
-         ↓
-   🚀 Parallel Execution (asyncio.gather)
-    ├─→ @bob (Research)
-    ├─→ @maya (Reflection)
-    ├─→ @kai (Reflexion)
-    └─→ [@sue, @rex, @alice...]
-         ↓
-   ✨ LLM-Powered Aggregation
-    ├─→ Synthesizes all findings
-    ├─→ Executive summary
-    ├─→ Key insights from each specialist
-    └─→ Actionable recommendations
-         ↓
-   📄 Final Response (Markdown)
-```
-
-### What Makes This Fast?
-
-**Parallel Execution**: When Leo determines you need research from multiple areas, all agents run simultaneously using `asyncio.gather()`. A 3-agent task completes in ~10 seconds instead of ~30 seconds sequential.
-
-**Smart Caching**: Redis keeps recent conversations hot. PostgreSQL stores everything. Qdrant enables semantic search across millions of data points.
-
-**LLM Optimization**: Uses GPT-4o-mini for reasoning tasks (fast + cost-effective). Automatically falls back to pattern matching if needed.
 
 ---
 
@@ -394,10 +451,11 @@ User Query
 - **LangGraph** - Agent orchestration framework
 - **LangChain** - LLM integration layer
 - **FastAPI** - Async web framework
-- **PostgreSQL** - Persistent storage
+- **PostgreSQL** - Persistent storage (documents, chunks, collections)
 - **Redis** - Hot memory layer (active sessions)
 - **Qdrant** - Vector database for semantic search
-- **OpenAI GPT-4o-mini** - Intelligence layer
+- **OpenAI** - GPT-4o-mini (intelligence), ada-002 (embeddings)
+- **Tavily** - Web search API (research + cache)
 
 ### Frontend (TypeScript)
 - **Next.js 14** - React with App Router
@@ -413,70 +471,34 @@ User Query
 
 ---
 
-## 📊 Project Structure
-
-```
-commander.ai/
-├── backend/
-│   ├── agents/
-│   │   ├── base/           # Agent interface & registry
-│   │   ├── parent_agent/   # @leo orchestrator
-│   │   │   ├── llm_reasoning.py      # GPT-4o-mini decomposition
-│   │   │   ├── llm_aggregation.py    # Result synthesis
-│   │   │   ├── nodes.py              # Graph nodes (parallel exec)
-│   │   │   └── graph.py              # LangGraph workflow
-│   │   └── specialized/
-│   │       ├── agent_a/    # @bob (Research) - LLM-powered
-│   │       ├── agent_b/    # @sue (Compliance)
-│   │       ├── agent_c/    # @rex (Data Analysis)
-│   │       ├── agent_d/    # @alice (Documents)
-│   │       ├── agent_e/    # @maya (Reflection) ⚡ NEW
-│   │       └── agent_f/    # @kai (Reflexion) ⚡ NEW
-│   ├── memory/             # Three-tier memory system
-│   │   ├── short_term.py   # Redis (hot layer)
-│   │   ├── long_term.py    # PostgreSQL (warm layer)
-│   │   ├── vector_store.py # Qdrant (semantic layer)
-│   │   └── memory_service.py
-│   ├── api/                # FastAPI app + WebSocket
-│   └── core/               # Config, parsers, executors
-├── frontend/
-│   ├── app/                # Next.js 14 App Router
-│   ├── components/         # React components
-│   │   ├── kanban/        # Real-time task board
-│   │   ├── graphs/        # Agent visualization
-│   │   └── command/       # Input with autocomplete
-│   └── lib/               # WebSocket, state, types
-└── migrations/            # Database schema versions
-```
-
----
-
 ## ⚙️ Configuration
 
 ### Required Environment Variables
 
 ```bash
 # Core - REQUIRED
-OPENAI_API_KEY=sk-...                # GPT-4o-mini for reasoning
+OPENAI_API_KEY=sk-...                # GPT-4o-mini + ada-002 embeddings
+TAVILY_API_KEY=tvly-...              # Web search for @bob and @alice
 
 # Database - Auto-configured by Docker
 DATABASE_URL=postgresql+asyncpg://commander:changeme@localhost:5432/commander_ai
 REDIS_URL=redis://localhost:6379/0
 QDRANT_URL=http://localhost:6333
 
-# Optional - Enhances Capabilities
-TAVILY_API_KEY=tvly-...              # Web search for @bob
-ANTHROPIC_API_KEY=sk-ant-...         # Alternative LLM provider
+# Web Cache Configuration (Optional - uses defaults)
+WEB_CACHE_TTL_HOURS=24               # General content cache TTL
+WEB_CACHE_NEWS_TTL_HOURS=1           # News content cache TTL
+TAVILY_RATE_LIMIT_PER_MINUTE=60      # API rate limit
 ```
 
-### Docker Services (Included)
+### Docker Services
 
 ```bash
 docker-compose up -d
 ```
 
 This starts:
-- **PostgreSQL 16** (pgvector extension)
+- **PostgreSQL 16** (pgvector extension for embeddings)
 - **Redis 7** (Alpine - lightweight)
 - **Qdrant** (Latest vector DB)
 
@@ -484,98 +506,26 @@ All services have health checks and auto-restart.
 
 ---
 
-## 💡 Real-World Examples
-
-### Example 1: Market Research
-
-**Command:**
-```bash
-research "AI Agent Frameworks 2025" investigate ['current market leaders', 'emerging technologies', 'adoption trends', 'cost comparison']
-```
-
-**What you get:**
-- 🔬 @bob researches each area in parallel
-- 📊 Comprehensive findings from multiple sources
-- 🎯 Executive summary with key insights
-- 💡 Recommendations based on trends
-- ⏱️ Complete in ~10 seconds (vs 40s sequential)
-
-### Example 2: Content Quality Control
-
-**Command:**
-```bash
-@maya review this article: [paste 2000-word article]
-```
-
-**What you get:**
-- 📝 Overall quality assessment (0-1.0 score)
-- 🔴 Critical issues that must be fixed
-- 🟡 Important improvements
-- 🟢 Minor polish suggestions
-- ✨ Refined version with improvements applied
-
-### Example 3: Deep Problem Solving
-
-**Command:**
-```bash
-@kai analyze: Why are our API response times degrading under load?
-```
-
-**What you get:**
-- 🧠 Initial hypothesis and reasoning
-- 🔍 Self-critique of the analysis
-- 🔄 Refined reasoning (iteration 2)
-- 🔍 Another self-critique
-- ✅ Final comprehensive analysis (iteration 3)
-- 📈 Shows evolution of thinking
-
-### Example 4: Document Intelligence
-
-**Command:**
-```bash
-@alice load research_papers/*.pdf into quantum_research
-@alice search for "topological qubits" in quantum_research
-@alice summarize findings about error correction
-```
-
-**What you get:**
-- 📚 All PDFs indexed with vector embeddings
-- 🎯 Semantic search (not just keywords)
-- 📊 Cross-document synthesis
-- 💡 Connections you might have missed
-
----
-
-## 🎮 Keyboard Shortcuts
-
-- `Cmd/Ctrl + Enter` - Submit command
-- `@` - Trigger agent autocomplete
-- `Esc` - Close modals/dialogs
-
----
-
 ## 🚦 Current Status
 
-**✅ Production Ready (v1.0)**
-- ✅ LLM-powered task decomposition (GPT-4o-mini)
-- ✅ Parallel multi-agent execution (asyncio.gather)
-- ✅ Intelligent result aggregation
-- ✅ 7 specialized agents (including @maya and @kai)
+**✅ Production Ready (v1.1)**
+- ✅ 7 specialized agents (chat, research, compliance, data, documents, reflection, reflexion)
 - ✅ Three-tier memory system (Redis/PostgreSQL/Qdrant)
 - ✅ Real-time Kanban UI with WebSocket
-- ✅ Agent graph visualization
-- ✅ Full-screen graph viewer with zoom/pan
+- ✅ Agent graph visualization with zoom/pan
 - ✅ Document management with semantic search
+- ✅ **Web search with cache-first architecture** (NEW!)
+- ✅ **TavilyToolset integration** - unified search/crawl/extract/map (NEW!)
+- ✅ **Automatic cache cleanup** - removes stale entries (NEW!)
+- ✅ **DocumentStore singleton pattern** - prevents connection pool exhaustion (NEW!)
 
 **🚧 In Active Development**
+- ⏳ Vision/image analysis agent (in progress - image processing skill)
 - ⏳ User authentication & multi-user support
 - ⏳ CLI interface for terminal lovers
-- ⏳ Export to .docx/.pdf (currently markdown)
 - ⏳ Agent performance metrics dashboard
-- ⏳ Custom agent creation wizard
 
 **📅 Roadmap**
-- Vision/image analysis agents
 - Code execution agents (sandboxed)
 - Plugin system for custom tools
 - Agent marketplace
@@ -585,7 +535,7 @@ research "AI Agent Frameworks 2025" investigate ['current market leaders', 'emer
 
 ## 🤝 Contributing
 
-This started as a personal project to explore what's possible when you give AI agents the ability to truly collaborate. If you're excited about multi-agent systems, LangGraph, or just want to make AI more useful, contributions are welcome!
+Contributions are welcome! If you're excited about multi-agent systems, LangGraph, or making AI more useful:
 
 **Ways to contribute:**
 - 🐛 Report bugs or UX issues
@@ -594,10 +544,7 @@ This started as a personal project to explore what's possible when you give AI a
 - 🧪 Add test coverage
 - ⚡ Performance optimizations
 
-**Before submitting a PR:**
-1. Run tests: `pytest`
-2. Check linting: `ruff check .`
-3. Ensure type safety: `mypy backend/`
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
@@ -610,8 +557,6 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - ✅ Modification allowed
 - ✅ Distribution allowed
 - ✅ Patent use allowed
-- ⚖️ License and copyright notice required
-- ⚖️ State changes required
 
 ---
 
@@ -621,16 +566,8 @@ Built on the shoulders of giants:
 - **[LangGraph](https://github.com/langchain-ai/langgraph)** - The foundation for agent orchestration
 - **[LangChain](https://github.com/langchain-ai/langchain)** - LLM integration made simple
 - **[shadcn/ui](https://ui.shadcn.com/)** - Beautiful, accessible components
-- **[Lucide Icons](https://lucide.dev/)** - Clean, consistent icons
+- **[Tavily](https://tavily.com/)** - Fast, reliable web search API
 - **OpenAI** - GPT-4o-mini powers the intelligence layer
-
----
-
-## 📚 Further Reading
-
-- [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Deep dive into the LLM system
-- [Commander_ai_Project_Plan.md](Commander_ai_Project_Plan.md) - Original vision and requirements
-- [PLAN.md](PLAN.md) - Detailed development roadmap
 
 ---
 
@@ -640,9 +577,10 @@ Commander.ai isn't just another AI assistant. It's a glimpse into how we'll work
 
 The magic happens when:
 - @bob finds information you didn't know to look for
+- @alice stores and searches it semantically
 - @maya catches issues before they become problems
 - @kai reasons through complex problems iteratively
-- @leo brings it all together into actionable insights
+- @chat answers your quick questions with web context
 
 **Try it yourself.** Watch the agents work. See the reasoning unfold. You'll never go back to single-agent assistants.
 
@@ -659,5 +597,5 @@ The magic happens when:
 
 ---
 
-**Status**: 🚀 v1.0 - Production Ready
-**Last Updated**: February 2025
+**Status**: 🚀 v1.1 - Production Ready with Web Search Cache
+**Last Updated**: February 2026
