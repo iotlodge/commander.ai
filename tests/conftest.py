@@ -8,12 +8,17 @@ to all test files without needing to import them.
 import asyncio
 import pytest
 from uuid import UUID, uuid4
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Dict
 from unittest.mock import MagicMock, AsyncMock
+from httpx import AsyncClient, ASGITransport
 
 from backend.core.config import get_settings
 from backend.memory.document_store import DocumentStore
 from backend.core.dependencies import reset_document_store
+from backend.core.database import get_session_maker, close_db_connections
+from backend.auth.models import User, Base as AuthBase
+from backend.auth.security import get_password_hash, create_access_token
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # Test user ID (consistent across all tests)
@@ -193,6 +198,149 @@ def mock_task_callback():
     return callback
 
 
+@pytest.fixture
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Fixture providing database session for tests
+
+    Creates tables before tests and drops them after
+    """
+    from sqlalchemy import create_engine
+    from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
+    # Use test database URL or in-memory
+    settings = get_settings()
+    engine = create_async_engine(
+        settings.database_url,
+        echo=False,
+    )
+
+    # Create tables
+    async with engine.begin() as conn:
+        await conn.run_sync(AuthBase.metadata.create_all)
+
+    # Create session
+    async_session = async_sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+
+    async with async_session() as session:
+        yield session
+        await session.rollback()
+
+    # Drop tables
+    async with engine.begin() as conn:
+        await conn.run_sync(AuthBase.metadata.drop_all)
+
+    await engine.dispose()
+
+
+@pytest.fixture
+async def test_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Fixture providing async HTTP client for API testing
+
+    Overrides database dependency to use test database
+    """
+    from backend.api.main import app
+    from backend.core.database import get_db_session
+
+    # Override database dependency
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db_session] = override_get_db
+
+    # Create test client
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+    # Clean up overrides
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+async def test_user(db_session: AsyncSession) -> User:
+    """
+    Fixture providing test user
+
+    Creates a user in the test database
+    """
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+        is_active=True,
+        is_superuser=False,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+async def other_user(db_session: AsyncSession) -> User:
+    """
+    Fixture providing another test user for authorization tests
+    """
+    user = User(
+        email="other@example.com",
+        hashed_password=get_password_hash("otherpassword123"),
+        is_active=True,
+        is_superuser=False,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def auth_headers(test_user: User) -> Dict[str, str]:
+    """
+    Fixture providing authentication headers with JWT token
+
+    Creates access token for test_user
+    """
+    access_token = create_access_token(subject=str(test_user.id), token_type="access")
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
+def other_user_auth_headers(other_user: User) -> Dict[str, str]:
+    """
+    Fixture providing authentication headers for other_user
+    """
+    access_token = create_access_token(subject=str(other_user.id), token_type="access")
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
+async def other_user_task_id(
+    test_client: AsyncClient,
+    other_user_auth_headers: Dict[str, str],
+) -> str:
+    """
+    Fixture providing task ID created by other_user
+
+    Used for testing cross-user authorization
+    """
+    response = await test_client.post(
+        "/api/tasks",
+        json={
+            "user_id": str(uuid4()),
+            "agent_id": "agent_a",
+            "thread_id": str(uuid4()),
+            "command": "other user task",
+        },
+        headers=other_user_auth_headers,
+    )
+    return response.json()["id"]
+
+
 # Pytest configuration
 def pytest_configure(config):
     """Configure pytest with custom markers"""
@@ -204,4 +352,7 @@ def pytest_configure(config):
     )
     config.addinivalue_line(
         "markers", "api: mark test as API integration test"
+    )
+    config.addinivalue_line(
+        "markers", "auth: mark test as authentication/authorization test"
     )
