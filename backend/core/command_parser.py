@@ -4,10 +4,13 @@ Supports @mentions and natural greetings
 """
 
 import re
+import logging
 from dataclasses import dataclass
 from typing import List
 
 from backend.agents.base.agent_registry import AgentRegistry
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -65,6 +68,12 @@ class CommandParser:
             agent = AgentRegistry.get_by_nickname(nickname)
             if agent and agent.agent_id not in mentioned_agents:
                 mentioned_agents.append(agent.agent_id)
+            elif not agent:
+                # Trust but verify: Agent mentioned but not found in registry
+                logger.warning(
+                    f"Agent nickname '@{nickname}' mentioned in command but not found in registry. "
+                    f"Registered nicknames: {AgentRegistry.get_all_nicknames()}"
+                )
 
         # Clean command (remove @mentions)
         clean_command = re.sub(cls.MENTION_PATTERN, "", command).strip()
