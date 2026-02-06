@@ -91,7 +91,7 @@ export function PromptCard({ prompt, onEdit, onDelete }: PromptCardProps) {
       {/* Preview (first 150 chars) */}
       <div className="text-xs text-[var(--mc-text-secondary)] mb-2">
         {isExpanded ? (
-          <pre className="whitespace-pre-wrap font-mono bg-[var(--mc-bg-secondary)] p-2 rounded border border-[var(--mc-border)] max-h-64 overflow-y-auto">
+          <pre className="whitespace-pre-wrap break-words font-mono bg-[var(--mc-bg-secondary)] p-2 rounded border border-[var(--mc-border)] max-h-64 overflow-y-auto overflow-x-hidden">
             {prompt.prompt_text}
           </pre>
         ) : (

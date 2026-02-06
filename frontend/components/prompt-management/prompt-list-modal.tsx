@@ -99,7 +99,7 @@ export function PromptListModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto bg-[var(--mc-bg-secondary)] border-[var(--mc-border)]">
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto overflow-x-hidden bg-[var(--mc-bg-secondary)] border-[var(--mc-border)]">
           <DialogHeader>
             <DialogTitle className="text-[var(--mc-text-primary)] text-xl">
               Manage Prompts - @{agentNickname} ({agentName})
