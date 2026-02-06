@@ -413,6 +413,13 @@ export class BackendStack extends cdk.Stack {
               secretsmanager.Secret.fromSecretNameV2(this, 'TavilyKey', 'commander-ai/tavily')
             ),
             DB_PASSWORD: ecs.Secret.fromSecretsManager(props.dbSecret, 'password'),
+            // JWT Authentication secrets (required for production)
+            SECRET_KEY: ecs.Secret.fromSecretsManager(
+              secretsmanager.Secret.fromSecretNameV2(this, 'JWTSecret', 'commander-ai/jwt-secret')
+            ),
+            // Optional: Override default token expiry
+            // ACCESS_TOKEN_EXPIRE_MINUTES: '60',
+            // REFRESH_TOKEN_EXPIRE_DAYS: '7',
           },
         },
         publicLoadBalancer: true,
@@ -516,7 +523,20 @@ aws secretsmanager create-secret \
 aws secretsmanager create-secret \
   --name commander-ai/tavily \
   --secret-string '{"api_key":"tvly-..."}'
+
+# JWT Authentication secret (required for production)
+# Generate a secure random key: openssl rand -hex 32
+aws secretsmanager create-secret \
+  --name commander-ai/jwt-secret \
+  --secret-string '{"secret_key":"<your-generated-secret-key>"}'
 ```
+
+**⚠️ Authentication Security:**
+- Generate a strong random secret for JWT signing: `openssl rand -hex 32`
+- **Never** commit the secret key to version control
+- Rotate secrets periodically (recommended: every 90 days)
+- For development, use the MVP user bypass (no JWT needed)
+- For production, enforce JWT authentication by removing MVP user bypass
 
 ### 2. Build and Push Docker Images
 

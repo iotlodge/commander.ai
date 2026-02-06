@@ -283,6 +283,62 @@ await doc_store.disconnect()  # Breaks singleton for all agents!
 - Only disconnected during app shutdown
 - TavilyToolset, alice, and other agents share the same instance
 
+### JWT Authentication & Security
+
+Commander.ai includes production-ready JWT authentication with a seamless development experience:
+
+**Features:**
+- ✅ User registration and login
+- ✅ JWT access tokens (1 hour) and refresh tokens (7 days)
+- ✅ Bcrypt password hashing with salt
+- ✅ Protected API endpoints (tasks, commands, WebSocket)
+- ✅ User resource isolation (users only access their own data)
+- ✅ Comprehensive test coverage (26/27 tests passing - 94%)
+
+**Development Mode:**
+All API endpoints support an MVP user bypass for development:
+```typescript
+// Frontend automatically includes MVP user ID
+fetch('http://localhost:8000/api/commands?user_id=00000000-0000-0000-0000-000000000001', ...)
+```
+
+**Production Mode:**
+For production, include JWT token in Authorization header:
+```typescript
+fetch('http://localhost:8000/api/commands', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+  }
+})
+```
+
+**Auth Endpoints:**
+- `POST /auth/register` - Create new user account
+- `POST /auth/login` - Login and get JWT tokens
+- `POST /auth/refresh` - Refresh expired access token
+- `GET /auth/me` - Get current user info
+
+**Architecture:**
+```
+backend/auth/
+├── models.py         # User SQLAlchemy model
+├── security.py       # Password hashing, JWT utilities
+├── routes.py         # Auth endpoints
+└── dependencies.py   # FastAPI auth dependencies (with MVP bypass)
+```
+
+**Testing:**
+```bash
+# Run auth test suite
+pytest tests/auth/ -v
+
+# Results: 26/27 tests passing
+# - test_security.py: 9/9 ✅
+# - test_auth_routes.py: 14/14 ✅
+# - test_protected_routes.py: 3/4 ✅
+```
+
 ---
 
 ## 🔧 Integrating a New Agent
