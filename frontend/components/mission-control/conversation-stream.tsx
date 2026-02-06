@@ -37,7 +37,8 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
       }
       setLastProcessedIndex(events.length - 1);
     }
-  }, [events, lastProcessedIndex, handleWebSocketEvent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, lastProcessedIndex]);
 
   // Build conversation from tasks
   useEffect(() => {
@@ -89,7 +90,13 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
       }
     }
 
-    setConversationItems(items);
+    // Only update if items actually changed
+    setConversationItems(prev => {
+      if (JSON.stringify(prev.map(i => i.id)) === JSON.stringify(items.map(i => i.id))) {
+        return prev;
+      }
+      return items;
+    });
   }, [tasks, agentFilter]);
 
   // Auto-scroll to bottom on new messages (if enabled)
