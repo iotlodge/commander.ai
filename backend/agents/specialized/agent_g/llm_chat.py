@@ -8,7 +8,7 @@ import logging
 from typing import Any
 from uuid import UUID
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
@@ -170,17 +170,81 @@ Guidelines:
     # Add current message
     messages.append(HumanMessage(content=current_message))
 
-    # Generate response
-    response = await llm.ainvoke(messages)
+    # Agentic loop for tool execution
+    MAX_TOOL_ITERATIONS = 5
+    response = None
 
-    # Track token usage
-    if metrics:
-        prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
-        metrics.add_llm_call(
-            model="gpt-4o-mini",
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            purpose="chat_response"
-        )
+    for iteration in range(MAX_TOOL_ITERATIONS):
+        # Invoke LLM
+        response = await llm.ainvoke(messages)
 
-    return response.content
+        # Track token usage for this invocation
+        if metrics:
+            prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+            metrics.add_llm_call(
+                model="gpt-4o-mini",
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                purpose="chat_response"
+            )
+
+        # Check if LLM wants to use tools
+        if not response.tool_calls:
+            # No tools needed, return final response
+            return response.content
+
+        # Add AI response with tool calls to message history
+        messages.append(response)
+
+        # Execute each tool call
+        for tool_call in response.tool_calls:
+            try:
+                tool_name = tool_call["name"]
+                tool_args = tool_call["args"]
+                tool_call_id = tool_call["id"]
+
+                # Execute the tool
+                if tool_name == "web_search":
+                    # Use the web_search_tool's coroutine (search_web function)
+                    result = await web_search_tool.coroutine(tool_args["query"])
+
+                    # Track successful tool execution
+                    if metrics:
+                        metrics.add_tool_call("web_search", success=True)
+
+                    # Add tool result to messages
+                    tool_message = ToolMessage(
+                        content=result,
+                        tool_call_id=tool_call_id
+                    )
+                    messages.append(tool_message)
+                else:
+                    # Unknown tool requested
+                    logger.warning(f"Unknown tool requested: {tool_name}")
+                    tool_message = ToolMessage(
+                        content=f"Error: Unknown tool '{tool_name}'",
+                        tool_call_id=tool_call_id
+                    )
+                    messages.append(tool_message)
+
+                    if metrics:
+                        metrics.add_tool_call(tool_name, success=False)
+
+            except Exception as e:
+                # Tool execution failed
+                logger.error(f"Tool execution failed: {e}", exc_info=True)
+                tool_message = ToolMessage(
+                    content=f"Tool execution error: {str(e)}",
+                    tool_call_id=tool_call.get("id", "unknown")
+                )
+                messages.append(tool_message)
+
+                if metrics:
+                    metrics.add_tool_call(
+                        tool_call.get("name", "unknown"),
+                        success=False
+                    )
+
+    # Max iterations reached
+    logger.warning(f"Max tool iterations ({MAX_TOOL_ITERATIONS}) reached")
+    return response.content if response and response.content else "I encountered difficulty processing your request after multiple attempts."

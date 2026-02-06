@@ -38,10 +38,12 @@ Every conversation is remembered. Every insight is retained. Commander.ai uses a
 
 **💬 @chat** - *Interactive Chat Assistant*
 - Natural conversation with GPT-4o-mini
-- Web search integration via Tavily
-- Context-aware responses
-- Maintains conversation history
-- *Your go-to for quick questions and casual chat*
+- **Live web search integration** - automatically searches when you ask current questions
+- Context-aware responses with agentic tool execution
+- Maintains conversation history across sessions
+- Auto-focus input for seamless multi-turn conversations
+- Real-time metrics (LLM calls, tokens, tool usage)
+- *Your go-to for quick questions and casual chat with real-time information*
 
 ### Specialist Agents
 
@@ -564,16 +566,19 @@ All services have health checks and auto-restart.
 
 ## 🚦 Current Status
 
-**✅ Production Ready (v1.1)**
+**✅ Production Ready (v1.3)**
 - ✅ 7 specialized agents (chat, research, compliance, data, documents, reflection, reflexion)
 - ✅ Three-tier memory system (Redis/PostgreSQL/Qdrant)
 - ✅ Real-time Kanban UI with WebSocket
 - ✅ Agent graph visualization with zoom/pan
 - ✅ Document management with semantic search
-- ✅ **Web search with cache-first architecture** (NEW!)
-- ✅ **TavilyToolset integration** - unified search/crawl/extract/map (NEW!)
-- ✅ **Automatic cache cleanup** - removes stale entries (NEW!)
-- ✅ **DocumentStore singleton pattern** - prevents connection pool exhaustion (NEW!)
+- ✅ **Web search with cache-first architecture**
+- ✅ **TavilyToolset integration** - unified search/crawl/extract/map
+- ✅ **Automatic cache cleanup** - removes stale entries
+- ✅ **DocumentStore singleton pattern** - prevents connection pool exhaustion
+- ✅ **Chat agent tool execution** - @chat now executes web searches with agentic loop (NEW!)
+- ✅ **Enhanced chat UX** - auto-focus input after responses (NEW!)
+- ✅ **JWT authentication system** - production-ready with 94% test coverage (NEW!)
 
 **🚧 In Active Development**
 - ⏳ Vision/image analysis agent (in progress - image processing skill)
@@ -653,5 +658,5 @@ The magic happens when:
 
 ---
 
-**Status**: 🚀 v1.1 - Production Ready with Web Search Cache
-**Last Updated**: February 2026
+**Status**: 🚀 v1.3 - Production Ready with Chat Tool Execution & JWT Auth
+**Last Updated**: February 5, 2026

@@ -216,6 +216,9 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
       await updateSessionTask(finalMessages, updatedMetrics);
 
       setIsSubmitting(false);
+
+      // Focus back on input after response
+      setTimeout(() => inputRef.current?.focus(), 100);
     } catch (error) {
       console.error('Failed to send message:', error);
       const errorMessage: ChatMessage = {
@@ -225,6 +228,9 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
       };
       setMessages(prev => [...prev, errorMessage]);
       setIsSubmitting(false);
+
+      // Focus back on input even after error
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 

@@ -223,6 +223,7 @@ class TestLLMGenerateChatResponse:
             mock_llm = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = "This is a test response."
+            mock_response.tool_calls = []  # No tools needed
             mock_llm.ainvoke = AsyncMock(return_value=mock_response)
             mock_llm.bind_tools = MagicMock(return_value=mock_llm)
             mock_llm_class.return_value = mock_llm
@@ -252,6 +253,7 @@ class TestLLMGenerateChatResponse:
             mock_llm = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = "Continuing conversation..."
+            mock_response.tool_calls = []  # No tools needed
             mock_llm.ainvoke = AsyncMock(return_value=mock_response)
             mock_llm.bind_tools = MagicMock(return_value=mock_llm)
             mock_llm_class.return_value = mock_llm
@@ -278,6 +280,7 @@ class TestLLMGenerateChatResponse:
             mock_llm = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = "Response"
+            mock_response.tool_calls = []  # No tools needed
             mock_llm.ainvoke = AsyncMock(return_value=mock_response)
             mock_llm.bind_tools = MagicMock(return_value=mock_llm)
             mock_llm_class.return_value = mock_llm
@@ -304,6 +307,7 @@ class TestLLMGenerateChatResponse:
             mock_llm = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = "Response"
+            mock_response.tool_calls = []  # No tools needed
             # Mock token usage in response
             mock_response.response_metadata = {
                 "token_usage": {
@@ -342,6 +346,7 @@ class TestLLMGenerateChatResponse:
             mock_llm = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = "Response"
+            mock_response.tool_calls = []  # No tools needed
             mock_llm.ainvoke = AsyncMock(return_value=mock_response)
             mock_llm.bind_tools = MagicMock(return_value=mock_llm)
             mock_llm_class.return_value = mock_llm
@@ -371,6 +376,7 @@ class TestWebSearchToolIntegration:
             mock_llm = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = "Response"
+            mock_response.tool_calls = []  # No tools needed
             mock_llm.ainvoke = AsyncMock(return_value=mock_response)
 
             # Track bind_tools call
@@ -402,6 +408,7 @@ class TestWebSearchToolIntegration:
                 mock_llm = AsyncMock()
                 mock_response = MagicMock()
                 mock_response.content = "Response"
+                mock_response.tool_calls = []  # No tools needed
                 mock_llm.ainvoke = AsyncMock(return_value=mock_response)
                 mock_llm.bind_tools = MagicMock(return_value=mock_llm)
                 mock_llm_class.return_value = mock_llm
@@ -435,3 +442,229 @@ class TestErrorHandling:
             mock_logger.error.assert_called()
             log_message = mock_logger.error.call_args[0][0]
             assert "Web search failed" in log_message
+
+
+class TestToolExecution:
+    """Test tool execution in agentic loop"""
+
+    @pytest.mark.asyncio
+    async def test_web_search_tool_execution(self, mock_settings, mock_document_store, mock_tavily_toolset):
+        """Test that web search tool calls are executed and results returned"""
+        user_id = uuid4()
+
+        # Mock search results
+        mock_search_result = TavilySearchResult(
+            query="latest AI news",
+            results=[
+                {
+                    "title": "AI Breakthrough",
+                    "content": "Major developments in AI",
+                    "url": "https://example.com/ai",
+                    "score": 0.95,
+                }
+            ],
+            source="api",
+            execution_time_ms=1000.0,
+        )
+        mock_tavily_toolset.search = AsyncMock(return_value=mock_search_result)
+
+        # First response: LLM wants to use tool
+        mock_tool_response = MagicMock()
+        mock_tool_response.tool_calls = [{
+            "name": "web_search",
+            "args": {"query": "latest AI news"},
+            "id": "call_123"
+        }]
+        mock_tool_response.content = ""
+
+        # Second response: Final answer with search results
+        mock_final_response = MagicMock()
+        mock_final_response.tool_calls = []
+        mock_final_response.content = "Based on the search results, here's the latest AI news..."
+
+        with patch('backend.agents.specialized.agent_g.llm_chat.ChatOpenAI') as mock_llm_class:
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke = AsyncMock(side_effect=[mock_tool_response, mock_final_response])
+            mock_llm.bind_tools = MagicMock(return_value=mock_llm)
+            mock_llm_class.return_value = mock_llm
+
+            response = await llm_generate_chat_response(
+                current_message="What's the latest in AI?",
+                user_id=user_id,
+            )
+
+            # Verify two LLM calls (one with tool, one final)
+            assert mock_llm.ainvoke.call_count == 2
+            # Verify search was executed
+            mock_tavily_toolset.search.assert_called_once()
+            # Verify final response returned
+            assert "Based on the search results" in response
+
+    @pytest.mark.asyncio
+    async def test_tool_execution_error_handling(self, mock_settings, mock_document_store, mock_tavily_toolset):
+        """Test that tool execution errors are handled gracefully"""
+        user_id = uuid4()
+
+        # Mock search to raise error
+        mock_tavily_toolset.search = AsyncMock(
+            side_effect=TavilyAPIError("Search API failed")
+        )
+
+        # First response: LLM wants to use tool
+        mock_tool_response = MagicMock()
+        mock_tool_response.tool_calls = [{
+            "name": "web_search",
+            "args": {"query": "test query"},
+            "id": "call_456"
+        }]
+        mock_tool_response.content = ""
+
+        # Second response: LLM responds to error
+        mock_error_response = MagicMock()
+        mock_error_response.tool_calls = []
+        mock_error_response.content = "I encountered an error searching, but I can tell you..."
+
+        with patch('backend.agents.specialized.agent_g.llm_chat.ChatOpenAI') as mock_llm_class:
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke = AsyncMock(side_effect=[mock_tool_response, mock_error_response])
+            mock_llm.bind_tools = MagicMock(return_value=mock_llm)
+            mock_llm_class.return_value = mock_llm
+
+            response = await llm_generate_chat_response(
+                current_message="Search for test",
+                user_id=user_id,
+            )
+
+            # Verify error was handled and LLM continued
+            assert mock_llm.ainvoke.call_count == 2
+            assert "I encountered an error searching" in response
+
+    @pytest.mark.asyncio
+    async def test_max_iterations_limit(self, mock_settings, mock_document_store, mock_tavily_toolset):
+        """Test that tool execution stops at max iterations"""
+        user_id = uuid4()
+
+        # Mock search results
+        mock_search_result = TavilySearchResult(
+            query="test",
+            results=[{"title": "Test", "content": "Content", "url": "https://test.com", "score": 0.9}],
+            source="api",
+            execution_time_ms=500.0,
+        )
+        mock_tavily_toolset.search = AsyncMock(return_value=mock_search_result)
+
+        # Mock response that always requests tools (infinite loop scenario)
+        mock_tool_response = MagicMock()
+        mock_tool_response.tool_calls = [{
+            "name": "web_search",
+            "args": {"query": "test"},
+            "id": "call_loop"
+        }]
+        mock_tool_response.content = "Partial response"
+
+        with patch('backend.agents.specialized.agent_g.llm_chat.ChatOpenAI') as mock_llm_class:
+            mock_llm = AsyncMock()
+            # Always return tool call response (simulating infinite loop)
+            mock_llm.ainvoke = AsyncMock(return_value=mock_tool_response)
+            mock_llm.bind_tools = MagicMock(return_value=mock_llm)
+            mock_llm_class.return_value = mock_llm
+
+            response = await llm_generate_chat_response(
+                current_message="Test max iterations",
+                user_id=user_id,
+            )
+
+            # Verify max iterations (5) reached
+            assert mock_llm.ainvoke.call_count == 5
+            # Should return fallback message or partial content
+            assert response is not None
+
+    @pytest.mark.asyncio
+    async def test_unknown_tool_handling(self, mock_settings, mock_document_store, mock_tavily_toolset):
+        """Test that unknown tool requests are handled gracefully"""
+        user_id = uuid4()
+
+        # First response: LLM requests unknown tool
+        mock_tool_response = MagicMock()
+        mock_tool_response.tool_calls = [{
+            "name": "unknown_tool",
+            "args": {"param": "value"},
+            "id": "call_unknown"
+        }]
+        mock_tool_response.content = ""
+
+        # Second response: LLM responds to error
+        mock_final_response = MagicMock()
+        mock_final_response.tool_calls = []
+        mock_final_response.content = "I apologize, that tool is not available."
+
+        with patch('backend.agents.specialized.agent_g.llm_chat.ChatOpenAI') as mock_llm_class:
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke = AsyncMock(side_effect=[mock_tool_response, mock_final_response])
+            mock_llm.bind_tools = MagicMock(return_value=mock_llm)
+            mock_llm_class.return_value = mock_llm
+
+            response = await llm_generate_chat_response(
+                current_message="Use unknown tool",
+                user_id=user_id,
+            )
+
+            # Verify unknown tool was handled
+            assert mock_llm.ainvoke.call_count == 2
+            assert "not available" in response
+
+    @pytest.mark.asyncio
+    async def test_metrics_tracking_for_tools(self, mock_settings, mock_document_store, mock_tavily_toolset):
+        """Test that tool execution is tracked in metrics"""
+        user_id = uuid4()
+
+        # Mock search results
+        mock_search_result = TavilySearchResult(
+            query="test",
+            results=[{"title": "Test", "content": "Content", "url": "https://test.com", "score": 0.9}],
+            source="api",
+            execution_time_ms=500.0,
+        )
+        mock_tavily_toolset.search = AsyncMock(return_value=mock_search_result)
+
+        # First response: LLM wants to use tool
+        mock_tool_response = MagicMock()
+        mock_tool_response.tool_calls = [{
+            "name": "web_search",
+            "args": {"query": "test"},
+            "id": "call_metrics"
+        }]
+        mock_tool_response.content = ""
+        mock_tool_response.response_metadata = {
+            "token_usage": {"prompt_tokens": 100, "completion_tokens": 20}
+        }
+
+        # Second response: Final answer
+        mock_final_response = MagicMock()
+        mock_final_response.tool_calls = []
+        mock_final_response.content = "Here are the results..."
+        mock_final_response.response_metadata = {
+            "token_usage": {"prompt_tokens": 150, "completion_tokens": 30}
+        }
+
+        with patch('backend.agents.specialized.agent_g.llm_chat.ChatOpenAI') as mock_llm_class:
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke = AsyncMock(side_effect=[mock_tool_response, mock_final_response])
+            mock_llm.bind_tools = MagicMock(return_value=mock_llm)
+            mock_llm_class.return_value = mock_llm
+
+            # Create mock metrics
+            mock_metrics = MagicMock()
+            mock_metrics.add_llm_call = MagicMock()
+            mock_metrics.add_tool_call = MagicMock()
+
+            response = await llm_generate_chat_response(
+                current_message="Test metrics",
+                user_id=user_id,
+                metrics=mock_metrics,
+            )
+
+            # Verify LLM calls tracked (2 calls)
+            assert mock_metrics.add_llm_call.call_count == 2
+            # Verify tool call tracked (1 successful web_search)
+            mock_metrics.add_tool_call.assert_called_once_with("web_search", success=True)
