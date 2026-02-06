@@ -186,6 +186,8 @@ async def test_get_current_user_me_invalid_token(test_client: AsyncClient):
 @pytest.mark.asyncio
 async def test_refresh_token_success(test_client: AsyncClient, test_user: User):
     """Test successful token refresh"""
+    import asyncio
+
     # Login to get tokens
     login_response = await test_client.post(
         "/auth/login",
@@ -195,6 +197,9 @@ async def test_refresh_token_success(test_client: AsyncClient, test_user: User):
         },
     )
     refresh_token = login_response.json()["refresh_token"]
+
+    # Wait 1 second to ensure different expiration timestamp
+    await asyncio.sleep(1)
 
     # Refresh tokens
     response = await test_client.post(
@@ -208,7 +213,7 @@ async def test_refresh_token_success(test_client: AsyncClient, test_user: User):
     assert "refresh_token" in data
     assert data["token_type"] == "bearer"
 
-    # New tokens should be different from old ones
+    # New tokens should be different from old ones (due to different exp timestamp)
     assert data["access_token"] != login_response.json()["access_token"]
     assert data["refresh_token"] != refresh_token
 

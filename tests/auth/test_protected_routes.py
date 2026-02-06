@@ -17,7 +17,7 @@ async def test_create_task_authenticated(test_client: AsyncClient, auth_headers:
             "user_id": str(uuid4()),  # This should be ignored
             "agent_id": "agent_a",
             "thread_id": str(uuid4()),
-            "command": "test command",
+            "command_text": "test command",
         },
         headers=auth_headers,
     )
@@ -39,7 +39,7 @@ async def test_create_task_no_auth(test_client: AsyncClient):
             "user_id": str(uuid4()),
             "agent_id": "agent_a",
             "thread_id": str(uuid4()),
-            "command": "test command",
+            "command_text": "test command",
         },
     )
 
@@ -55,7 +55,7 @@ async def test_create_task_invalid_token(test_client: AsyncClient):
             "user_id": str(uuid4()),
             "agent_id": "agent_a",
             "thread_id": str(uuid4()),
-            "command": "test command",
+            "command_text": "test command",
         },
         headers={"Authorization": "Bearer invalid-token"},
     )
@@ -94,7 +94,7 @@ async def test_get_task_own_task(
             "user_id": str(test_user.id),
             "agent_id": "agent_a",
             "thread_id": str(uuid4()),
-            "command": "test command",
+            "command_text": "test command",
         },
         headers=auth_headers,
     )
@@ -139,7 +139,7 @@ async def test_update_task_own_task(
             "user_id": str(test_user.id),
             "agent_id": "agent_a",
             "thread_id": str(uuid4()),
-            "command": "test command",
+            "command_text": "test command",
         },
         headers=auth_headers,
     )
@@ -186,7 +186,7 @@ async def test_delete_task_own_task(
             "user_id": str(test_user.id),
             "agent_id": "agent_a",
             "thread_id": str(uuid4()),
-            "command": "test command",
+            "command_text": "test command",
         },
         headers=auth_headers,
     )

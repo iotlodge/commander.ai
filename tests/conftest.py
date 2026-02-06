@@ -203,19 +203,22 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Fixture providing database session for tests
 
-    Creates tables before tests and drops them after
+    Creates tables before tests, commits during test, cleans up after
     """
-    from sqlalchemy import create_engine
     from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+    from sqlalchemy import text
 
-    # Use test database URL or in-memory
+    # Use test database URL
     settings = get_settings()
+
+    # Create engine
     engine = create_async_engine(
         settings.database_url,
         echo=False,
+        pool_pre_ping=True,
     )
 
-    # Create tables
+    # Create tables if they don't exist (idempotent)
     async with engine.begin() as conn:
         await conn.run_sync(AuthBase.metadata.create_all)
 
@@ -228,11 +231,16 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
     async with async_session() as session:
         yield session
-        await session.rollback()
 
-    # Drop tables
-    async with engine.begin() as conn:
-        await conn.run_sync(AuthBase.metadata.drop_all)
+    # Clean up test data
+    async with async_session() as cleanup:
+        try:
+            await cleanup.execute(text("DELETE FROM agent_tasks WHERE TRUE"))
+            await cleanup.execute(text("DELETE FROM users WHERE email LIKE '%@example.com' OR email = 'mvp@commander.ai'"))
+            await cleanup.commit()
+        except Exception as e:
+            print(f"Warning: Test cleanup failed: {e}")
+            await cleanup.rollback()
 
     await engine.dispose()
 
@@ -334,7 +342,7 @@ async def other_user_task_id(
             "user_id": str(uuid4()),
             "agent_id": "agent_a",
             "thread_id": str(uuid4()),
-            "command": "other user task",
+            "command_text": "other user task",
         },
         headers=other_user_auth_headers,
     )
