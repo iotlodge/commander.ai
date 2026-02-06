@@ -13,11 +13,11 @@ interface SystemMessageProps {
 function SystemMessageComponent({ message, task, timestamp }: SystemMessageProps) {
   return (
     <div className="flex items-center justify-center">
-      <div className="flex items-center gap-2 bg-[#1e2433]/50 border border-[#2a3444] rounded-full px-4 py-2">
-        <Loader2 className="h-3 w-3 text-[#4a9eff] animate-spin" />
+      <div className="flex items-center gap-2 bg-[var(--mc-bg-secondary)]/50 border border-[var(--mc-border)] rounded-full px-4 py-2">
+        <Loader2 className="h-3 w-3 text-[var(--mc-accent-blue)] animate-spin" />
         <span className="text-xs text-gray-400">{message}</span>
         {task && task.progress_percentage !== undefined && (
-          <span className="text-xs text-[#4a9eff]">
+          <span className="text-xs text-[var(--mc-accent-blue)]">
             {task.progress_percentage}%
           </span>
         )}

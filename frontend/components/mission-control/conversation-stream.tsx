@@ -120,13 +120,13 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
         <div className="text-center animate-fade-in">
           <div className="relative inline-block mb-6">
             <Inbox className="h-16 w-16 text-gray-600 mx-auto" />
-            <Sparkles className="h-6 w-6 text-[#4a9eff] absolute -top-2 -right-2 animate-pulse" />
+            <Sparkles className="h-6 w-6 text-[var(--mc-accent-blue)] absolute -top-2 -right-2 animate-pulse" />
           </div>
-          <h3 className="text-gray-300 text-xl font-semibold mb-2">
+          <h3 className="text-[var(--mc-text-primary)] text-xl font-semibold mb-2">
             Welcome to Mission Control
           </h3>
-          <p className="text-gray-400 text-sm mb-4 max-w-md mx-auto">
-            Your AI team is ready. Start by typing a command below and mention an agent with <span className="text-[#4a9eff] font-mono">@agent</span>
+          <p className="text-[var(--mc-text-secondary)] text-sm mb-4 max-w-md mx-auto">
+            Your AI team is ready. Start by typing a command below and mention an agent with <span className="text-[var(--mc-accent-blue)] font-mono">@agent</span>
           </p>
           <div className="flex flex-col gap-2 items-center">
             <p className="text-xs text-gray-500">Try these commands:</p>
@@ -136,7 +136,7 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
                 "@bob research quantum computing",
                 "@alice search web for AI news"
               ].map((cmd, i) => (
-                <div key={i} className="text-xs bg-[#1e2433] border border-[#2a3444] rounded px-3 py-1.5 text-gray-400 font-mono">
+                <div key={i} className="text-xs bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded px-3 py-1.5 text-gray-400 font-mono">
                   {cmd}
                 </div>
               ))}
@@ -161,14 +161,14 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
                 key={item.id}
                 className="flex justify-end"
               >
-                <div className="max-w-2xl bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-lg px-4 py-3 hover:bg-[#4a9eff]/15 transition-colors">
-                  <div className="text-sm text-gray-400 mb-1">
+                <div className="max-w-2xl bg-[var(--mc-accent-blue)]/10 border border-[var(--mc-accent-blue)]/30 rounded-lg px-4 py-3 hover:bg-[var(--mc-accent-blue)]/15 transition-colors">
+                  <div className="text-sm text-[var(--mc-text-secondary)] mb-1">
                     You → @{item.content.agentNickname}
                   </div>
-                  <div className="text-white">
+                  <div className="text-[var(--mc-text-primary)]">
                     {item.content.command.replace(/^@\w+\s*/, "")}
                   </div>
-                  <div className="text-xs text-gray-500 mt-2">
+                  <div className="text-xs text-[var(--mc-text-tertiary)] mt-2">
                     {item.timestamp.toLocaleTimeString()}
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
             streamEndRef.current?.scrollIntoView({ behavior: "smooth" });
             setAutoScroll(true);
           }}
-          className="fixed bottom-24 right-8 bg-[#4a9eff] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#3a8edf] transition-all hover:scale-105 flex items-center gap-2 animate-bounce-subtle"
+          className="fixed bottom-24 right-8 bg-[var(--mc-accent-blue)] text-white px-4 py-2 rounded-full shadow-lg hover:opacity-90 transition-all hover:scale-105 flex items-center gap-2 animate-bounce-subtle"
         >
           <span className="text-sm">↓ New messages</span>
         </button>

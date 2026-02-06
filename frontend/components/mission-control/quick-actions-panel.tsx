@@ -17,11 +17,26 @@ interface AgentQuickActions {
   actions: QuickAction[];
 }
 
+// Agent color helper - uses CSS variables
+const getAgentColor = (nickname: string): string => {
+  const colorMap: Record<string, string> = {
+    leo: "var(--agent-leo)",
+    chat: "var(--agent-chat)",
+    bob: "var(--agent-bob)",
+    sue: "var(--agent-sue)",
+    rex: "var(--agent-rex)",
+    alice: "var(--agent-alice)",
+    maya: "var(--agent-maya)",
+    kai: "var(--agent-kai)",
+  };
+  return colorMap[nickname] || "var(--mc-accent-blue)";
+};
+
 const QUICK_ACTIONS: AgentQuickActions[] = [
   {
     agentNickname: "leo",
     agentName: "Leo",
-    color: "#fbbf24",
+    color: getAgentColor("leo"),
     icon: <Network className="h-4 w-4" />,
     actions: [
       { label: "Complex task", command: "@leo coordinate a multi-step task to " },
@@ -32,7 +47,7 @@ const QUICK_ACTIONS: AgentQuickActions[] = [
   {
     agentNickname: "chat",
     agentName: "Chat",
-    color: "#4a9eff",
+    color: getAgentColor("chat"),
     icon: <MessageSquare className="h-4 w-4" />,
     actions: [
       { label: "Get help", command: "@chat what can you help me with?" },
@@ -42,7 +57,7 @@ const QUICK_ACTIONS: AgentQuickActions[] = [
   {
     agentNickname: "alice",
     agentName: "Alice",
-    color: "#ec4899",
+    color: getAgentColor("alice"),
     icon: <FileText className="h-4 w-4" />,
     actions: [
       { label: "List all documents", command: "@alice list all documents in the system" },
@@ -54,7 +69,7 @@ const QUICK_ACTIONS: AgentQuickActions[] = [
   {
     agentNickname: "bob",
     agentName: "Bob",
-    color: "#10b981",
+    color: getAgentColor("bob"),
     icon: <Search className="h-4 w-4" />,
     actions: [
       { label: "Latest AI news", command: "@bob what's the latest news in AI?" },
@@ -66,7 +81,7 @@ const QUICK_ACTIONS: AgentQuickActions[] = [
   {
     agentNickname: "rex",
     agentName: "Rex",
-    color: "#8b5cf6",
+    color: getAgentColor("rex"),
     icon: <BarChart3 className="h-4 w-4" />,
     actions: [
       { label: "Analyze data", command: "@rex analyze the following data: " },
@@ -77,7 +92,7 @@ const QUICK_ACTIONS: AgentQuickActions[] = [
   {
     agentNickname: "sue",
     agentName: "Sue",
-    color: "#f59e0b",
+    color: getAgentColor("sue"),
     icon: <Shield className="h-4 w-4" />,
     actions: [
       { label: "Compliance check", command: "@sue perform a compliance review of " },
@@ -88,7 +103,7 @@ const QUICK_ACTIONS: AgentQuickActions[] = [
   {
     agentNickname: "maya",
     agentName: "Maya",
-    color: "#06b6d4",
+    color: getAgentColor("maya"),
     icon: <Sparkles className="h-4 w-4" />,
     actions: [
       { label: "Reflect on approach", command: "@maya reflect on the best approach for " },
@@ -98,7 +113,7 @@ const QUICK_ACTIONS: AgentQuickActions[] = [
   {
     agentNickname: "kai",
     agentName: "Kai",
-    color: "#f97316",
+    color: getAgentColor("kai"),
     icon: <Zap className="h-4 w-4" />,
     actions: [
       { label: "Deep analysis", command: "@kai perform a deep reflexive analysis of " },
@@ -119,16 +134,16 @@ export function QuickActionsPanel({ onCommandSelect }: QuickActionsPanelProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#141824] border-l border-[#2a3444]">
+    <div className="h-full flex flex-col bg-[var(--mc-bg-tertiary)] border-l border-[var(--mc-border)]">
       {/* Header */}
-      <div className="flex-shrink-0 p-4 border-b border-[#2a3444]">
+      <div className="flex-shrink-0 p-4 border-b border-[var(--mc-border)]">
         <div className="flex items-center gap-2 mb-2">
-          <Zap className="h-5 w-5 text-[#4a9eff]" />
-          <h2 className="text-sm font-bold text-white uppercase tracking-wide">
+          <Zap className="h-5 w-5 text-[var(--mc-accent-blue)]" />
+          <h2 className="text-sm font-bold text-[var(--mc-text-primary)] uppercase tracking-wide">
             Quick Actions
           </h2>
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-[var(--mc-text-tertiary)]">
           One-click commands for common tasks
         </p>
       </div>
@@ -139,7 +154,7 @@ export function QuickActionsPanel({ onCommandSelect }: QuickActionsPanelProps) {
           <div key={agent.agentNickname} className="mb-2">
             <button
               onClick={() => toggleAgent(agent.agentNickname)}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-[#1a1f2e] hover:bg-[#1e2433] border border-transparent hover:border-[#2a3444] transition-all"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-transparent hover:border-[var(--mc-border)] transition-all"
             >
               <div className="flex items-center gap-2">
                 <div
@@ -148,10 +163,10 @@ export function QuickActionsPanel({ onCommandSelect }: QuickActionsPanelProps) {
                 >
                   {agent.icon}
                 </div>
-                <span className="text-sm font-semibold text-white">
+                <span className="text-sm font-semibold text-[var(--mc-text-primary)]">
                   @{agent.agentNickname}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[var(--mc-text-secondary)]">
                   {agent.actions.length}
                 </span>
               </div>
@@ -169,7 +184,7 @@ export function QuickActionsPanel({ onCommandSelect }: QuickActionsPanelProps) {
                   <button
                     key={idx}
                     onClick={() => onCommandSelect(action.command)}
-                    className="w-full text-left px-3 py-2 rounded text-xs bg-[#1a1f2e]/50 hover:bg-[#2a3444] text-gray-300 hover:text-white transition-colors border border-transparent hover:border-[#4a9eff]/30"
+                    className="w-full text-left px-3 py-2 rounded text-xs bg-[var(--mc-bg-primary)]/50 hover:bg-[var(--mc-hover)] text-[var(--mc-text-secondary)] hover:text-[var(--mc-text-primary)] transition-colors border border-transparent hover:border-[var(--mc-accent-blue)]/30"
                   >
                     {action.label}
                   </button>
@@ -181,7 +196,7 @@ export function QuickActionsPanel({ onCommandSelect }: QuickActionsPanelProps) {
       </div>
 
       {/* Footer Tip */}
-      <div className="flex-shrink-0 p-4 border-t border-[#2a3444]">
+      <div className="flex-shrink-0 p-4 border-t border-[var(--mc-border)]">
         <p className="text-xs text-gray-500 text-center">
           💡 Click any action to auto-fill the command
         </p>

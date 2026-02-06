@@ -79,6 +79,36 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Mission Control - Light Mode */
+  --mc-bg-primary: oklch(0.99 0 0);           /* White/near-white background */
+  --mc-bg-secondary: oklch(0.97 0 0);         /* Light gray card background */
+  --mc-bg-tertiary: oklch(0.95 0 0);          /* Slightly darker sidebar */
+  --mc-border: oklch(0.80 0 0);               /* Visible borders (darker) */
+  --mc-hover: oklch(0.92 0 0);                /* Hover states */
+  --mc-accent-blue: oklch(0.55 0.18 250);     /* Deeper blue for better contrast */
+
+  /* Text colors for light mode */
+  --mc-text-primary: oklch(0.20 0 0);         /* Dark text */
+  --mc-text-secondary: oklch(0.40 0 0);       /* Medium gray text */
+  --mc-text-tertiary: oklch(0.50 0 0);        /* Light gray text */
+
+  /* Agent Brand Colors (same in light/dark) */
+  --agent-leo: oklch(0.78 0.15 80);           /* #fbbf24 */
+  --agent-bob: oklch(0.65 0.17 155);          /* #10b981 */
+  --agent-sue: oklch(0.72 0.15 65);           /* #f59e0b */
+  --agent-rex: oklch(0.64 0.20 290);          /* #8b5cf6 */
+  --agent-alice: oklch(0.65 0.25 340);        /* #ec4899 */
+  --agent-maya: oklch(0.65 0.15 200);         /* #06b6d4 */
+  --agent-kai: oklch(0.68 0.20 40);           /* #f97316 */
+  --agent-chat: oklch(0.55 0.18 250);         /* Match accent blue */
+
+  /* Metric Colors (same in light/dark) */
+  --metric-tokens: oklch(0.73 0.18 145);      /* green-400 */
+  --metric-llm: oklch(0.75 0.20 300);         /* purple-400 */
+  --metric-tools: oklch(0.82 0.18 90);        /* yellow-400 */
+  --metric-duration: oklch(0.68 0.15 250);    /* blue-400 */
+  --metric-agent-calls: oklch(0.70 0.15 200); /* cyan-400 */
 }
 
 .dark {
@@ -113,6 +143,21 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Mission Control - Dark Mode */
+  --mc-bg-primary: oklch(0.15 0.01 250);      /* #1a1f2e */
+  --mc-bg-secondary: oklch(0.17 0.01 250);    /* #1e2433 */
+  --mc-bg-tertiary: oklch(0.12 0.01 250);     /* #141824 */
+  --mc-border: oklch(0.28 0.01 250);          /* Slightly lighter borders */
+  --mc-hover: oklch(0.30 0.01 250);           /* Slightly lighter hover */
+  --mc-accent-blue: oklch(0.65 0.18 250);     /* Brighter blue */
+
+  /* Text colors for dark mode */
+  --mc-text-primary: oklch(0.98 0 0);         /* Near white */
+  --mc-text-secondary: oklch(0.75 0 0);       /* Light gray */
+  --mc-text-tertiary: oklch(0.60 0 0);        /* Medium gray */
+
+  /* Agent colors remain the same in dark mode */
 }
 
 @layer base {
@@ -181,21 +226,21 @@
   animation: bounce-subtle 2s ease-in-out infinite;
 }
 
-/* Custom scrollbar for dark theme */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1f2e;
+  background: var(--mc-bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a3444;
+  background: var(--mc-border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a4454;
+  background: var(--mc-hover);
 }

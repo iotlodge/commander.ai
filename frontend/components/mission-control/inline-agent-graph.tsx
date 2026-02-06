@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import mermaid from 'mermaid';
+import { useTheme } from '@/components/providers/theme-provider';
 
 interface AgentGraph {
   agent_id: string;
@@ -24,6 +25,7 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(0.7); // Start at 70% for better initial view
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     fetchGraph();
@@ -33,7 +35,8 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
     if (graph) {
       renderMermaid();
     }
-  }, [graph]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graph, resolvedTheme]);
 
   async function fetchGraph() {
     setLoading(true);
@@ -71,9 +74,11 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
     if (!graph) return;
 
     try {
+      const isDark = resolvedTheme === 'dark';
+
       mermaid.initialize({
         startOnLoad: false,
-        theme: 'dark',
+        theme: isDark ? 'dark' : 'default',
         flowchart: {
           curve: 'basis',
           padding: 15,
@@ -81,7 +86,14 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
           rankSpacing: 60,
         },
         securityLevel: 'loose',
-        themeVariables: {
+        themeVariables: isDark ? {
+          primaryTextColor: '#1a1a1a',
+          secondaryTextColor: '#2d3748',
+          tertiaryTextColor: '#4a5568',
+          nodeTextColor: '#1a1a1a',
+          labelTextColor: '#1a1a1a',
+          edgeLabelBackground: '#ffffff',
+        } : {
           primaryTextColor: '#1a1a1a',
           secondaryTextColor: '#2d3748',
           tertiaryTextColor: '#4a5568',
@@ -116,8 +128,8 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 bg-[#1a1f2e] rounded-lg border border-[#2a3444]">
-        <Loader2 className="h-5 w-5 animate-spin text-[#4a9eff] mr-2" />
+      <div className="flex items-center justify-center py-8 bg-[var(--mc-bg-primary)] rounded-lg border border-[var(--mc-border)]">
+        <Loader2 className="h-5 w-5 animate-spin text-[var(--mc-accent-blue)] mr-2" />
         <span className="text-sm text-gray-400">Loading graph...</span>
       </div>
     );
@@ -125,7 +137,7 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
 
   if (error) {
     return (
-      <div className="py-8 bg-[#1a1f2e] rounded-lg border border-red-500/30">
+      <div className="py-8 bg-[var(--mc-bg-primary)] rounded-lg border border-red-500/30">
         <p className="text-sm text-red-400 text-center">{error}</p>
       </div>
     );
@@ -140,14 +152,14 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
   const handleResetZoom = () => setZoom(0.7);
 
   return (
-    <div className="bg-[#1a1f2e] rounded-lg border border-[#2a3444] overflow-hidden">
-      <div className="px-4 py-3 bg-[#2a3444] border-b border-[#3a4454]">
+    <div className="bg-[var(--mc-bg-primary)] rounded-lg border border-[var(--mc-border)] overflow-hidden">
+      <div className="px-4 py-3 bg-[var(--mc-hover)] border-b border-[var(--mc-border)]">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-semibold text-white">
+            <h4 className="text-sm font-semibold text-[var(--mc-text-primary)]">
               Agent Graph: @{agentNickname}
             </h4>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[var(--mc-text-secondary)]">
               {graph.node_count} nodes • {graph.edge_count} edges
             </p>
           </div>
@@ -155,21 +167,21 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={handleZoomOut}
-              className="p-1.5 bg-[#1a1f2e] hover:bg-[#1e2433] border border-[#3a4454] rounded text-gray-400 hover:text-white transition-colors"
+              className="p-1.5 bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded text-gray-400 hover:text-white transition-colors"
               title="Zoom out"
             >
               <ZoomOut className="h-3 w-3" />
             </button>
             <button
               onClick={handleResetZoom}
-              className="px-2 py-1 bg-[#1a1f2e] hover:bg-[#1e2433] border border-[#3a4454] rounded text-xs text-gray-400 hover:text-white transition-colors"
+              className="px-2 py-1 bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded text-xs text-gray-400 hover:text-white transition-colors"
               title="Reset zoom"
             >
               {Math.round(zoom * 100)}%
             </button>
             <button
               onClick={handleZoomIn}
-              className="p-1.5 bg-[#1a1f2e] hover:bg-[#1e2433] border border-[#3a4454] rounded text-gray-400 hover:text-white transition-colors"
+              className="p-1.5 bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded text-gray-400 hover:text-white transition-colors"
               title="Zoom in"
             >
               <ZoomIn className="h-3 w-3" />
@@ -177,7 +189,7 @@ export function InlineAgentGraph({ agentNickname }: InlineAgentGraphProps) {
           </div>
         </div>
       </div>
-      <div className="bg-white/5 p-4 overflow-auto max-h-[500px]">
+      <div className="bg-white/5 dark:bg-white/5 p-4 overflow-auto max-h-[500px]">
         <div
           id={`mermaid-inline-${agentNickname}`}
           className="flex items-center justify-center min-h-[300px]"

@@ -18,15 +18,30 @@ interface AgentInfo {
   color: string;
 }
 
+// Agent color helper - uses CSS variables
+const getAgentColor = (nickname: string): string => {
+  const colorMap: Record<string, string> = {
+    leo: "var(--agent-leo)",
+    chat: "var(--agent-chat)",
+    bob: "var(--agent-bob)",
+    sue: "var(--agent-sue)",
+    rex: "var(--agent-rex)",
+    alice: "var(--agent-alice)",
+    maya: "var(--agent-maya)",
+    kai: "var(--agent-kai)",
+  };
+  return colorMap[nickname] || "var(--mc-accent-blue)";
+};
+
 const AGENTS: AgentInfo[] = [
-  { id: "parent", nickname: "leo", specialization: "Orchestrator", color: "#fbbf24" },
-  { id: "agent_g", nickname: "chat", specialization: "Interactive Chat", color: "#4a9eff" },
-  { id: "agent_a", nickname: "bob", specialization: "Research Specialist", color: "#10b981" },
-  { id: "agent_b", nickname: "sue", specialization: "Compliance Specialist", color: "#f59e0b" },
-  { id: "agent_c", nickname: "rex", specialization: "Data Analyst", color: "#8b5cf6" },
-  { id: "agent_d", nickname: "alice", specialization: "Document Manager", color: "#ec4899" },
-  { id: "agent_e", nickname: "maya", specialization: "Reflection Specialist", color: "#06b6d4" },
-  { id: "agent_f", nickname: "kai", specialization: "Reflexion Specialist", color: "#f97316" },
+  { id: "parent", nickname: "leo", specialization: "Orchestrator", color: getAgentColor("leo") },
+  { id: "agent_g", nickname: "chat", specialization: "Interactive Chat", color: getAgentColor("chat") },
+  { id: "agent_a", nickname: "bob", specialization: "Research Specialist", color: getAgentColor("bob") },
+  { id: "agent_b", nickname: "sue", specialization: "Compliance Specialist", color: getAgentColor("sue") },
+  { id: "agent_c", nickname: "rex", specialization: "Data Analyst", color: getAgentColor("rex") },
+  { id: "agent_d", nickname: "alice", specialization: "Document Manager", color: getAgentColor("alice") },
+  { id: "agent_e", nickname: "maya", specialization: "Reflection Specialist", color: getAgentColor("maya") },
+  { id: "agent_f", nickname: "kai", specialization: "Reflexion Specialist", color: getAgentColor("kai") },
 ];
 
 interface AgentTeamPanelProps {
@@ -112,10 +127,10 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex-shrink-0 p-4 border-b border-[#2a3444]">
+      <div className="flex-shrink-0 p-4 border-b border-[var(--mc-border)]">
         <div className="flex items-center gap-2 mb-2">
-          <Brain className="h-5 w-5 text-[#4a9eff]" />
-          <h2 className="text-sm font-bold text-white uppercase tracking-wide">
+          <Brain className="h-5 w-5 text-[var(--mc-accent-blue)]" />
+          <h2 className="text-sm font-bold text-[var(--mc-text-primary)] uppercase tracking-wide">
             AI Agents
           </h2>
         </div>
@@ -170,8 +185,8 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
               }}
               className={`w-full p-3 mb-2 rounded-lg transition-all ${
                 isSelected
-                  ? "bg-[#4a9eff]/10 border border-[#4a9eff]/30"
-                  : "bg-[#1a1f2e] hover:bg-[#1e2433] border border-transparent"
+                  ? "bg-[var(--mc-accent-blue)]/10 border border-[var(--mc-accent-blue)]/30"
+                  : "bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-transparent"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -189,16 +204,16 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                     </AvatarFallback>
                   </Avatar>
                   {isActive && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[#141824] animate-pulse" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[var(--mc-bg-tertiary)] animate-pulse" />
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 text-left">
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-[var(--mc-text-primary)]">
                     @{agent.nickname}
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-[var(--mc-text-secondary)]">
                     {agent.specialization}
                   </div>
 
@@ -228,22 +243,22 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                       {activity.active > 0 && activity.metrics && (
                         <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                           {activity.metrics.tokens > 0 && (
-                            <span className="text-green-400 font-mono">
+                            <span className="text-[var(--metric-tokens)] font-mono">
                               {activity.metrics.tokens.toLocaleString()} tok
                             </span>
                           )}
                           {activity.metrics.llmCalls > 0 && (
-                            <span className="text-purple-400">
+                            <span className="text-[var(--metric-llm)]">
                               {activity.metrics.llmCalls} LLM
                             </span>
                           )}
                           {activity.metrics.toolCalls > 0 && (
-                            <span className="text-yellow-400">
+                            <span className="text-[var(--metric-tools)]">
                               {activity.metrics.toolCalls} tools
                             </span>
                           )}
                           {activity.metrics.currentNode && (
-                            <span className="text-blue-400 truncate max-w-[120px]">
+                            <span className="text-[var(--metric-duration)] truncate max-w-[120px]">
                               → {activity.metrics.currentNode}
                             </span>
                           )}
@@ -259,7 +274,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
       </div>
 
       {/* Footer Stats */}
-      <div className="flex-shrink-0 p-4 pb-20 border-t border-[#2a3444] space-y-3">
+      <div className="flex-shrink-0 p-4 pb-20 border-t border-[var(--mc-border)] space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <Activity className="h-3 w-3" />
           <span>System Activity</span>
@@ -267,16 +282,16 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
 
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-[#1a1f2e] p-2 rounded">
-            <div className="text-lg font-bold text-green-400">{totalActive}</div>
+          <div className="bg-[var(--mc-bg-primary)] p-2 rounded">
+            <div className="text-lg font-bold text-[var(--metric-tokens)]">{totalActive}</div>
             <div className="text-[10px] text-gray-500">Active</div>
           </div>
-          <div className="bg-[#1a1f2e] p-2 rounded">
+          <div className="bg-[var(--mc-bg-primary)] p-2 rounded">
             <div className="text-lg font-bold text-gray-400">{totalQueued}</div>
             <div className="text-[10px] text-gray-500">Queued</div>
           </div>
-          <div className="bg-[#1a1f2e] p-2 rounded">
-            <div className="text-lg font-bold text-blue-400">{totalCompleted}</div>
+          <div className="bg-[var(--mc-bg-primary)] p-2 rounded">
+            <div className="text-lg font-bold text-[var(--metric-duration)]">{totalCompleted}</div>
             <div className="text-[10px] text-gray-500">Done</div>
           </div>
         </div>

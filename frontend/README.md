@@ -11,7 +11,7 @@ Next.js 14 frontend with Mission Control interface for real-time AI agent orches
 - 📈 **Execution Flow**: Detailed metrics timeline with step-by-step visibility
 - 🔍 **Graph Visualization**: Inline agent workflow diagrams with zoom controls
 - 🎭 **shadcn/ui Components**: Professional, accessible UI components
-- 🌙 **Dark Theme**: Custom color palette optimized for command center aesthetics
+- 🌓 **Light/Dark Mode**: Full theme toggle with system preference detection and WCAG AA contrast
 
 ## Tech Stack
 
@@ -122,21 +122,45 @@ components/
 - **Map Data Structure**: O(1) task lookups instead of array iteration
 - **Instant Scroll**: Auto-scroll uses "instant" behavior for stability
 
-### Color System
+### Theming System
 
+**Light/Dark Mode Toggle**:
+- Click theme toggle in header (Sun/Moon/Monitor icons)
+- Cycles: Light → Dark → System → Light
+- Theme persists to localStorage
+- System mode follows OS `prefers-color-scheme`
+
+**CSS Variables Architecture**:
 ```css
---background: #1a1f2e      /* Main background */
---panel: #141824           /* Left panel */
---surface: #1e2433         /* Cards, headers */
---border: #2a3444          /* Borders */
---accent: #4a9eff          /* Primary blue */
+/* Mission Control Colors (adapt per theme) */
+--mc-bg-primary          /* Main background */
+--mc-bg-secondary        /* Cards, headers */
+--mc-bg-tertiary         /* Sidebar, code blocks */
+--mc-border              /* Borders */
+--mc-hover               /* Hover states */
+--mc-accent-blue         /* Primary blue */
+
+/* Text Colors (adapt per theme) */
+--mc-text-primary        /* Headings, main text */
+--mc-text-secondary      /* Secondary text */
+--mc-text-tertiary       /* Muted text */
+
+/* Agent Brand Colors (consistent) */
+--agent-leo/bob/sue/rex/alice/maya/kai/chat
+
+/* Metric Colors (consistent) */
+--metric-tokens/llm/tools/duration/agent-calls
 ```
+
+**Light Mode**: Bright backgrounds, dark text, visible borders
+**Dark Mode**: Dark backgrounds, light text, enhanced contrast
 
 ### Keyboard Shortcuts
 
 - `⌘K` - Focus command input
 - `Esc` - Clear agent filter / Exit chat mode
 - `⌘⇧G` - Scroll to bottom
+- Theme toggle available in header (click to cycle modes)
 
 ## Build
 
@@ -181,5 +205,5 @@ No environment variables needed for frontend. Backend URL is hardcoded to `http:
 
 ---
 
-**Version**: 2.0 - Mission Control
-**Last Updated**: February 5, 2026
+**Version**: 0.2.0 - Light/Dark Mode
+**Last Updated**: February 6, 2026

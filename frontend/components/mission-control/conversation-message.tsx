@@ -15,14 +15,19 @@ interface ConversationMessageProps {
   timestamp: Date;
 }
 
-const AGENT_COLORS: Record<string, string> = {
-  chat: "#4a9eff",
-  bob: "#10b981",
-  sue: "#f59e0b",
-  rex: "#8b5cf6",
-  alice: "#ec4899",
-  maya: "#06b6d4",
-  kai: "#f97316",
+// Agent color helper - uses CSS variables
+const getAgentColor = (nickname: string): string => {
+  const colorMap: Record<string, string> = {
+    leo: "var(--agent-leo)",
+    chat: "var(--agent-chat)",
+    bob: "var(--agent-bob)",
+    sue: "var(--agent-sue)",
+    rex: "var(--agent-rex)",
+    alice: "var(--agent-alice)",
+    maya: "var(--agent-maya)",
+    kai: "var(--agent-kai)",
+  };
+  return colorMap[nickname] || "var(--mc-accent-blue)";
 };
 
 function ConversationMessageComponent({ task, timestamp }: ConversationMessageProps) {
@@ -30,7 +35,7 @@ function ConversationMessageComponent({ task, timestamp }: ConversationMessagePr
   const [showAgentGraph, setShowAgentGraph] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const agentColor = AGENT_COLORS[task.agent_nickname] || "#4a9eff";
+  const agentColor = getAgentColor(task.agent_nickname);
   const isSuccess = task.status === TaskStatus.COMPLETED;
   const hasExecutionTrace = task.metadata?.execution_trace &&
     (task.metadata.execution_trace as any[]).length > 0;
@@ -65,7 +70,7 @@ function ConversationMessageComponent({ task, timestamp }: ConversationMessagePr
       <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-white font-semibold">@{task.agent_nickname}</span>
+          <span className="text-[var(--mc-text-primary)] font-semibold">@{task.agent_nickname}</span>
 
           {/* Graph button */}
           <button
@@ -110,12 +115,12 @@ function ConversationMessageComponent({ task, timestamp }: ConversationMessagePr
         )}
 
         {/* Response Content */}
-        <div className="bg-[#1e2433] border border-[#2a3444] rounded-lg p-4">
+        <div className="bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded-lg p-4">
           {task.result && task.result.trim().length > 0 ? (
             <MarkdownRenderer
               content={task.result}
               variant="default"
-              className="text-gray-200"
+              className="text-[var(--mc-text-primary)]"
             />
           ) : task.error_message && task.error_message.trim().length > 0 ? (
             <div className="text-red-400">

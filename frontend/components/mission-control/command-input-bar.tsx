@@ -123,7 +123,7 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarP
     <div className="relative p-4">
       {/* Autocomplete (disabled in chat mode) */}
       {showAutocomplete && !chatMode && (
-        <div className="absolute bottom-full left-4 right-4 mb-2 bg-[#2a3444] border border-[#3a4454] rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute bottom-full left-4 right-4 mb-2 bg-[var(--mc-hover)] border border-[var(--mc-border)] rounded-lg shadow-lg max-h-64 overflow-y-auto">
           {agents
             .filter(
               (agent) =>
@@ -135,21 +135,21 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarP
                 key={agent.id}
                 onClick={() => handleAgentSelect(agent.nickname)}
                 onMouseDown={(e) => e.preventDefault()}
-                className="w-full px-4 py-2 text-left hover:bg-[#3a4454] flex items-center gap-3 border-b border-[#3a4454] last:border-b-0"
+                className="w-full px-4 py-2 text-left hover:bg-[var(--mc-border)] flex items-center gap-3 border-b border-[var(--mc-border)] last:border-b-0"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#4a9eff]/20 text-[#4a9eff] font-semibold">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--mc-accent-blue)]/20 text-[var(--mc-accent-blue)] font-semibold">
                   {agent.nickname.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm text-white">
+                    <span className="font-medium text-sm text-[var(--mc-text-primary)]">
                       @{agent.nickname}
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-[var(--mc-text-secondary)]">
                       {agent.specialization}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-[var(--mc-text-tertiary)] truncate">
                     {agent.description}
                   </p>
                 </div>
@@ -180,10 +180,10 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarP
                 ? "Chat with LLM... (natural conversation, no @mention needed)"
                 : "Type your command... (@agent to mention an AI agent)"
             }
-            className="min-h-[60px] max-h-[200px] resize-none bg-[#1a1f2e] border-[#2a3444] text-white placeholder:text-gray-500 focus:border-[#4a9eff] focus:ring-1 focus:ring-[#4a9eff] pr-10"
+            className="min-h-[60px] max-h-[200px] resize-none bg-[var(--mc-bg-primary)] border-[var(--mc-border)] text-[var(--mc-text-primary)] placeholder:text-[var(--mc-text-tertiary)] focus:border-[var(--mc-accent-blue)] focus:ring-1 focus:ring-[var(--mc-accent-blue)] pr-10"
             disabled={isLoading || agentsLoading}
           />
-          <div className="absolute bottom-2 right-2 text-xs text-gray-500">
+          <div className="absolute bottom-2 right-2 text-xs text-[var(--mc-text-tertiary)]">
             ↵ Send • ⇧↵ New line
           </div>
         </div>
@@ -192,7 +192,7 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarP
           onClick={handleSubmit}
           disabled={!input.trim() || isLoading || agentsLoading}
           size="lg"
-          className="bg-[#4a9eff] hover:bg-[#3a8edf] text-white h-[60px] px-6"
+          className="bg-[var(--mc-accent-blue)] hover:opacity-90 text-white h-[60px] px-6"
         >
           {isLoading ? (
             <>
@@ -227,7 +227,7 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarP
               <button
                 key={i}
                 onClick={() => setInput(suggestion)}
-                className="text-xs bg-[#1a1f2e] hover:bg-[#1e2433] border border-[#2a3444] rounded px-2 py-1 text-gray-400 hover:text-white transition-colors"
+                className="text-xs bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded px-2 py-1 text-[var(--mc-text-secondary)] hover:text-[var(--mc-text-primary)] transition-colors"
               >
                 {suggestion}
               </button>

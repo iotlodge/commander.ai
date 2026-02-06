@@ -47,10 +47,10 @@ export function KeyboardShortcutsHelp() {
 
       {/* Shortcuts Modal */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="bg-[#1e2433] border-[#2a3444] max-w-md">
+        <DialogContent className="bg-[var(--mc-bg-secondary)] border-[var(--mc-border)] max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
-              <Keyboard className="h-5 w-5 text-[#4a9eff]" />
+            <DialogTitle className="text-[var(--mc-text-primary)] flex items-center gap-2">
+              <Keyboard className="h-5 w-5 text-[var(--mc-accent-blue)]" />
               Keyboard Shortcuts
             </DialogTitle>
           </DialogHeader>
@@ -59,14 +59,14 @@ export function KeyboardShortcutsHelp() {
             {shortcuts.map((shortcut, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between py-2 border-b border-[#2a3444] last:border-0"
+                className="flex items-center justify-between py-2 border-b border-[var(--mc-border)] last:border-0"
               >
-                <span className="text-sm text-gray-300">{shortcut.description}</span>
+                <span className="text-sm text-[var(--mc-text-primary)]">{shortcut.description}</span>
                 <div className="flex items-center gap-1">
                   {shortcut.keys.map((key, j) => (
                     <kbd
                       key={j}
-                      className="px-2 py-1 text-xs font-semibold bg-[#1a1f2e] border border-[#2a3444] rounded text-gray-400"
+                      className="px-2 py-1 text-xs font-semibold bg-[var(--mc-bg-primary)] border border-[var(--mc-border)] rounded text-[var(--mc-text-secondary)]"
                     >
                       {key}
                     </kbd>
@@ -77,7 +77,7 @@ export function KeyboardShortcutsHelp() {
           </div>
 
           <div className="mt-4 text-xs text-gray-500 text-center">
-            Press <kbd className="px-1.5 py-0.5 bg-[#1a1f2e] border border-[#2a3444] rounded">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-[#1a1f2e] border border-[#2a3444] rounded">/</kbd> to view this help
+            Press <kbd className="px-1.5 py-0.5 bg-[var(--mc-bg-primary)] border border-[var(--mc-border)] rounded">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-[var(--mc-bg-primary)] border border-[var(--mc-border)] rounded">/</kbd> to view this help
           </div>
         </DialogContent>
       </Dialog>

@@ -41,11 +41,11 @@ export function InlineExecutionFlow({
   const getStepIcon = (type: string) => {
     switch (type) {
       case "node":
-        return <GitBranch className="h-3 w-3 text-blue-400" />;
+        return <GitBranch className="h-3 w-3 text-[var(--metric-duration)]" />;
       case "tool":
-        return <Zap className="h-3 w-3 text-yellow-400" />;
+        return <Zap className="h-3 w-3 text-[var(--metric-tools)]" />;
       case "llm":
-        return <Brain className="h-3 w-3 text-purple-400" />;
+        return <Brain className="h-3 w-3 text-[var(--metric-llm)]" />;
       default:
         return <GitBranch className="h-3 w-3 text-gray-400" />;
     }
@@ -75,13 +75,13 @@ export function InlineExecutionFlow({
     <div className="space-y-3">
       {/* Metrics Summary */}
       {(executionMetrics || executionSummary) && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-[#1a1f2e] rounded-lg border border-[#2a3444]">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-[var(--mc-bg-primary)] rounded-lg border border-[var(--mc-border)]">
           {/* Token Metrics */}
           {executionMetrics && executionMetrics.tokens && (
             <>
               <div className="space-y-1">
                 <div className="text-xs text-gray-500">Total Tokens</div>
-                <div className="text-lg font-bold text-green-400">
+                <div className="text-lg font-bold text-[var(--metric-tokens)]">
                   {executionMetrics.tokens.total?.toLocaleString() || '0'}
                 </div>
                 {executionMetrics.tokens.prompt !== undefined && executionMetrics.tokens.completion !== undefined && (
@@ -93,7 +93,7 @@ export function InlineExecutionFlow({
               {executionMetrics.llm_calls !== undefined && (
                 <div className="space-y-1">
                   <div className="text-xs text-gray-500">LLM Calls</div>
-                  <div className="text-lg font-bold text-purple-400">
+                  <div className="text-lg font-bold text-[var(--metric-llm)]">
                     {executionMetrics.llm_calls}
                   </div>
                 </div>
@@ -101,7 +101,7 @@ export function InlineExecutionFlow({
               {executionMetrics.tool_calls !== undefined && (
                 <div className="space-y-1">
                   <div className="text-xs text-gray-500">Tool Calls</div>
-                  <div className="text-lg font-bold text-yellow-400">
+                  <div className="text-lg font-bold text-[var(--metric-tools)]">
                     {executionMetrics.tool_calls}
                   </div>
                 </div>
@@ -109,7 +109,7 @@ export function InlineExecutionFlow({
               {executionMetrics.agent_calls !== undefined && executionMetrics.agent_calls > 0 && (
                 <div className="space-y-1">
                   <div className="text-xs text-gray-500">Agent Calls</div>
-                  <div className="text-lg font-bold text-cyan-400">
+                  <div className="text-lg font-bold text-[var(--metric-agent-calls)]">
                     {executionMetrics.agent_calls}
                   </div>
                 </div>
@@ -121,7 +121,7 @@ export function InlineExecutionFlow({
           {executionSummary && (
             <div className="space-y-1">
               <div className="text-xs text-gray-500">Duration</div>
-              <div className="text-lg font-bold text-blue-400">
+              <div className="text-lg font-bold text-[var(--metric-duration)]">
                 {formatDuration(executionSummary.total_duration_ms)}
               </div>
             </div>
@@ -130,7 +130,7 @@ export function InlineExecutionFlow({
       )}
 
       {/* Execution Flow Steps */}
-      <div className="space-y-1.5 pl-4 border-l-2 border-[#2a3444]">
+      <div className="space-y-1.5 pl-4 border-l-2 border-[var(--mc-border)]">
         {executionTrace.map((step, index) => (
         <div
           key={index}
@@ -156,7 +156,7 @@ export function InlineExecutionFlow({
 
             {/* Token count */}
             {step.metadata?.tokens && (
-              <span className="text-green-400">
+              <span className="text-[var(--metric-tokens)]">
                 {step.metadata.tokens.total_tokens || step.metadata.tokens.total} tok
               </span>
             )}
