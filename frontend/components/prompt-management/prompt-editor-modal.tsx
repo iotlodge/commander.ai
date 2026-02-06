@@ -127,7 +127,7 @@ export function PromptEditorModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden bg-[var(--mc-bg-secondary)] border-[var(--mc-border)]">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden bg-[var(--mc-bg-secondary)] border-[var(--mc-border)] p-4">
           <DialogHeader className="w-full">
             <DialogTitle className="text-[var(--mc-text-primary)] text-xl truncate">
               {isCreating ? "Create New Prompt" : "Edit Prompt"}: @{agentNickname}
