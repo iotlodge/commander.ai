@@ -111,15 +111,19 @@ class ChatAgent(BaseAgent):
         """Execute chat graph"""
         # Extract conversation history from context if available
         conversation_history = []
-        if context.conversation_context and context.conversation_context.graph_state:
-            conversation_history = context.conversation_context.graph_state.get("messages", [])
+        if context.conversation_context and context.conversation_context.recent_conversation:
+            # Convert ConversationMessage objects to simple dict format
+            conversation_history = [
+                {"role": msg.role.value, "content": msg.content}
+                for msg in context.conversation_context.recent_conversation
+            ]
 
         initial_state: ChatAgentState = {
             "query": command,
             "user_id": context.user_id,
             "thread_id": context.thread_id,
             "conversation_context": (
-                context.conversation_context.model_dump()
+                context.conversation_context.model_dump(mode='json')
                 if context.conversation_context
                 else {}
             ),
@@ -131,13 +135,8 @@ class ChatAgent(BaseAgent):
             "metrics": context.metrics,
         }
 
-        config = {
-            "configurable": {
-                "thread_id": str(context.thread_id),
-                "user_id": str(context.user_id),
-                "agent_id": self.agent_id,
-            }
-        }
+        # Build config with execution tracker callbacks
+        config = self._build_graph_config(context)
 
         try:
             final_state = await self.graph.ainvoke(initial_state, config)

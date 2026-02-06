@@ -36,6 +36,7 @@ from backend.memory.schemas import (
 from backend.repositories.graph_repository import GraphRepository
 from backend.repositories.task_repository import get_session_factory
 from backend.core.token_tracker import ExecutionMetrics
+from backend.core.execution_tracker import ExecutionTracker
 
 
 @dataclass
@@ -59,6 +60,7 @@ class AgentExecutionContext(BaseModel):
     task_callback: Any = None  # TaskProgressCallback | None (avoid circular import)
     metadata: dict[str, Any] = {}
     metrics: ExecutionMetrics | None = None  # Track token usage and calls
+    execution_tracker: ExecutionTracker | None = None  # Track execution flow
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -72,6 +74,7 @@ class AgentExecutionResult(BaseModel):
     error: str | None = None
     metadata: dict[str, Any] = {}
     metrics: ExecutionMetrics | None = None  # Token usage and call metrics
+    execution_trace: list[dict[str, Any]] | None = None  # Execution flow trace
 
 
 class MemoryAwareMixin:
@@ -207,6 +210,33 @@ class BaseAgent(ABC, MemoryAwareMixin):
         # Generate and store graph visualization
         await self._store_graph_visualization()
 
+    def _build_graph_config(
+        self,
+        context: AgentExecutionContext,
+    ) -> dict[str, Any]:
+        """
+        Build LangGraph configuration with callbacks and metadata
+
+        Args:
+            context: Execution context with user_id, thread_id, etc.
+
+        Returns:
+            Config dictionary with callbacks and configurable metadata
+        """
+        config = {
+            "configurable": {
+                "thread_id": str(context.thread_id),
+                "user_id": str(context.user_id),
+                "agent_id": self.agent_id,
+            }
+        }
+
+        # Add execution tracker callback if available
+        if context.execution_tracker:
+            config["callbacks"] = [context.execution_tracker]
+
+        return config
+
     async def _store_graph_visualization(self) -> None:
         """Generate mermaid diagram and store in database"""
         if not self.graph:
@@ -250,6 +280,10 @@ class BaseAgent(ABC, MemoryAwareMixin):
             # Initialize metrics tracking if not provided
             if context.metrics is None:
                 context.metrics = ExecutionMetrics()
+
+            # Initialize execution tracking if not provided
+            if context.execution_tracker is None:
+                context.execution_tracker = ExecutionTracker()
 
             # Notify task started
             if context.task_callback:
@@ -297,14 +331,21 @@ class BaseAgent(ABC, MemoryAwareMixin):
             except Exception:
                 pass  # Memory system not fully initialized - skip for MVP
 
-            # Add metrics to result
+            # Add metrics and execution trace to result
             result.metrics = context.metrics
+            result.execution_trace = context.execution_tracker.get_trace() if context.execution_tracker else None
 
-            # Save metrics to task metadata
-            if context.task_callback and context.metrics:
-                await context.task_callback.update_metadata({
-                    "execution_metrics": context.metrics.to_dict(include_details=True)
-                })
+            # Save metrics and execution trace to task metadata
+            if context.task_callback:
+                metadata_update = {}
+                if context.metrics:
+                    metadata_update["execution_metrics"] = context.metrics.to_dict(include_details=True)
+                if context.execution_tracker:
+                    metadata_update["execution_trace"] = context.execution_tracker.get_trace()
+                    metadata_update["execution_summary"] = context.execution_tracker.get_summary()
+
+                if metadata_update:
+                    await context.task_callback.update_metadata(metadata_update)
 
             # Notify completion
             if context.task_callback:

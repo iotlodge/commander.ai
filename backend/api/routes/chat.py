@@ -18,6 +18,7 @@ class ChatRequest(BaseModel):
     user_id: UUID
     message: str
     thread_id: UUID | None = None
+    conversation_history: list[dict[str, str]] | None = None  # [{role: "user/assistant", content: "..."}]
 
 
 class ChatResponse(BaseModel):
@@ -43,13 +44,29 @@ async def send_chat_message(request: ChatRequest):
 
     # Create execution context
     metrics = ExecutionMetrics()
+
+    # Convert conversation history to proper format
+    recent_conversation = []
+    if request.conversation_history:
+        from backend.memory.schemas import ConversationMessage, ConversationRole
+        for msg in request.conversation_history:
+            role = ConversationRole.USER if msg["role"] == "user" else ConversationRole.ASSISTANT
+            recent_conversation.append(ConversationMessage(
+                user_id=request.user_id,
+                agent_id="agent_g",
+                thread_id=thread_id,
+                role=role,
+                content=msg["content"],
+                metadata={},
+            ))
+
     context = AgentExecutionContext(
         user_id=request.user_id,
         thread_id=thread_id,
-        command=request.message,  # Add the required command field
+        command=request.message,
         conversation_context=ConversationContext(
             graph_state={},
-            recent_conversation=[],
+            recent_conversation=recent_conversation,
             relevant_memories=[],
             thread_id=thread_id,
             user_id=request.user_id,

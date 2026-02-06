@@ -181,6 +181,10 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
           user_id: "00000000-0000-0000-0000-000000000001",
           message: userMessage.content,
           thread_id: threadId,
+          conversation_history: messages.map(m => ({
+            role: m.role,
+            content: m.content
+          })),
         }),
       });
 

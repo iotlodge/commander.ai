@@ -427,13 +427,8 @@ class ReflexionAgent(BaseAgent):
             "metrics": context.metrics,
         }
 
-        config = {
-            "configurable": {
-                "thread_id": str(context.thread_id),
-                "user_id": str(context.user_id),
-                "agent_id": self.agent_id,
-            }
-        }
+        # Build config with execution tracker callbacks
+        config = self._build_graph_config(context)
 
         try:
             final_state = await self.graph.ainvoke(initial_state, config)

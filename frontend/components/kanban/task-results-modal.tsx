@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, FileText, CheckCircle, AlertCircle, Copy, Check, Maximize2, Minimize2 } from 'lucide-react';
+import { X, FileText, CheckCircle, AlertCircle, Copy, Check, Maximize2, Minimize2, GitBranch, ChevronDown, ChevronRight, Clock, Zap } from 'lucide-react';
 import { AgentTask, TaskStatus } from '@/lib/types';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 
@@ -16,12 +16,20 @@ interface TaskResultsModalProps {
 export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProps) {
   const [copied, setCopied] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [showExecutionTrace, setShowExecutionTrace] = useState(false);
 
   if (!task) return null;
 
   const isSuccess = task.status === TaskStatus.COMPLETED;
   const hasResult = task.result && task.result.trim().length > 0;
   const hasError = task.error_message && task.error_message.trim().length > 0;
+  const executionTrace = task.metadata?.execution_trace as Array<{
+    type: string;
+    name: string;
+    timestamp: string;
+    duration_ms?: number;
+    metadata?: Record<string, any>;
+  }> | undefined;
 
   const handleCopy = async () => {
     const textToCopy = task.result || task.error_message || '';
@@ -181,6 +189,98 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
               </div>
             </div>
           </div>
+
+          {/* Execution Trace (Phase 1 - Simple Timeline) */}
+          {executionTrace && executionTrace.length > 0 && (
+            <div className="bg-[#2a3444] rounded-lg p-4">
+              <div
+                className="flex items-center justify-between cursor-pointer mb-3"
+                onClick={() => setShowExecutionTrace(!showExecutionTrace)}
+              >
+                <h3 className="text-sm font-semibold text-gray-400 flex items-center gap-2">
+                  <GitBranch className="h-4 w-4 text-purple-400" />
+                  Execution Flow
+                  <span className="text-xs text-gray-500">
+                    ({executionTrace.length} steps)
+                  </span>
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-gray-700/50"
+                >
+                  {showExecutionTrace ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+
+              {showExecutionTrace && (
+                <div className="bg-[#1e2433] rounded-md border border-[#3a4454] p-4 space-y-3">
+                  {executionTrace.map((step, index) => {
+                    const stepIcon = step.type === 'node' ? (
+                      <GitBranch className="h-4 w-4 text-blue-400" />
+                    ) : step.type === 'tool' ? (
+                      <Zap className="h-4 w-4 text-yellow-400" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-purple-400" />
+                    );
+
+                    const stepColor = step.type === 'node'
+                      ? 'border-blue-500/30 bg-blue-500/5'
+                      : step.type === 'tool'
+                      ? 'border-yellow-500/30 bg-yellow-500/5'
+                      : 'border-purple-500/30 bg-purple-500/5';
+
+                    return (
+                      <div
+                        key={index}
+                        className={`flex items-start gap-3 p-3 rounded-md border ${stepColor}`}
+                      >
+                        <div className="mt-0.5">{stepIcon}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-sm font-medium text-white truncate">
+                              {step.name}
+                            </span>
+                            {step.duration_ms !== undefined && (
+                              <div className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                                <Clock className="h-3 w-3" />
+                                {step.duration_ms < 1000
+                                  ? `${Math.round(step.duration_ms)}ms`
+                                  : `${(step.duration_ms / 1000).toFixed(2)}s`
+                                }
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="px-1.5 py-0.5 rounded bg-gray-700/50">
+                              {step.type}
+                            </span>
+                            {step.metadata?.status === 'failed' && (
+                              <span className="text-red-400">✗ Failed</span>
+                            )}
+                            {step.metadata?.tokens && (
+                              <span className="text-green-400">
+                                {step.metadata.tokens.total_tokens || step.metadata.tokens.total} tokens
+                              </span>
+                            )}
+                          </div>
+                          {step.metadata?.error && (
+                            <div className="mt-2 text-xs text-red-400 bg-red-500/10 p-2 rounded">
+                              Error: {step.metadata.error}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* No Content Message */}
           {!hasResult && !hasError && (
