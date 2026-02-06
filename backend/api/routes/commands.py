@@ -3,6 +3,7 @@ Command submission REST API
 Combines command parsing with task creation and agent execution
 """
 import asyncio
+from typing import Annotated
 from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -12,6 +13,8 @@ from backend.repositories.task_repository import TaskRepository, get_db_session
 from backend.core.command_parser import CommandParser
 from backend.agents.base.agent_registry import AgentRegistry
 from backend.api.websocket import get_ws_manager
+from backend.auth.dependencies import get_current_active_user
+from backend.auth.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/commands", tags=["commands"])
@@ -19,8 +22,7 @@ router = APIRouter(prefix="/api/commands", tags=["commands"])
 
 class CommandSubmissionRequest(BaseModel):
     """Request to submit a command"""
-    user_id: UUID
-    text: str
+    text: str  # Removed user_id - will use from token
 
 
 async def get_repo(session: AsyncSession = Depends(get_db_session)) -> TaskRepository:
@@ -31,10 +33,11 @@ async def get_repo(session: AsyncSession = Depends(get_db_session)) -> TaskRepos
 @router.post("", response_model=AgentTask)
 async def submit_command(
     command: CommandSubmissionRequest,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     repo: TaskRepository = Depends(get_repo),
 ):
     """
-    Submit a command for processing
+    Submit a command for processing (requires authentication)
 
     1. Parse command to determine target agent
     2. Create task in database
@@ -53,9 +56,9 @@ async def submit_command(
             detail=f"Agent {target_agent_id} not found in registry"
         )
 
-    # Create task
+    # Create task using authenticated user's ID
     task_create = TaskCreate(
-        user_id=command.user_id,
+        user_id=current_user.id,  # Use user_id from token
         agent_id=target_agent_id,
         thread_id=uuid4(),
         command_text=command.text,

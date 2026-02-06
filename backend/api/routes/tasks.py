@@ -2,6 +2,7 @@
 Task management REST API
 """
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -10,6 +11,8 @@ from backend.models.task_models import (
 )
 from backend.repositories.task_repository import TaskRepository, get_db_session
 from backend.api.websocket import get_ws_manager
+from backend.auth.dependencies import get_current_active_user
+from backend.auth.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -23,9 +26,12 @@ async def get_repo(session: AsyncSession = Depends(get_db_session)) -> TaskRepos
 @router.post("", response_model=AgentTask)
 async def create_task(
     task: TaskCreate,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     repo: TaskRepository = Depends(get_repo),
 ):
-    """Create new task"""
+    """Create new task (requires authentication)"""
+    # Override user_id from token (don't trust client-provided user_id)
+    task.user_id = current_user.id
     agent_task = await repo.create_task(task)
 
     # Broadcast task created event via WebSocket
@@ -44,23 +50,30 @@ async def create_task(
 
 @router.get("", response_model=list[AgentTask])
 async def list_tasks(
-    user_id: UUID,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     limit: int = 50,
     repo: TaskRepository = Depends(get_repo),
 ):
-    """List tasks for a user"""
-    return await repo.get_user_tasks(user_id, limit)
+    """List tasks for authenticated user"""
+    # Use user_id from token for security
+    return await repo.get_user_tasks(current_user.id, limit)
 
 
 @router.get("/{task_id}", response_model=AgentTask)
 async def get_task(
     task_id: UUID,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     repo: TaskRepository = Depends(get_repo),
 ):
-    """Get specific task"""
+    """Get specific task (requires authentication)"""
     task = await repo.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # Verify task belongs to current user
+    if task.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     return task
 
 
@@ -68,13 +81,18 @@ async def get_task(
 async def update_task(
     task_id: UUID,
     update: TaskUpdate,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     repo: TaskRepository = Depends(get_repo),
 ):
-    """Update task"""
+    """Update task (requires authentication)"""
     # Get old status before update
     old_task = await repo.get_task(task_id)
     if not old_task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # Verify task belongs to current user
+    if old_task.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
 
     # Update task
     task = await repo.update_task(task_id, update)
@@ -97,13 +115,18 @@ async def update_task(
 @router.delete("/{task_id}")
 async def delete_task(
     task_id: UUID,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     repo: TaskRepository = Depends(get_repo),
 ):
-    """Delete a specific task"""
+    """Delete a specific task (requires authentication)"""
     # Check if task exists
     task = await repo.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # Verify task belongs to current user
+    if task.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
 
     # Delete the task
     await repo.delete_task(task_id)
@@ -122,11 +145,12 @@ async def delete_task(
 
 @router.delete("/purge/completed")
 async def purge_completed_tasks(
-    user_id: UUID,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     repo: TaskRepository = Depends(get_repo),
 ):
-    """Delete all completed tasks for a user"""
-    deleted_ids = await repo.delete_tasks_by_status(user_id, TaskStatus.COMPLETED)
+    """Delete all completed tasks for authenticated user"""
+    # Use user_id from token for security
+    deleted_ids = await repo.delete_tasks_by_status(current_user.id, TaskStatus.COMPLETED)
 
     # Broadcast deletion events via WebSocket
     ws_manager = get_ws_manager()
@@ -143,11 +167,12 @@ async def purge_completed_tasks(
 
 @router.delete("/purge/failed")
 async def purge_failed_tasks(
-    user_id: UUID,
+    current_user: Annotated[User, Depends(get_current_active_user)],
     repo: TaskRepository = Depends(get_repo),
 ):
-    """Delete all failed tasks for a user"""
-    deleted_ids = await repo.delete_tasks_by_status(user_id, TaskStatus.FAILED)
+    """Delete all failed tasks for authenticated user"""
+    # Use user_id from token for security
+    deleted_ids = await repo.delete_tasks_by_status(current_user.id, TaskStatus.FAILED)
 
     # Broadcast deletion events via WebSocket
     ws_manager = get_ws_manager()

@@ -46,6 +46,11 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     await memory_service.shutdown()
+
+    # Close database connections
+    from backend.core.database import close_db_connections
+    await close_db_connections()
+
     print("👋 commander.ai shutdown complete")
 
 
@@ -90,25 +95,57 @@ async def health():
 
 
 # WebSocket endpoint for real-time task updates
-@app.websocket("/ws/{user_id}")
-async def task_websocket(websocket: WebSocket, user_id: UUID):
-    """WebSocket endpoint for real-time task updates"""
+@app.websocket("/ws")
+async def task_websocket(websocket: WebSocket, token: str = None):
+    """
+    WebSocket endpoint for real-time task updates
+
+    Authentication: Pass JWT token as query parameter: /ws?token=<jwt_token>
+    """
+    from backend.auth.security import decode_token
+    from jose import JWTError
+
     ws_manager = get_ws_manager()
-    await ws_manager.connect(websocket, user_id)
+
+    # Validate token before accepting connection
+    if not token:
+        await websocket.close(code=1008, reason="Missing authentication token")
+        return
 
     try:
-        while True:
-            # Keep connection alive with heartbeat
-            data = await websocket.receive_text()
-            if data == "ping":
-                await websocket.send_text("pong")
-    except WebSocketDisconnect:
-        ws_manager.disconnect(user_id)
+        # Decode and validate JWT token
+        payload = decode_token(token)
+        if payload is None or payload.get("type") != "access":
+            await websocket.close(code=1008, reason="Invalid token")
+            return
+
+        user_id = UUID(payload.get("sub"))
+
+        # Accept connection after successful authentication
+        await ws_manager.connect(websocket, user_id)
+
+        try:
+            while True:
+                # Keep connection alive with heartbeat
+                data = await websocket.receive_text()
+                if data == "ping":
+                    await websocket.send_text("pong")
+        except WebSocketDisconnect:
+            ws_manager.disconnect(user_id)
+
+    except (JWTError, ValueError) as e:
+        await websocket.close(code=1008, reason=f"Authentication failed: {str(e)}")
+        return
 
 
 # Import and include routers
 from backend.api.routes import tasks, commands, graphs, agents, chat
+from backend.auth.routes import router as auth_router
 
+# Public routes (no auth required)
+app.include_router(auth_router)
+
+# Protected routes (auth required)
 app.include_router(tasks.router)
 app.include_router(commands.router)
 app.include_router(graphs.router)
