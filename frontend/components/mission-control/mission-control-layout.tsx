@@ -5,14 +5,23 @@ import { AgentTeamPanel } from "./agent-team-panel";
 import { ConversationStream } from "./conversation-stream";
 import { CommandInputBar } from "./command-input-bar";
 import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
+import { QuickActionsPanel } from "./quick-actions-panel";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { ChatModeProvider, useChatMode } from "./chat-mode-context";
+import { Trash2 } from "lucide-react";
+import { useTaskStore } from "@/lib/store";
 
 function MissionControlContent() {
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
-  const commandInputRef = useRef<{ focus: () => void; insertMention: (nickname: string) => void }>(null);
+  const commandInputRef = useRef<{ focus: () => void; insertMention: (nickname: string) => void; setCommand: (command: string) => void }>(null);
   const conversationRef = useRef<{ scrollToBottom: () => void }>(null);
   const { isChatMode, enterChatMode, exitChatMode } = useChatMode();
+  const { clearAllTasks } = useTaskStore();
+
+  const handleQuickActionSelect = (command: string) => {
+    commandInputRef.current?.setCommand(command);
+    commandInputRef.current?.focus();
+  };
 
   const handleAgentClick = (nickname: string) => {
     if (nickname === "chat") {
@@ -65,7 +74,7 @@ function MissionControlContent() {
       </div>
 
       {/* Center Panel: Conversation Stream + Command Input */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header */}
         <div className="flex-shrink-0 h-16 bg-[#1e2433] border-b border-[#2a3444] flex items-center justify-between px-6">
           <div className="flex items-center gap-3">
@@ -96,6 +105,18 @@ function MissionControlContent() {
                 </button>
               </div>
             )}
+            <button
+              onClick={() => {
+                if (confirm("Clear all conversation history? This cannot be undone.")) {
+                  clearAllTasks();
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/30 rounded hover:bg-red-500/20 transition-colors"
+              title="Clear chat window"
+            >
+              <Trash2 className="h-3 w-3" />
+              Clear Chat
+            </button>
             <KeyboardShortcutsHelp />
           </div>
         </div>
@@ -109,6 +130,11 @@ function MissionControlContent() {
         <div className="flex-shrink-0 bg-[#1e2433] border-t border-[#2a3444]">
           <CommandInputBar ref={commandInputRef} chatMode={isChatMode} />
         </div>
+      </div>
+
+      {/* Right Panel: Quick Actions */}
+      <div className="w-72 flex-shrink-0">
+        <QuickActionsPanel onCommandSelect={handleQuickActionSelect} />
       </div>
     </div>
   );

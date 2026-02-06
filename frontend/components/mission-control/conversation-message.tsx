@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { AgentTask, TaskStatus } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, ChevronDown, ChevronUp, CheckCircle, AlertCircle } from "lucide-react";
+import { Copy, ChevronDown, ChevronUp, CheckCircle, AlertCircle, Network } from "lucide-react";
 import { InlineExecutionFlow } from "./inline-execution-flow";
+import { InlineAgentGraph } from "./inline-agent-graph";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 interface ConversationMessageProps {
@@ -24,8 +25,9 @@ const AGENT_COLORS: Record<string, string> = {
   kai: "#f97316",
 };
 
-export function ConversationMessage({ task, timestamp }: ConversationMessageProps) {
+function ConversationMessageComponent({ task, timestamp }: ConversationMessageProps) {
   const [showExecutionFlow, setShowExecutionFlow] = useState(false);
+  const [showAgentGraph, setShowAgentGraph] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const agentColor = AGENT_COLORS[task.agent_nickname] || "#4a9eff";
@@ -64,6 +66,17 @@ export function ConversationMessage({ task, timestamp }: ConversationMessageProp
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
           <span className="text-white font-semibold">@{task.agent_nickname}</span>
+
+          {/* Graph button */}
+          <button
+            onClick={() => setShowAgentGraph(!showAgentGraph)}
+            className="flex items-center gap-1 px-2 py-0.5 text-xs bg-purple-500/10 text-purple-400 border border-purple-500/30 rounded hover:bg-purple-500/20 transition-colors"
+            title="View agent graph"
+          >
+            <Network className="h-3 w-3" />
+            Graph
+          </button>
+
           <Badge
             variant="outline"
             className={
@@ -89,28 +102,10 @@ export function ConversationMessage({ task, timestamp }: ConversationMessageProp
           </span>
         </div>
 
-        {/* Execution Flow (inline, collapsible) */}
-        {hasExecutionTrace && (
+        {/* Agent Graph (inline, collapsible) */}
+        {showAgentGraph && (
           <div className="mb-3">
-            <button
-              onClick={() => setShowExecutionFlow(!showExecutionFlow)}
-              className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mb-2"
-            >
-              {showExecutionFlow ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-              <span>
-                Execution flow ({(task.metadata.execution_trace as any[]).length} steps)
-              </span>
-            </button>
-
-            {showExecutionFlow && (
-              <InlineExecutionFlow
-                executionTrace={task.metadata.execution_trace as any[]}
-              />
-            )}
+            <InlineAgentGraph agentNickname={task.agent_nickname} />
           </div>
         )}
 
@@ -135,6 +130,35 @@ export function ConversationMessage({ task, timestamp }: ConversationMessageProp
             </div>
           )}
         </div>
+
+        {/* Execution Flow (inline, collapsible) - Below results */}
+        {hasExecutionTrace && (
+          <div className="mt-3">
+            <button
+              onClick={() => setShowExecutionFlow(!showExecutionFlow)}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded hover:bg-blue-500/20 transition-colors"
+            >
+              {showExecutionFlow ? (
+                <ChevronUp className="h-3 w-3" />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
+              <span>
+                Metrics & Flow ({(task.metadata.execution_trace as any[]).length} steps)
+              </span>
+            </button>
+
+            {showExecutionFlow && (
+              <div className="mt-2">
+                <InlineExecutionFlow
+                  executionTrace={task.metadata.execution_trace as any[]}
+                  executionSummary={task.metadata.execution_summary as any}
+                  executionMetrics={task.metadata.execution_metrics as any}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-2 mt-2">
@@ -161,3 +185,19 @@ export function ConversationMessage({ task, timestamp }: ConversationMessageProp
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const ConversationMessage = memo(
+  ConversationMessageComponent,
+  (prevProps, nextProps) => {
+    // Only re-render if task or timestamp actually changed
+    return (
+      prevProps.task.id === nextProps.task.id &&
+      prevProps.task.status === nextProps.task.status &&
+      prevProps.task.result === nextProps.task.result &&
+      prevProps.task.error_message === nextProps.task.error_message &&
+      prevProps.timestamp.getTime() === nextProps.timestamp.getTime() &&
+      JSON.stringify(prevProps.task.metadata) === JSON.stringify(nextProps.task.metadata)
+    );
+  }
+);

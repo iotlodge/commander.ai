@@ -6,6 +6,8 @@ interface TaskStore {
   addTask: (task: AgentTask) => void;
   updateTask: (taskId: string, updates: Partial<AgentTask>) => void;
   removeTask: (taskId: string) => void;
+  clearAllTasks: () => void;
+  clearCompletedTasks: () => void;
   handleWebSocketEvent: (event: WebSocketEvent) => void;
   getTasksByStatus: (status: TaskStatus) => AgentTask[];
 }
@@ -34,6 +36,23 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     set((state) => {
       const newTasks = new Map(state.tasks);
       newTasks.delete(taskId);
+      return { tasks: newTasks };
+    }),
+
+  clearAllTasks: () =>
+    set(() => ({
+      tasks: new Map(),
+    })),
+
+  clearCompletedTasks: () =>
+    set((state) => {
+      const newTasks = new Map(state.tasks);
+      // Remove tasks with COMPLETED or FAILED status
+      for (const [id, task] of newTasks.entries()) {
+        if (task.status === TaskStatus.COMPLETED || task.status === TaskStatus.FAILED) {
+          newTasks.delete(id);
+        }
+      }
       return { tasks: newTasks };
     }),
 

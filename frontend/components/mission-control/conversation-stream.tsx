@@ -28,6 +28,8 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
   const [lastProcessedIndex, setLastProcessedIndex] = useState(-1);
   const streamEndRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const hasAnimatedRef = useRef(new Set<string>());
+  const previousItemCountRef = useRef(0);
 
   // Handle WebSocket events
   useEffect(() => {
@@ -90,15 +92,18 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
       }
     }
 
-    // Always update - tasks may have new results even with same IDs
+    // Update conversation items
     setConversationItems(items);
   }, [tasks, agentFilter]);
 
   // Auto-scroll to bottom on new messages (if enabled)
   useEffect(() => {
     if (autoScroll && streamEndRef.current) {
-      streamEndRef.current.scrollIntoView({ behavior: "smooth" });
+      // Use instant scroll instead of smooth to prevent jitter
+      streamEndRef.current.scrollIntoView({ behavior: "instant" });
     }
+    // Update previous count after render
+    previousItemCountRef.current = conversationItems.length;
   }, [conversationItems, autoScroll]);
 
   // Detect manual scroll
@@ -147,16 +152,14 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
       className="h-full overflow-y-auto px-6 py-4"
       onScroll={handleScroll}
     >
-      <div className="max-w-4xl space-y-4">
+      <div className="space-y-4">
         {conversationItems.map((item, index) => {
-          const animationDelay = `${Math.min(index * 50, 300)}ms`;
-
+          // Animations disabled to prevent shaking - can re-enable later
           if (item.type === "user_command") {
             return (
               <div
                 key={item.id}
-                className="flex justify-end animate-slide-in-right"
-                style={{ animationDelay }}
+                className="flex justify-end"
               >
                 <div className="max-w-2xl bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-lg px-4 py-3 hover:bg-[#4a9eff]/15 transition-colors">
                   <div className="text-sm text-gray-400 mb-1">
@@ -177,8 +180,6 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
             return (
               <div
                 key={item.id}
-                className="animate-slide-in-left"
-                style={{ animationDelay }}
               >
                 <ConversationMessage
                   task={item.content.task}
@@ -192,8 +193,6 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
             return (
               <div
                 key={item.id}
-                className="animate-fade-in"
-                style={{ animationDelay }}
               >
                 <SystemMessage
                   message={item.content.message}

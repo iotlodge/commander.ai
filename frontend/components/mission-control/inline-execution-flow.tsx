@@ -10,11 +10,34 @@ interface ExecutionStep {
   metadata?: Record<string, any>;
 }
 
-interface InlineExecutionFlowProps {
-  executionTrace: ExecutionStep[];
+interface ExecutionSummary {
+  total_steps: number;
+  total_duration_ms: number;
+  step_counts: Record<string, number>;
 }
 
-export function InlineExecutionFlow({ executionTrace }: InlineExecutionFlowProps) {
+interface ExecutionMetrics {
+  llm_calls: number;
+  tool_calls: number;
+  agent_calls: number;
+  tokens: {
+    prompt: number;
+    completion: number;
+    total: number;
+  };
+}
+
+interface InlineExecutionFlowProps {
+  executionTrace: ExecutionStep[];
+  executionSummary?: ExecutionSummary;
+  executionMetrics?: ExecutionMetrics;
+}
+
+export function InlineExecutionFlow({
+  executionTrace,
+  executionSummary,
+  executionMetrics
+}: InlineExecutionFlowProps) {
   const getStepIcon = (type: string) => {
     switch (type) {
       case "node":
@@ -49,8 +72,66 @@ export function InlineExecutionFlow({ executionTrace }: InlineExecutionFlowProps
   };
 
   return (
-    <div className="space-y-1.5 pl-4 border-l-2 border-[#2a3444]">
-      {executionTrace.map((step, index) => (
+    <div className="space-y-3">
+      {/* Metrics Summary */}
+      {(executionMetrics || executionSummary) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-[#1a1f2e] rounded-lg border border-[#2a3444]">
+          {/* Token Metrics */}
+          {executionMetrics && executionMetrics.tokens && (
+            <>
+              <div className="space-y-1">
+                <div className="text-xs text-gray-500">Total Tokens</div>
+                <div className="text-lg font-bold text-green-400">
+                  {executionMetrics.tokens.total?.toLocaleString() || '0'}
+                </div>
+                {executionMetrics.tokens.prompt !== undefined && executionMetrics.tokens.completion !== undefined && (
+                  <div className="text-xs text-gray-400">
+                    {executionMetrics.tokens.prompt.toLocaleString()} prompt + {executionMetrics.tokens.completion.toLocaleString()} completion
+                  </div>
+                )}
+              </div>
+              {executionMetrics.llm_calls !== undefined && (
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-500">LLM Calls</div>
+                  <div className="text-lg font-bold text-purple-400">
+                    {executionMetrics.llm_calls}
+                  </div>
+                </div>
+              )}
+              {executionMetrics.tool_calls !== undefined && (
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-500">Tool Calls</div>
+                  <div className="text-lg font-bold text-yellow-400">
+                    {executionMetrics.tool_calls}
+                  </div>
+                </div>
+              )}
+              {executionMetrics.agent_calls !== undefined && executionMetrics.agent_calls > 0 && (
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-500">Agent Calls</div>
+                  <div className="text-lg font-bold text-cyan-400">
+                    {executionMetrics.agent_calls}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Duration */}
+          {executionSummary && (
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500">Duration</div>
+              <div className="text-lg font-bold text-blue-400">
+                {formatDuration(executionSummary.total_duration_ms)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Execution Flow Steps */}
+      <div className="space-y-1.5 pl-4 border-l-2 border-[#2a3444]">
+        {executionTrace.map((step, index) => (
         <div
           key={index}
           className={`flex items-center gap-2 px-3 py-1.5 rounded border text-xs ${getStepColor(
@@ -87,6 +168,7 @@ export function InlineExecutionFlow({ executionTrace }: InlineExecutionFlowProps
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }

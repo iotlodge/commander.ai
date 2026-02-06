@@ -34,26 +34,60 @@ interface AgentTeamPanelProps {
 }
 
 export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: AgentTeamPanelProps) {
-  const { tasks, getTasksByStatus } = useTaskStore();
+  const { tasks, getTasksByStatus, clearCompletedTasks } = useTaskStore();
   const { isConnected } = useWebSocket(MVP_USER_ID);
 
-  // Calculate agent activity
+  // Calculate agent activity and metrics
   const getAgentActivity = (nickname: string) => {
     const agentTasks = Array.from(tasks.values()).filter(
       (task) => task.agent_nickname === nickname
     );
 
-    const active = agentTasks.filter(
+    const activeTasks = agentTasks.filter(
       (task) =>
         task.status === TaskStatus.IN_PROGRESS ||
         task.status === TaskStatus.TOOL_CALL
-    ).length;
+    );
 
     const queued = agentTasks.filter(
       (task) => task.status === TaskStatus.QUEUED
     ).length;
 
-    return { active, queued };
+    // Aggregate metrics from active tasks
+    let totalTokens = 0;
+    let totalLlmCalls = 0;
+    let totalToolCalls = 0;
+    let currentNode = "";
+
+    activeTasks.forEach((task) => {
+      if (task.metadata?.execution_metrics) {
+        const metrics = task.metadata.execution_metrics as any;
+        if (metrics.tokens?.total) {
+          totalTokens += metrics.tokens.total;
+        }
+        if (metrics.llm_calls !== undefined) {
+          totalLlmCalls += metrics.llm_calls;
+        }
+        if (metrics.tool_calls !== undefined) {
+          totalToolCalls += metrics.tool_calls;
+        }
+      }
+      // Get current node from the most recent active task
+      if (task.current_node && !currentNode) {
+        currentNode = task.current_node;
+      }
+    });
+
+    return {
+      active: activeTasks.length,
+      queued,
+      metrics: {
+        tokens: totalTokens,
+        llmCalls: totalLlmCalls,
+        toolCalls: totalToolCalls,
+        currentNode,
+      },
+    };
   };
 
   // Calculate total metrics
@@ -64,6 +98,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
   ).length;
 
   const totalQueued = getTasksByStatus(TaskStatus.QUEUED).length;
+  const totalCompleted = getTasksByStatus(TaskStatus.COMPLETED).length + getTasksByStatus(TaskStatus.FAILED).length;
 
   return (
     <div className="h-full flex flex-col">
@@ -142,22 +177,50 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
 
                   {/* Activity */}
                   {(activity.active > 0 || activity.queued > 0) && (
-                    <div className="flex items-center gap-2 mt-1">
-                      {activity.active > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs bg-green-500/10 text-green-400 border-green-500/30"
-                        >
-                          {activity.active} active
-                        </Badge>
-                      )}
-                      {activity.queued > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs bg-gray-500/10 text-gray-400 border-gray-500/30"
-                        >
-                          {activity.queued} queued
-                        </Badge>
+                    <div className="mt-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        {activity.active > 0 && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-green-500/10 text-green-400 border-green-500/30"
+                          >
+                            {activity.active} active
+                          </Badge>
+                        )}
+                        {activity.queued > 0 && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-gray-500/10 text-gray-400 border-gray-500/30"
+                          >
+                            {activity.queued} queued
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Real-time metrics for active tasks */}
+                      {activity.active > 0 && activity.metrics && (
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                          {activity.metrics.tokens > 0 && (
+                            <span className="text-green-400 font-mono">
+                              {activity.metrics.tokens.toLocaleString()} tok
+                            </span>
+                          )}
+                          {activity.metrics.llmCalls > 0 && (
+                            <span className="text-purple-400">
+                              {activity.metrics.llmCalls} LLM
+                            </span>
+                          )}
+                          {activity.metrics.toolCalls > 0 && (
+                            <span className="text-yellow-400">
+                              {activity.metrics.toolCalls} tools
+                            </span>
+                          )}
+                          {activity.metrics.currentNode && (
+                            <span className="text-blue-400 truncate max-w-[120px]">
+                              → {activity.metrics.currentNode}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -169,21 +232,44 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
       </div>
 
       {/* Footer Stats */}
-      <div className="flex-shrink-0 p-4 pb-20 border-t border-[#2a3444]">
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+      <div className="flex-shrink-0 p-4 pb-20 border-t border-[#2a3444] space-y-3">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
           <Activity className="h-3 w-3" />
           <span>System Activity</span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-2">
           <div className="bg-[#1a1f2e] p-2 rounded">
-            <div className="text-xl font-bold text-green-400">{totalActive}</div>
-            <div className="text-xs text-gray-500">Active</div>
+            <div className="text-lg font-bold text-green-400">{totalActive}</div>
+            <div className="text-[10px] text-gray-500">Active</div>
           </div>
           <div className="bg-[#1a1f2e] p-2 rounded">
-            <div className="text-xl font-bold text-gray-400">{totalQueued}</div>
-            <div className="text-xs text-gray-500">Queued</div>
+            <div className="text-lg font-bold text-gray-400">{totalQueued}</div>
+            <div className="text-[10px] text-gray-500">Queued</div>
+          </div>
+          <div className="bg-[#1a1f2e] p-2 rounded">
+            <div className="text-lg font-bold text-blue-400">{totalCompleted}</div>
+            <div className="text-[10px] text-gray-500">Done</div>
           </div>
         </div>
+
+        {/* Clear Completed Button */}
+        {totalCompleted > 0 && (
+          <button
+            onClick={() => {
+              if (confirm(`Clear ${totalCompleted} completed task${totalCompleted === 1 ? '' : 's'}?`)) {
+                clearCompletedTasks();
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded hover:bg-blue-500/20 transition-colors"
+          >
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Clear Completed ({totalCompleted})
+          </button>
+        )}
       </div>
     </div>
   );

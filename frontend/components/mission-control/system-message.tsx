@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { AgentTask } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 
@@ -9,7 +10,7 @@ interface SystemMessageProps {
   timestamp: Date;
 }
 
-export function SystemMessage({ message, task, timestamp }: SystemMessageProps) {
+function SystemMessageComponent({ message, task, timestamp }: SystemMessageProps) {
   return (
     <div className="flex items-center justify-center">
       <div className="flex items-center gap-2 bg-[#1e2433]/50 border border-[#2a3444] rounded-full px-4 py-2">
@@ -24,3 +25,6 @@ export function SystemMessage({ message, task, timestamp }: SystemMessageProps) 
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const SystemMessage = memo(SystemMessageComponent);
