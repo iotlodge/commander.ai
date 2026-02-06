@@ -26,7 +26,7 @@ const statusColors = {
 
 async function removeTask(taskId: string) {
   try {
-    await fetch(`http://localhost:8000/api/tasks/${taskId}`, {
+    await fetch(`http://localhost:8000/api/tasks/${taskId}?user_id=00000000-0000-0000-0000-000000000001`, {
       method: 'DELETE',
     });
   } catch (error) {

@@ -43,7 +43,7 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
     const createSessionTask = async () => {
       try {
         // Create the session task
-        const response = await fetch("http://localhost:8000/api/commands", {
+        const response = await fetch("http://localhost:8000/api/commands?user_id=00000000-0000-0000-0000-000000000001", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -60,7 +60,7 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
 
           // Immediately update to IN_PROGRESS to prevent automatic execution
           // and set initial result
-          await fetch(`http://localhost:8000/api/tasks/${task.id}`, {
+          await fetch(`http://localhost:8000/api/tasks/${task.id}?user_id=00000000-0000-0000-0000-000000000001`, {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
@@ -90,7 +90,7 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
           : `# Chat Session Summary\n\n**No messages exchanged**`;
 
         // Update the task to completed status using PATCH
-        await fetch(`http://localhost:8000/api/tasks/${sessionTaskId}`, {
+        await fetch(`http://localhost:8000/api/tasks/${sessionTaskId}?user_id=00000000-0000-0000-0000-000000000001`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -141,7 +141,7 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
       const fullResult = `# Chat Session (In Progress)\n\n**Messages**: ${updatedMessages.length}\n**LLM Calls**: ${currentMetrics.llmCalls}\n**Tokens**: ${currentMetrics.tokens.toLocaleString()}\n\n---\n\n${conversationMarkdown}`;
 
       // Update task result while keeping it in progress (don't change status)
-      await fetch(`http://localhost:8000/api/tasks/${sessionTaskId}`, {
+      await fetch(`http://localhost:8000/api/tasks/${sessionTaskId}?user_id=00000000-0000-0000-0000-000000000001`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -172,7 +172,7 @@ export function ChatModal({ isOpen, onClose }: ChatModalProps) {
 
     try {
       // Call the direct chat endpoint (doesn't create a task)
-      const response = await fetch("http://localhost:8000/api/chat/message", {
+      const response = await fetch("http://localhost:8000/api/chat/message?user_id=00000000-0000-0000-0000-000000000001", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

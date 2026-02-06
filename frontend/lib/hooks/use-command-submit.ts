@@ -87,7 +87,8 @@ export function useCommandSubmit({ agents }: UseCommandSubmitProps) {
         text: commandText,
       };
 
-      const response = await fetch("http://localhost:8000/api/commands", {
+      // Add user_id as query parameter for MVP user development bypass
+      const response = await fetch(`http://localhost:8000/api/commands?user_id=${MVP_USER_ID}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

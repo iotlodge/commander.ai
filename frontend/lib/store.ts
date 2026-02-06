@@ -47,7 +47,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         // If task doesn't exist and old_status is null (new task), fetch it from API
         if (!tasks.has(event.task_id) && event.old_status === null) {
           console.log("  → New task detected, fetching from API...");
-          fetch(`http://localhost:8000/api/tasks/${event.task_id}`)
+          fetch(`http://localhost:8000/api/tasks/${event.task_id}?user_id=00000000-0000-0000-0000-000000000001`)
             .then((res) => res.json())
             .then((task) => {
               console.log("  → Adding new task to store:", task);
