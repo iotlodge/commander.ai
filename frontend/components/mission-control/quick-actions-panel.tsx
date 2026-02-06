@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Zap, FileText, Search, BarChart3, MessageSquare, Shield, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, Zap, FileText, Search, BarChart3, MessageSquare, Shield, Sparkles, Network } from "lucide-react";
 
 interface QuickAction {
   label: string;
@@ -18,6 +18,17 @@ interface AgentQuickActions {
 }
 
 const QUICK_ACTIONS: AgentQuickActions[] = [
+  {
+    agentNickname: "leo",
+    agentName: "Leo",
+    color: "#fbbf24",
+    icon: <Network className="h-4 w-4" />,
+    actions: [
+      { label: "Complex task", command: "@leo coordinate a multi-step task to " },
+      { label: "Multi-agent workflow", command: "@leo orchestrate agents to " },
+      { label: "Delegate intelligently", command: "@leo analyze and delegate: " },
+    ],
+  },
   {
     agentNickname: "chat",
     agentName: "Chat",

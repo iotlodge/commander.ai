@@ -18,6 +18,7 @@ interface AgentInfo {
 }
 
 const AGENTS: AgentInfo[] = [
+  { id: "parent", nickname: "leo", specialization: "Orchestrator", color: "#fbbf24" },
   { id: "agent_g", nickname: "chat", specialization: "Interactive Chat", color: "#4a9eff" },
   { id: "agent_a", nickname: "bob", specialization: "Research Specialist", color: "#10b981" },
   { id: "agent_b", nickname: "sue", specialization: "Compliance Specialist", color: "#f59e0b" },
