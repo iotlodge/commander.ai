@@ -12,7 +12,7 @@ export interface CommandInputBarRef {
   focus: () => void;
 }
 
-export const CommandInputBar = forwardRef<CommandInputBarRef>((props, ref) => {
+const CommandInputBarComponent = forwardRef<CommandInputBarRef, {}>((props, ref) => {
   const { agents, isLoading: agentsLoading } = useAgents();
   const { submitCommand, isLoading, error } = useCommandSubmit({ agents });
 
@@ -180,4 +180,6 @@ export const CommandInputBar = forwardRef<CommandInputBarRef>((props, ref) => {
   );
 });
 
-CommandInputBar.displayName = "CommandInputBar";
+CommandInputBarComponent.displayName = "CommandInputBar";
+
+export const CommandInputBar = CommandInputBarComponent;
