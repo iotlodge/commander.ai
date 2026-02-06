@@ -1,4 +1,4 @@
-# Commander.ai
+  # Commander.ai
 
 > **Mission Control for your AI team.** Watch specialized agents collaborate in real-time, executing complex tasks with complete visibility and maximum control.
 
@@ -23,8 +23,8 @@ Unlike chatbots that force you to wait and guess, Commander.ai shows you **exact
 
 **This isn't a chat interface with agents bolted on. It's Mission Control.**
 
-![Commander.ai Mission Control](images/mission-control-overview.png)
-*Three-panel interface: Agent roster (left), conversation stream (center), quick actions (right)*
+![Commander.ai Mission Control](images/new_landing_page.png)
+*Mission Control: Real-time visibility into your AI team*
 
 ---
 
@@ -54,8 +54,11 @@ Unlike chatbots that force you to wait and guess, Commander.ai shows you **exact
   - 🔍 Bob: "Latest AI news", "Market research"
   - 📊 Rex: "Analyze data", "Generate report"
 
-![Live Agent Metrics](images/agent-tiles-live-metrics.png)
+![Live Agent Metrics](images/actve_agent_updates.png)
 *Agent tiles showing real-time token counts, LLM calls, and current processing node*
+
+![Multi-Agent Conversation Flow](images/mult-conversation_with_flow.png)
+*Multiple agents working in parallel with complete execution visibility*
 
 ### Real-Time Visibility
 
@@ -78,7 +81,7 @@ Every agent tile updates live as they:
 - Confirmation before clearing
 - Keeps conversation focused on active work
 
-![Metrics & Flow](images/metrics-flow-expanded.png)
+![Metrics & Flow](images/sequence_and_metrics.png)
 *Expandable metrics showing tokens, LLM calls, tool calls, duration, and step-by-step execution timeline*
 
 ---
@@ -135,6 +138,9 @@ Iterative reasoning through self-reflection.
 - Shows reasoning evolution
 - Self-critique and refinement
 - *Your deep thinker*
+
+![Kai in Action](images/kai1.png)
+*@kai executing reflexive reasoning with full execution trace*
 
 ---
 
