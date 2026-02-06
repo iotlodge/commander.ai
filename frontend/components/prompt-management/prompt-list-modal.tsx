@@ -100,16 +100,16 @@ export function PromptListModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto overflow-x-hidden bg-[var(--mc-bg-secondary)] border-[var(--mc-border)]">
-          <DialogHeader>
-            <DialogTitle className="text-[var(--mc-text-primary)] text-xl">
+          <DialogHeader className="w-full">
+            <DialogTitle className="text-[var(--mc-text-primary)] text-xl truncate">
               Manage Prompts - @{agentNickname} ({agentName})
             </DialogTitle>
           </DialogHeader>
 
           {/* Search & Filters */}
-          <div className="space-y-3">
+          <div className="space-y-3 w-full">
             {/* Search Bar */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--mc-text-tertiary)]" />
                 <Input
@@ -129,7 +129,7 @@ export function PromptListModal({
             </div>
 
             {/* Filter Controls */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap w-full">
               <span className="text-xs text-[var(--mc-text-secondary)] flex items-center gap-1">
                 <Filter className="h-3 w-3" />
                 Filters:
@@ -168,7 +168,7 @@ export function PromptListModal({
           </div>
 
           {/* Prompt List */}
-          <div className="space-y-2 min-h-[300px]">
+          <div className="space-y-2 min-h-[300px] w-full">
             {isLoading && (
               <div className="text-center py-8 text-[var(--mc-text-secondary)]">
                 Loading prompts...

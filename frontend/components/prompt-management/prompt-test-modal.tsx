@@ -53,13 +53,13 @@ export function PromptTestModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden bg-[var(--mc-bg-secondary)] border-[var(--mc-border)]">
-        <DialogHeader>
-          <DialogTitle className="text-[var(--mc-text-primary)] text-xl">
+        <DialogHeader className="w-full">
+          <DialogTitle className="text-[var(--mc-text-primary)] text-xl truncate">
             Test Prompt
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {/* Test Query Input */}
           <div className="space-y-2">
             <Label htmlFor="testQuery" className="text-[var(--mc-text-secondary)]">
