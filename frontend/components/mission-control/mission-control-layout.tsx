@@ -6,8 +6,36 @@ import { ConversationStream } from "./conversation-stream";
 import { CommandInputBar } from "./command-input-bar";
 import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { ChatModeProvider, useChatMode } from "./chat-mode-context";
+
+function MissionControlContent() {
+  const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
+  const commandInputRef = useRef<{ focus: () => void; insertMention: (nickname: string) => void }>(null);
+  const conversationRef = useRef<{ scrollToBottom: () => void }>(null);
+  const { isChatMode, enterChatMode, exitChatMode } = useChatMode();
+
+  const handleAgentClick = (nickname: string) => {
+    if (nickname === "chat") {
+      // Special handling for chat agent - enter chat mode
+      enterChatMode();
+      exitChatMode(); // Exit any filter
+      setSelectedAgentFilter(null);
+      commandInputRef.current?.focus();
+    } else {
+      // Regular agents - auto-populate @mention
+      exitChatMode();
+      commandInputRef.current?.insertMention(nickname);
+      commandInputRef.current?.focus();
+    }
+  };
 
 export function MissionControlLayout() {
+  return (
+    <ChatModeProvider>
+      <MissionControlContent />
+    </ChatModeProvider>
+  );
+}
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
   const commandInputRef = useRef<{ focus: () => void; insertMention: (nickname: string) => void }>(null);
   const conversationRef = useRef<{ scrollToBottom: () => void }>(null);
@@ -28,8 +56,11 @@ export function MissionControlLayout() {
     },
     {
       key: "Escape",
-      description: "Clear agent filter",
-      action: () => setSelectedAgentFilter(null),
+      description: "Clear agent filter / Exit chat mode",
+      action: () => {
+        setSelectedAgentFilter(null);
+        exitChatMode();
+      },
     },
     {
       key: "g",
@@ -60,6 +91,18 @@ export function MissionControlLayout() {
             <div className="text-xs text-gray-500">Real-time AI orchestration</div>
           </div>
           <div className="flex items-center gap-4">
+            {isChatMode && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-full">
+                <div className="w-2 h-2 bg-[#4a9eff] rounded-full animate-pulse" />
+                <span className="text-sm text-[#4a9eff] font-medium">Chat Mode</span>
+                <button
+                  onClick={() => exitChatMode()}
+                  className="ml-1 text-xs text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             {selectedAgentFilter && (
               <div className="text-sm text-gray-400">
                 Filtering: <span className="text-[#4a9eff]">@{selectedAgentFilter}</span>
@@ -82,9 +125,10 @@ export function MissionControlLayout() {
 
         {/* Command Input Bar */}
         <div className="flex-shrink-0 bg-[#1e2433] border-t border-[#2a3444]">
-          <CommandInputBar ref={commandInputRef} />
+          <CommandInputBar ref={commandInputRef} chatMode={isChatMode} />
         </div>
       </div>
     </div>
   );
+}
 }

@@ -13,7 +13,11 @@ export interface CommandInputBarRef {
   insertMention: (nickname: string) => void;
 }
 
-const CommandInputBarComponent = forwardRef<CommandInputBarRef, {}>((props, ref) => {
+interface CommandInputBarProps {
+  chatMode?: boolean;
+}
+
+const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarProps>(({ chatMode = false }, ref) => {
   const { agents, isLoading: agentsLoading } = useAgents();
   const { submitCommand, isLoading, error } = useCommandSubmit({ agents });
 
@@ -89,7 +93,12 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, {}>((props, ref)
     if (!input.trim() || isLoading) return;
 
     try {
-      await submitCommand(input);
+      if (chatMode) {
+        // Send to chat API (simplified for now - just use regular command with @chat)
+        await submitCommand(`@chat ${input}`);
+      } else {
+        await submitCommand(input);
+      }
       setInput("");
       setCursorPosition(0);
       textareaRef.current?.focus();
@@ -107,8 +116,8 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, {}>((props, ref)
 
   return (
     <div className="relative p-4">
-      {/* Autocomplete */}
-      {showAutocomplete && (
+      {/* Autocomplete (disabled in chat mode) */}
+      {showAutocomplete && !chatMode && (
         <div className="absolute bottom-full left-4 right-4 mb-2">
           <AgentMentionAutocomplete
             query={mentionQuery}
@@ -126,7 +135,11 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, {}>((props, ref)
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Type your command... (@agent to mention an AI agent)"
+            placeholder={
+              chatMode
+                ? "Chat with LLM... (natural conversation, no @mention needed)"
+                : "Type your command... (@agent to mention an AI agent)"
+            }
             className="min-h-[60px] max-h-[200px] resize-none bg-[#1a1f2e] border-[#2a3444] text-white placeholder:text-gray-500 focus:border-[#4a9eff] focus:ring-1 focus:ring-[#4a9eff] pr-10"
             disabled={isLoading || agentsLoading}
           />
