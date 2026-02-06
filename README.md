@@ -1,11 +1,28 @@
-  # Commander.ai
+<!--
+SEO Keywords: multi-agent AI, AI orchestration, LangGraph agents, agent framework,
+real-time AI dashboard, AI mission control, autonomous agents, LLM orchestration,
+AI agent metrics, agent workflow, LangChain multi-agent, GPT-4 agents, agentic AI,
+AI workflow automation, agent observability, AI team collaboration, FastAPI agents,
+Next.js AI dashboard, real-time agent monitoring, AI agent visualization
+-->
+
+# Commander.ai
 
 > **Mission Control for your AI team.** Watch specialized agents collaborate in real-time, executing complex tasks with complete visibility and maximum control.
+
+<div align="center">
 
 [![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Latest-green.svg)](https://github.com/langchain-ai/langgraph)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
+[![GitHub Stars](https://img.shields.io/github/stars/iotlodge/commander.ai?style=social)](https://github.com/iotlodge/commander.ai/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/iotlodge/commander.ai?style=social)](https://github.com/iotlodge/commander.ai/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/iotlodge/commander.ai)](https://github.com/iotlodge/commander.ai/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+</div>
 
 ---
 
