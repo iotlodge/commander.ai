@@ -99,9 +99,9 @@ export function PromptEditorModal({
   };
 
   const handleAddVariable = () => {
-    const key = prompt(`Enter variable name (without curly braces):`);
+    const key = window.prompt(`Enter variable name (without curly braces):`);
     if (key && key.trim()) {
-      const value = prompt(`Enter default value for {${key}}:`);
+      const value = window.prompt(`Enter default value for {${key}}:`);
       setVariables((prev) => ({
         ...prev,
         [key.trim()]: value?.trim() || "",
