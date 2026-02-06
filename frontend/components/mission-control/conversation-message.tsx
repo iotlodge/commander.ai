@@ -116,20 +116,22 @@ export function ConversationMessage({ task, timestamp }: ConversationMessageProp
 
         {/* Response Content */}
         <div className="bg-[#1e2433] border border-[#2a3444] rounded-lg p-4">
-          {task.result && (
+          {task.result && task.result.trim().length > 0 ? (
             <MarkdownRenderer
               content={task.result}
               variant="default"
               className="text-gray-200"
             />
-          )}
-
-          {task.error_message && (
+          ) : task.error_message && task.error_message.trim().length > 0 ? (
             <div className="text-red-400">
               <MarkdownRenderer
                 content={task.error_message}
                 variant="error"
               />
+            </div>
+          ) : (
+            <div className="text-gray-500 italic text-sm">
+              Task completed with no output
             </div>
           )}
         </div>

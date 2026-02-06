@@ -9,8 +9,14 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 export function MissionControlLayout() {
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
-  const commandInputRef = useRef<{ focus: () => void }>(null);
+  const commandInputRef = useRef<{ focus: () => void; insertMention: (nickname: string) => void }>(null);
   const conversationRef = useRef<{ scrollToBottom: () => void }>(null);
+
+  const handleAgentClick = (nickname: string) => {
+    // Auto-populate @mention in input and focus
+    commandInputRef.current?.insertMention(nickname);
+    commandInputRef.current?.focus();
+  };
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -41,6 +47,7 @@ export function MissionControlLayout() {
         <AgentTeamPanel
           selectedAgent={selectedAgentFilter}
           onSelectAgent={setSelectedAgentFilter}
+          onAgentClick={handleAgentClick}
         />
       </div>
 

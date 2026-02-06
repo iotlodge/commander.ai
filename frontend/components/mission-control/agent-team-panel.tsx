@@ -30,9 +30,10 @@ const AGENTS: AgentInfo[] = [
 interface AgentTeamPanelProps {
   selectedAgent: string | null;
   onSelectAgent: (agentNickname: string | null) => void;
+  onAgentClick?: (agentNickname: string) => void;
 }
 
-export function AgentTeamPanel({ selectedAgent, onSelectAgent }: AgentTeamPanelProps) {
+export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: AgentTeamPanelProps) {
   const { tasks, getTasksByStatus } = useTaskStore();
   const { isConnected } = useWebSocket(MVP_USER_ID);
 
@@ -98,9 +99,13 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent }: AgentTeamPanelP
           return (
             <button
               key={agent.id}
-              onClick={() =>
-                onSelectAgent(isSelected ? null : agent.nickname)
-              }
+              onClick={() => {
+                if (onAgentClick) {
+                  onAgentClick(agent.nickname);
+                } else {
+                  onSelectAgent(isSelected ? null : agent.nickname);
+                }
+              }}
               className={`w-full p-3 mb-2 rounded-lg transition-all ${
                 isSelected
                   ? "bg-[#4a9eff]/10 border border-[#4a9eff]/30"

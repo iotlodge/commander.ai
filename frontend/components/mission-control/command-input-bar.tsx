@@ -10,6 +10,7 @@ import { Loader2, Send, Sparkles } from "lucide-react";
 
 export interface CommandInputBarRef {
   focus: () => void;
+  insertMention: (nickname: string) => void;
 }
 
 const CommandInputBarComponent = forwardRef<CommandInputBarRef, {}>((props, ref) => {
@@ -22,9 +23,14 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, {}>((props, ref)
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Expose focus method to parent
+  // Expose focus and insertMention methods to parent
   useImperativeHandle(ref, () => ({
     focus: () => textareaRef.current?.focus(),
+    insertMention: (nickname: string) => {
+      setInput(`@${nickname} `);
+      setCursorPosition(nickname.length + 2);
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    },
   }));
 
   // Detect @mentions
