@@ -47,7 +47,7 @@ const AGENTS: AgentInfo[] = [
 interface AgentTeamPanelProps {
   selectedAgent: string | null;
   onSelectAgent: (agentNickname: string | null) => void;
-  onAgentClick?: (agentNickname: string) => void;
+  onAgentClick?: (agentNickname: string, isMultiSelect?: boolean) => void;
 }
 
 export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: AgentTeamPanelProps) {
@@ -134,7 +134,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
             AI Agents
           </h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-2">
           <Badge
             variant={isConnected ? "default" : "destructive"}
             className={
@@ -164,6 +164,14 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
             </Badge>
           )}
         </div>
+
+        {/* Helpful hint for multi-select */}
+        <div className="text-[10px] text-[var(--mc-text-tertiary)] flex items-start gap-1">
+          <span className="text-[var(--mc-accent-blue)]">💡</span>
+          <span>
+            Hold <strong className="text-[var(--mc-text-secondary)]">⌘ / Shift</strong> to select multiple agents
+          </span>
+        </div>
       </div>
 
       {/* Agent List */}
@@ -176,9 +184,10 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
           return (
             <button
               key={agent.id}
-              onClick={() => {
+              onClick={(e) => {
+                const isMultiSelect = e.metaKey || e.shiftKey;
                 if (onAgentClick) {
-                  onAgentClick(agent.nickname);
+                  onAgentClick(agent.nickname, isMultiSelect);
                 } else {
                   onSelectAgent(isSelected ? null : agent.nickname);
                 }

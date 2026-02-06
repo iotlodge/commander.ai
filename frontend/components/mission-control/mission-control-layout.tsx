@@ -14,7 +14,12 @@ import { useTaskStore } from "@/lib/store";
 
 function MissionControlContent() {
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
-  const commandInputRef = useRef<{ focus: () => void; insertMention: (nickname: string) => void; setCommand: (command: string) => void }>(null);
+  const commandInputRef = useRef<{
+    focus: () => void;
+    insertMention: (nickname: string) => void;
+    appendMention: (nickname: string) => void;
+    setCommand: (command: string) => void
+  }>(null);
   const conversationRef = useRef<{ scrollToBottom: () => void }>(null);
   const { isChatMode, enterChatMode, exitChatMode } = useChatMode();
   const { clearAllTasks } = useTaskStore();
@@ -24,9 +29,9 @@ function MissionControlContent() {
     commandInputRef.current?.focus();
   };
 
-  const handleAgentClick = (nickname: string) => {
+  const handleAgentClick = (nickname: string, isMultiSelect: boolean = false) => {
     if (nickname === "chat") {
-      // Special handling for chat agent - enter chat mode
+      // Special handling for chat agent - enter chat mode and clear any selections
       enterChatMode();
       setSelectedAgentFilter(null);
       commandInputRef.current?.setCommand("");
@@ -34,7 +39,15 @@ function MissionControlContent() {
     } else {
       // Regular agents - auto-populate @mention
       exitChatMode();
-      commandInputRef.current?.insertMention(nickname);
+
+      if (isMultiSelect) {
+        // Multi-select: append to existing mentions
+        commandInputRef.current?.appendMention(nickname);
+      } else {
+        // Single select: replace with new mention
+        commandInputRef.current?.insertMention(nickname);
+      }
+
       commandInputRef.current?.focus();
     }
   };

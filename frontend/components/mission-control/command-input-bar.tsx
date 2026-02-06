@@ -10,6 +10,7 @@ import { Loader2, Send, Sparkles } from "lucide-react";
 export interface CommandInputBarRef {
   focus: () => void;
   insertMention: (nickname: string) => void;
+  appendMention: (nickname: string) => void;
   setCommand: (command: string) => void;
 }
 
@@ -27,12 +28,21 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarP
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Expose focus, insertMention, and setCommand methods to parent
+  // Expose focus, insertMention, appendMention, and setCommand methods to parent
   useImperativeHandle(ref, () => ({
     focus: () => textareaRef.current?.focus(),
     insertMention: (nickname: string) => {
       setInput(`@${nickname} `);
       setCursorPosition(nickname.length + 2);
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    },
+    appendMention: (nickname: string) => {
+      const currentCommand = input.trim();
+      const newCommand = currentCommand
+        ? `${currentCommand} @${nickname} `
+        : `@${nickname} `;
+      setInput(newCommand);
+      setCursorPosition(newCommand.length);
       setTimeout(() => textareaRef.current?.focus(), 0);
     },
     setCommand: (command: string) => {
