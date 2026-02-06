@@ -24,8 +24,17 @@ if config.config_file_name is not None:
 from backend.repositories.task_repository import Base, AgentTaskModel
 # Import all model files to ensure they're registered with Base
 from backend.models.graph_models import AgentGraphModel
+# Import auth models
+from backend.auth.models import User, Base as AuthBase
 
-target_metadata = Base.metadata
+# Combine metadata from all bases
+from sqlalchemy import MetaData
+combined_metadata = MetaData()
+for base in [Base, AuthBase]:
+    for table in base.metadata.tables.values():
+        table.to_metadata(combined_metadata)
+
+target_metadata = combined_metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

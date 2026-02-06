@@ -100,6 +100,16 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
     cors_allow_credentials: bool = True
 
+    # Authentication Configuration
+    algorithm: str = "HS256"  # JWT algorithm
+    access_token_expire_minutes: int = 60  # 1 hour
+    refresh_token_expire_days: int = 7  # 7 days
+
+    @property
+    def secret_key(self) -> str:
+        """JWT secret key (uses app_secret_key)"""
+        return self.app_secret_key
+
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string"""
