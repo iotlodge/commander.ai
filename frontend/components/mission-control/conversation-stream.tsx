@@ -152,7 +152,7 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
       className="h-full overflow-y-auto px-6 py-4"
       onScroll={handleScroll}
     >
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="max-w-4xl space-y-4">
         {conversationItems.map((item, index) => {
           const animationDelay = `${Math.min(index * 50, 300)}ms`;
 
