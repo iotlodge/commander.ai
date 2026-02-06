@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { AgentTeamPanel } from "./agent-team-panel";
 import { ConversationStream } from "./conversation-stream";
 import { CommandInputBar } from "./command-input-bar";
@@ -18,7 +18,6 @@ function MissionControlContent() {
     if (nickname === "chat") {
       // Special handling for chat agent - enter chat mode
       enterChatMode();
-      exitChatMode(); // Exit any filter
       setSelectedAgentFilter(null);
       commandInputRef.current?.focus();
     } else {
@@ -27,23 +26,6 @@ function MissionControlContent() {
       commandInputRef.current?.insertMention(nickname);
       commandInputRef.current?.focus();
     }
-  };
-
-export function MissionControlLayout() {
-  return (
-    <ChatModeProvider>
-      <MissionControlContent />
-    </ChatModeProvider>
-  );
-}
-  const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
-  const commandInputRef = useRef<{ focus: () => void; insertMention: (nickname: string) => void }>(null);
-  const conversationRef = useRef<{ scrollToBottom: () => void }>(null);
-
-  const handleAgentClick = (nickname: string) => {
-    // Auto-populate @mention in input and focus
-    commandInputRef.current?.insertMention(nickname);
-    commandInputRef.current?.focus();
   };
 
   // Keyboard shortcuts
@@ -131,4 +113,11 @@ export function MissionControlLayout() {
     </div>
   );
 }
+
+export function MissionControlLayout() {
+  return (
+    <ChatModeProvider>
+      <MissionControlContent />
+    </ChatModeProvider>
+  );
 }
