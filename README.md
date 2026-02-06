@@ -207,6 +207,9 @@ Iterative reasoning through self-reflection.
 - Click the ⚙️ Settings icon
 - Enter the Prompt Management UI
 
+![Agent Settings Icon](images/agent_system_settings.png)
+*Hover over any agent card to reveal the ⚙️ Settings icon. Click to access Prompt Management.*
+
 **Inside the Prompt Engineer:**
 
 1. **📋 Browse & Search**
@@ -215,11 +218,17 @@ Iterative reasoning through self-reflection.
    - Filter by type (system, human, ai) and active status
    - See creation/update timestamps
 
+![Manage Prompts Modal](images/manage_prompt_modal.png)
+*Prompt List Modal showing search, filters, and prompt cards with type badges, active status, and update timestamps.*
+
 2. **✏️ Create & Edit**
    - Write new prompts with rich template variables
    - Edit existing prompts while preserving version history
    - Add dynamic variables: `{query}`, `{token_budget}`, `{urgency}`, `{tools_list}`
    - Toggle active/inactive for A/B testing
+
+![Edit Prompt Interface](images/edit_live_prompts.png)
+*Prompt Editor with description, prompt text area, template variables section, and Test button for live LLM validation.*
 
 3. **🧪 Test with Real LLM**
    - Click "Test" on any prompt
@@ -236,6 +245,16 @@ Iterative reasoning through self-reflection.
    - Compare prompt variations
    - Measure impact on token efficiency
    - Optimize for speed vs. quality
+
+### 🎨 **Visual Workflow**
+
+The prompt engineering interface follows an intuitive three-step process:
+
+1. **Access** - Hover over any agent → Click ⚙️ Settings
+2. **Browse** - Search/filter prompts → View details → Click Edit
+3. **Edit & Test** - Modify prompt → Add variables → Test with GPT-4o-mini → Save
+
+Each step is designed for speed and clarity, making prompt optimization feel natural.
 
 ### 💡 **Why This Changes Everything**
 
