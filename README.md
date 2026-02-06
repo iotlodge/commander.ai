@@ -23,8 +23,14 @@ Unlike chatbots that force you to wait and guess, Commander.ai shows you **exact
 
 **This isn't a chat interface with agents bolted on. It's Mission Control.**
 
-![Commander.ai Mission Control](images/new_landing_page.png)
-*Mission Control: Real-time visibility into your AI team*
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="images/dark_landing_page.png">
+    <source media="(prefers-color-scheme: light)" srcset="images/light_landing_page.png">
+    <img alt="Commander.ai Mission Control" src="images/dark_landing_page.png" width="100%">
+  </picture>
+  <p><em>Mission Control: Real-time visibility into your AI team</em></p>
+</div>
 
 ---
 
