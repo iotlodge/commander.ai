@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, KeyboardEvent, forwardRef, useImperativeHandle } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { AgentMentionAutocomplete } from "@/components/command/agent-mention-autocomplete";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { useCommandSubmit } from "@/lib/hooks/use-command-submit";
 import { Loader2, Send, Sparkles } from "lucide-react";
@@ -124,12 +123,47 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarP
     <div className="relative p-4">
       {/* Autocomplete (disabled in chat mode) */}
       {showAutocomplete && !chatMode && (
-        <div className="absolute bottom-full left-4 right-4 mb-2">
-          <AgentMentionAutocomplete
-            query={mentionQuery}
-            agents={agents}
-            onSelect={handleAgentSelect}
-          />
+        <div className="absolute bottom-full left-4 right-4 mb-2 bg-[#2a3444] border border-[#3a4454] rounded-lg shadow-lg max-h-64 overflow-y-auto">
+          {agents
+            .filter(
+              (agent) =>
+                agent.nickname.toLowerCase().includes(mentionQuery.toLowerCase()) ||
+                agent.specialization.toLowerCase().includes(mentionQuery.toLowerCase())
+            )
+            .map((agent) => (
+              <button
+                key={agent.id}
+                onClick={() => handleAgentSelect(agent.nickname)}
+                onMouseDown={(e) => e.preventDefault()}
+                className="w-full px-4 py-2 text-left hover:bg-[#3a4454] flex items-center gap-3 border-b border-[#3a4454] last:border-b-0"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#4a9eff]/20 text-[#4a9eff] font-semibold">
+                  {agent.nickname.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm text-white">
+                      @{agent.nickname}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {agent.specialization}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">
+                    {agent.description}
+                  </p>
+                </div>
+              </button>
+            ))}
+          {agents.filter(
+            (agent) =>
+              agent.nickname.toLowerCase().includes(mentionQuery.toLowerCase()) ||
+              agent.specialization.toLowerCase().includes(mentionQuery.toLowerCase())
+          ).length === 0 && (
+            <div className="px-4 py-3 text-sm text-gray-400">
+              No agents found
+            </div>
+          )}
         </div>
       )}
 
