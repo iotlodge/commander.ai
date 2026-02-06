@@ -164,7 +164,7 @@ async def task_websocket(websocket: WebSocket, user_id: str, token: str = None):
 
 
 # Import and include routers
-from backend.api.routes import tasks, commands, graphs, agents, chat
+from backend.api.routes import tasks, commands, graphs, agents, chat, prompts
 from backend.auth.routes import router as auth_router
 
 # Public routes (no auth required)
@@ -176,3 +176,4 @@ app.include_router(commands.router)
 app.include_router(graphs.router)
 app.include_router(agents.router)
 app.include_router(chat.router)
+app.include_router(prompts.router)
