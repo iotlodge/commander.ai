@@ -33,7 +33,7 @@ export default function Home() {
         <MissionControlLayout />
 
         {/* View Switcher - Floating button */}
-        <div className="fixed bottom-4 left-4 z-50">
+        <div className="fixed bottom-4 right-4 z-50">
           <Button
             onClick={() => handleViewChange("kanban")}
             variant="outline"
@@ -64,7 +64,7 @@ export default function Home() {
       </main>
 
       {/* View Switcher - Floating button */}
-      <div className="fixed bottom-4 left-4 z-50">
+      <div className="fixed bottom-4 right-4 z-50">
         <Button
           onClick={() => handleViewChange("mission-control")}
           variant="outline"
