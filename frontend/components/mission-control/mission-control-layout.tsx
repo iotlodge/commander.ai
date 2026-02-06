@@ -1,12 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AgentTeamPanel } from "./agent-team-panel";
 import { ConversationStream } from "./conversation-stream";
 import { CommandInputBar } from "./command-input-bar";
+import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 export function MissionControlLayout() {
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
+  const commandInputRef = useRef<{ focus: () => void }>(null);
+  const conversationRef = useRef<{ scrollToBottom: () => void }>(null);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: "k",
+      metaKey: true,
+      description: "Focus command input",
+      action: () => commandInputRef.current?.focus(),
+    },
+    {
+      key: "Escape",
+      description: "Clear agent filter",
+      action: () => setSelectedAgentFilter(null),
+    },
+    {
+      key: "g",
+      metaKey: true,
+      shiftKey: true,
+      description: "Scroll to bottom",
+      action: () => conversationRef.current?.scrollToBottom(),
+    },
+  ]);
 
   return (
     <div className="h-screen bg-[#1a1f2e] flex overflow-hidden">
@@ -26,7 +52,7 @@ export function MissionControlLayout() {
             <div className="text-lg font-bold text-white">MISSION CONTROL</div>
             <div className="text-xs text-gray-500">Real-time AI orchestration</div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             {selectedAgentFilter && (
               <div className="text-sm text-gray-400">
                 Filtering: <span className="text-[#4a9eff]">@{selectedAgentFilter}</span>
@@ -38,6 +64,7 @@ export function MissionControlLayout() {
                 </button>
               </div>
             )}
+            <KeyboardShortcutsHelp />
           </div>
         </div>
 
@@ -48,7 +75,7 @@ export function MissionControlLayout() {
 
         {/* Command Input Bar */}
         <div className="flex-shrink-0 bg-[#1e2433] border-t border-[#2a3444]">
-          <CommandInputBar />
+          <CommandInputBar ref={commandInputRef} />
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, KeyboardEvent, forwardRef, useImperativeHandle } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AgentMentionAutocomplete } from "@/components/command/agent-mention-autocomplete";
@@ -8,7 +8,11 @@ import { useAgents } from "@/lib/hooks/use-agents";
 import { useCommandSubmit } from "@/lib/hooks/use-command-submit";
 import { Loader2, Send, Sparkles } from "lucide-react";
 
-export function CommandInputBar() {
+export interface CommandInputBarRef {
+  focus: () => void;
+}
+
+export const CommandInputBar = forwardRef<CommandInputBarRef>((props, ref) => {
   const { agents, isLoading: agentsLoading } = useAgents();
   const { submitCommand, isLoading, error } = useCommandSubmit({ agents });
 
@@ -17,6 +21,11 @@ export function CommandInputBar() {
   const [mentionQuery, setMentionQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Expose focus method to parent
+  useImperativeHandle(ref, () => ({
+    focus: () => textareaRef.current?.focus(),
+  }));
 
   // Detect @mentions
   useEffect(() => {
@@ -169,4 +178,6 @@ export function CommandInputBar() {
       )}
     </div>
   );
-}
+});
+
+CommandInputBar.displayName = "CommandInputBar";
