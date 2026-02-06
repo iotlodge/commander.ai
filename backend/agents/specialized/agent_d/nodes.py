@@ -544,6 +544,16 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
                 collection_id=collection.id, increment=len(chunk_creates)
             )
 
+            # TODO: Add image generation capability for complex results
+            # Use image_generate_analyze_upscale.py to create visualizations when:
+            # - Showing knowledge graph from web search results
+            # - Visualizing document relationships in collection
+            # - Creating mind maps of semantic connections
+            # - Illustrating topic clusters from search results
+            # Example: python image_generate_analyze_upscale.py generate \
+            #   --prompt "Knowledge graph showing connections between these research topics: [topic1, topic2, topic3]" \
+            #   --output output/knowledge_graph.png
+
             # Format final response with search results if available
             base_message = f"✓ Loaded '{file_name}' into collection '{collection_name}' ({len(chunk_creates)} chunks)."
 

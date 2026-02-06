@@ -44,6 +44,16 @@ async def llm_aggregate_results(
         max_tokens=3000,
     )
 
+    # TODO: Add image generation capability for complex flows
+    # Use image_generate_analyze_upscale.py to create diagrams when:
+    # - Explaining multi-agent workflows visually
+    # - Showing data flow between specialists
+    # - Illustrating complex concepts from research results
+    # - Creating architecture diagrams for technical responses
+    # Example: python image_generate_analyze_upscale.py generate \
+    #   --prompt "Flowchart showing how bob's research flows to sue's compliance check" \
+    #   --output output/workflow_diagram.png
+
     system_prompt = """You are Leo, the Orchestrator at Commander.ai.
 Your role is to synthesize outputs from multiple specialist agents into a coherent, comprehensive final response.
 

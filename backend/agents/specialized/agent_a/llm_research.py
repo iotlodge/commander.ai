@@ -193,6 +193,16 @@ async def llm_synthesize_research(
         max_tokens=2000,
     )
 
+    # TODO: Add image generation capability for complex research synthesis
+    # Use image_generate_analyze_upscale.py to create visualizations when:
+    # - Illustrating trends or timelines from research findings
+    # - Creating comparison charts between different sources
+    # - Visualizing concept relationships and hierarchies
+    # - Generating infographics for complex data patterns
+    # Example: python image_generate_analyze_upscale.py generate \
+    #   --prompt "Timeline showing evolution of quantum computing from 2020-2025 based on research findings" \
+    #   --output output/research_timeline.png
+
     system_prompt = """You are Bob, a Research Specialist at Commander.ai.
 Your role is to synthesize information from multiple sources into clear, comprehensive research responses.
 
