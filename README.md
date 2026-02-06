@@ -490,6 +490,10 @@ Commander.ai provides **complete visibility** into agent execution with live met
 - 🎯 **Tokens**: Total token consumption (prompt + completion)
 - ⏱️ **Duration**: Live execution time
 - 📈 **Progress**: Visual progress bar with current node
+- 🌿 **Execution Flow**: Timeline showing every node, tool, and LLM call with timing (NEW!)
+  - Color-coded: Blue (nodes), Yellow (tools), Purple (LLM calls)
+  - Collapsible timeline in task results modal
+  - See exact duration for each step (ms/seconds)
 
 **Token Tracking Example (Alice web search):**
 ```
@@ -566,7 +570,7 @@ All services have health checks and auto-restart.
 
 ## 🚦 Current Status
 
-**✅ Production Ready (v1.3)**
+**✅ Production Ready (v1.4)**
 - ✅ 7 specialized agents (chat, research, compliance, data, documents, reflection, reflexion)
 - ✅ Three-tier memory system (Redis/PostgreSQL/Qdrant)
 - ✅ Real-time Kanban UI with WebSocket
@@ -576,9 +580,11 @@ All services have health checks and auto-restart.
 - ✅ **TavilyToolset integration** - unified search/crawl/extract/map
 - ✅ **Automatic cache cleanup** - removes stale entries
 - ✅ **DocumentStore singleton pattern** - prevents connection pool exhaustion
-- ✅ **Chat agent tool execution** - @chat now executes web searches with agentic loop (NEW!)
-- ✅ **Enhanced chat UX** - auto-focus input after responses (NEW!)
-- ✅ **JWT authentication system** - production-ready with 94% test coverage (NEW!)
+- ✅ **Chat agent tool execution** - @chat now executes web searches with agentic loop
+- ✅ **Enhanced chat UX** - auto-focus input after responses
+- ✅ **JWT authentication system** - production-ready with 94% test coverage
+- ✅ **Execution flow tracking** - complete observability into every node, tool, and LLM call (NEW!)
+- ✅ **Timeline visualization** - see execution steps with color-coded timing in task results (NEW!)
 
 **🚧 In Active Development**
 - ⏳ Vision/image analysis agent (in progress - image processing skill)
@@ -658,5 +664,5 @@ The magic happens when:
 
 ---
 
-**Status**: 🚀 v1.3 - Production Ready with Chat Tool Execution & JWT Auth
+**Status**: 🚀 v1.4 - Production Ready with Execution Flow Tracking
 **Last Updated**: February 5, 2026
