@@ -1,3 +1,9 @@
+# Claude Code AI workflow files (personal, not part of application)
+CLAUDE.md
+CLAUDE-*.md
+.claude/
+.claude.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
