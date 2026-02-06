@@ -6,7 +6,7 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { AgentTask, TaskStatus } from "@/lib/types";
 import { ConversationMessage } from "./conversation-message";
 import { SystemMessage } from "./system-message";
-import { Inbox } from "lucide-react";
+import { Inbox, Sparkles } from "lucide-react";
 
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -110,12 +110,31 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
   if (conversationItems.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <Inbox className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400 text-lg mb-2">No conversation yet</p>
-          <p className="text-gray-500 text-sm">
-            Start by typing a command below with @agent
+        <div className="text-center animate-fade-in">
+          <div className="relative inline-block mb-6">
+            <Inbox className="h-16 w-16 text-gray-600 mx-auto" />
+            <Sparkles className="h-6 w-6 text-[#4a9eff] absolute -top-2 -right-2 animate-pulse" />
+          </div>
+          <h3 className="text-gray-300 text-xl font-semibold mb-2">
+            Welcome to Mission Control
+          </h3>
+          <p className="text-gray-400 text-sm mb-4 max-w-md mx-auto">
+            Your AI team is ready. Start by typing a command below and mention an agent with <span className="text-[#4a9eff] font-mono">@agent</span>
           </p>
+          <div className="flex flex-col gap-2 items-center">
+            <p className="text-xs text-gray-500">Try these commands:</p>
+            <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+              {[
+                "@chat what's the weather?",
+                "@bob research quantum computing",
+                "@alice search web for AI news"
+              ].map((cmd, i) => (
+                <div key={i} className="text-xs bg-[#1e2433] border border-[#2a3444] rounded px-3 py-1.5 text-gray-400 font-mono">
+                  {cmd}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -127,11 +146,17 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
       onScroll={handleScroll}
     >
       <div className="max-w-4xl mx-auto space-y-4">
-        {conversationItems.map((item) => {
+        {conversationItems.map((item, index) => {
+          const animationDelay = `${Math.min(index * 50, 300)}ms`;
+
           if (item.type === "user_command") {
             return (
-              <div key={item.id} className="flex justify-end">
-                <div className="max-w-2xl bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-lg px-4 py-3">
+              <div
+                key={item.id}
+                className="flex justify-end animate-slide-in-right"
+                style={{ animationDelay }}
+              >
+                <div className="max-w-2xl bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-lg px-4 py-3 hover:bg-[#4a9eff]/15 transition-colors">
                   <div className="text-sm text-gray-400 mb-1">
                     You → @{item.content.agentNickname}
                   </div>
@@ -148,22 +173,32 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
 
           if (item.type === "agent_response") {
             return (
-              <ConversationMessage
+              <div
                 key={item.id}
-                task={item.content.task}
-                timestamp={item.timestamp}
-              />
+                className="animate-slide-in-left"
+                style={{ animationDelay }}
+              >
+                <ConversationMessage
+                  task={item.content.task}
+                  timestamp={item.timestamp}
+                />
+              </div>
             );
           }
 
           if (item.type === "system_event") {
             return (
-              <SystemMessage
+              <div
                 key={item.id}
-                message={item.content.message}
-                task={item.content.task}
-                timestamp={item.timestamp}
-              />
+                className="animate-fade-in"
+                style={{ animationDelay }}
+              >
+                <SystemMessage
+                  message={item.content.message}
+                  task={item.content.task}
+                  timestamp={item.timestamp}
+                />
+              </div>
             );
           }
 
@@ -179,9 +214,9 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
             streamEndRef.current?.scrollIntoView({ behavior: "smooth" });
             setAutoScroll(true);
           }}
-          className="fixed bottom-24 right-8 bg-[#4a9eff] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#3a8edf] transition-all"
+          className="fixed bottom-24 right-8 bg-[#4a9eff] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#3a8edf] transition-all hover:scale-105 flex items-center gap-2 animate-bounce-subtle"
         >
-          ↓ New messages
+          <span className="text-sm">↓ New messages</span>
         </button>
       )}
     </div>
