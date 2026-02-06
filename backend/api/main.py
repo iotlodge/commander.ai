@@ -95,19 +95,39 @@ async def health():
 
 
 # WebSocket endpoint for real-time task updates
-@app.websocket("/ws")
-async def task_websocket(websocket: WebSocket, token: str = None):
+@app.websocket("/ws/{user_id}")
+async def task_websocket(websocket: WebSocket, user_id: str, token: str = None):
     """
     WebSocket endpoint for real-time task updates
 
-    Authentication: Pass JWT token as query parameter: /ws?token=<jwt_token>
+    Development: Accepts user_id path parameter (MVP user bypass)
+    Production: Requires authentication via token query parameter: /ws/{user_id}?token=<jwt_token>
     """
     from backend.auth.security import decode_token
+    from backend.auth.dependencies import MVP_USER_ID
     from jose import JWTError
 
     ws_manager = get_ws_manager()
 
-    # Validate token before accepting connection
+    # Development bypass: Allow MVP_USER_ID without token
+    if user_id == str(MVP_USER_ID) and not token:
+        try:
+            parsed_user_id = UUID(user_id)
+            await ws_manager.connect(websocket, parsed_user_id)
+
+            try:
+                while True:
+                    data = await websocket.receive_text()
+                    if data == "ping":
+                        await websocket.send_text("pong")
+            except WebSocketDisconnect:
+                ws_manager.disconnect(parsed_user_id)
+            return
+        except ValueError:
+            await websocket.close(code=1008, reason="Invalid user_id format")
+            return
+
+    # Production: Require JWT token
     if not token:
         await websocket.close(code=1008, reason="Missing authentication token")
         return
@@ -119,10 +139,15 @@ async def task_websocket(websocket: WebSocket, token: str = None):
             await websocket.close(code=1008, reason="Invalid token")
             return
 
-        user_id = UUID(payload.get("sub"))
+        token_user_id = UUID(payload.get("sub"))
+
+        # Verify path user_id matches token user_id
+        if user_id != str(token_user_id):
+            await websocket.close(code=1008, reason="User ID mismatch")
+            return
 
         # Accept connection after successful authentication
-        await ws_manager.connect(websocket, user_id)
+        await ws_manager.connect(websocket, token_user_id)
 
         try:
             while True:
@@ -131,7 +156,7 @@ async def task_websocket(websocket: WebSocket, token: str = None):
                 if data == "ping":
                     await websocket.send_text("pong")
         except WebSocketDisconnect:
-            ws_manager.disconnect(user_id)
+            ws_manager.disconnect(token_user_id)
 
     except (JWTError, ValueError) as e:
         await websocket.close(code=1008, reason=f"Authentication failed: {str(e)}")
