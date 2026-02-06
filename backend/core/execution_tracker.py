@@ -8,6 +8,7 @@ Provides observability into the agent decision-making process.
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 from langchain_core.callbacks.base import BaseCallbackHandler
 
 logger = logging.getLogger(__name__)
@@ -48,9 +49,13 @@ class ExecutionStep:
 
     @staticmethod
     def _sanitize(data: Any, max_length: int = 500) -> Any:
-        """Sanitize data for storage (truncate long strings)"""
+        """Sanitize data for storage (truncate long strings, convert UUIDs)"""
         if data is None:
             return None
+
+        # Convert UUIDs to strings
+        if isinstance(data, UUID):
+            return str(data)
 
         if isinstance(data, str):
             return data[:max_length] + "..." if len(data) > max_length else data
@@ -61,7 +66,14 @@ class ExecutionStep:
         if isinstance(data, list):
             return [ExecutionStep._sanitize(item, max_length) for item in data[:10]]  # Limit to 10 items
 
-        return data
+        # For other types (int, float, bool, etc.), return as-is
+        # Skip non-serializable objects like callbacks
+        try:
+            import json
+            json.dumps(data)  # Test if serializable
+            return data
+        except (TypeError, ValueError):
+            return str(data)  # Convert non-serializable to string
 
 
 class ExecutionTracker(BaseCallbackHandler):

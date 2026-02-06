@@ -3,6 +3,7 @@ Chat Assistant Agent Implementation
 Simple conversational agent for interactive chat
 """
 
+from uuid import UUID
 from langgraph.graph import StateGraph, END
 
 from backend.agents.base.agent_interface import (
@@ -149,10 +150,23 @@ class ChatAgent(BaseAgent):
                     final_state={},
                 )
 
+            # Sanitize final_state for JSON serialization
+            # Remove non-serializable objects and convert UUIDs to strings
+            sanitized_state = {}
+            for k, v in final_state.items():
+                # Skip task_callback and metrics objects
+                if k in ("task_callback", "metrics"):
+                    continue
+                # Convert UUIDs to strings
+                elif isinstance(v, UUID):
+                    sanitized_state[k] = str(v)
+                else:
+                    sanitized_state[k] = v
+
             return AgentExecutionResult(
                 success=True,
                 response=final_state.get("response", "Chat completed"),
-                final_state=final_state,
+                final_state=sanitized_state,
                 metadata={
                     "conversation_length": len(final_state.get("messages", [])),
                 },
