@@ -107,6 +107,32 @@ Every agent tile updates live as they:
 ![Metrics & Flow](images/sequence_and_metrics.png)
 *Expandable metrics showing tokens, LLM calls, tool calls, duration, and step-by-step execution timeline*
 
+### Agent Interaction
+
+**Single-Click Agent Selection:**
+- Click any agent tile → Auto-fills command input with `@agent `
+- Instant delegation - just add your task and press Enter
+- Example: Click @bob → type "latest AI news" → Send
+
+**Multi-Select with Modifier Keys:**
+- Hold **⌘ (Command)** or **Shift** while clicking agents
+- Build multi-agent commands effortlessly
+- Example workflow:
+  ```
+  1. Click @bob → "@bob "
+  2. Hold ⌘ + Click @alice → "@bob @alice "
+  3. Hold Shift + Click @kai → "@bob @alice @kai "
+  4. Add task: "research and document quantum computing"
+  5. Send → @leo orchestrates all three agents
+  ```
+
+**Smart Command Routing:**
+- **Single @mention** → Direct to that agent
+- **Multiple @mentions** → @leo orchestrates the team
+- **No @mention** → Defaults to @leo
+
+*💡 Tip: Look for the hint "Hold ⌘ / Shift to select multiple agents" in the Agent Panel*
+
 ---
 
 ## 🤖 Meet Your AI Team
