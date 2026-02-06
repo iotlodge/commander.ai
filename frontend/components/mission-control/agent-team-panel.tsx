@@ -187,7 +187,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
           const isSelected = selectedAgent === agent.nickname;
 
           return (
-            <button
+            <div
               key={agent.id}
               onClick={(e) => {
                 const isMultiSelect = e.metaKey || e.shiftKey;
@@ -197,7 +197,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                   onSelectAgent(isSelected ? null : agent.nickname);
                 }
               }}
-              className={`group w-full p-3 mb-2 rounded-lg transition-all ${
+              className={`group w-full p-3 mb-2 rounded-lg transition-all cursor-pointer ${
                 isSelected
                   ? "bg-[var(--mc-accent-blue)]/10 border border-[var(--mc-accent-blue)]/30"
                   : "bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)]"
@@ -295,7 +295,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                   )}
                 </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
