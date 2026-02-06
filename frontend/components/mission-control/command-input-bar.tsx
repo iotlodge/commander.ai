@@ -217,22 +217,36 @@ const CommandInputBarComponent = forwardRef<CommandInputBarRef, CommandInputBarP
 
       {/* Quick suggestions */}
       {!input && (
-        <div className="mt-3 flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-gray-500 flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
-            Try:
-          </span>
-          {["@chat what's the weather?", "@bob research quantum computing", "@alice search web for AI news"].map(
-            (suggestion, i) => (
-              <button
-                key={i}
-                onClick={() => setInput(suggestion)}
-                className="text-xs bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded px-2 py-1 text-[var(--mc-text-secondary)] hover:text-[var(--mc-text-primary)] transition-colors"
-              >
-                {suggestion}
-              </button>
-            )
-          )}
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-500 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              Try:
+            </span>
+            {["@chat what's the weather?", "@bob research quantum computing", "@alice search web for AI news"].map(
+              (suggestion, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInput(suggestion)}
+                  className="text-xs bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded px-2 py-1 text-[var(--mc-text-secondary)] hover:text-[var(--mc-text-primary)] transition-colors"
+                >
+                  {suggestion}
+                </button>
+              )
+            )}
+          </div>
+
+          {/* Helpful hints */}
+          <div className="text-[10px] text-[var(--mc-text-tertiary)] space-y-0.5">
+            <div className="flex items-start gap-1.5">
+              <span className="text-[var(--mc-accent-blue)] mt-0.5">💡</span>
+              <span>
+                <strong className="text-[var(--mc-text-secondary)]">Single @mention</strong> → Direct to that agent •
+                <strong className="text-[var(--mc-text-secondary)] ml-1">Multiple @mentions</strong> → @leo orchestrates •
+                <strong className="text-[var(--mc-text-secondary)] ml-1">No @mention</strong> → Defaults to @leo
+              </span>
+            </div>
+          </div>
         </div>
       )}
     </div>
