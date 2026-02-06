@@ -154,7 +154,7 @@ export function QuickActionsPanel({ onCommandSelect }: QuickActionsPanelProps) {
           <div key={agent.agentNickname} className="mb-2">
             <button
               onClick={() => toggleAgent(agent.agentNickname)}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-transparent hover:border-[var(--mc-border)] transition-all"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] transition-all"
             >
               <div className="flex items-center gap-2">
                 <div
@@ -184,7 +184,7 @@ export function QuickActionsPanel({ onCommandSelect }: QuickActionsPanelProps) {
                   <button
                     key={idx}
                     onClick={() => onCommandSelect(action.command)}
-                    className="w-full text-left px-3 py-2 rounded text-xs bg-[var(--mc-bg-primary)]/50 hover:bg-[var(--mc-hover)] text-[var(--mc-text-secondary)] hover:text-[var(--mc-text-primary)] transition-colors border border-transparent hover:border-[var(--mc-accent-blue)]/30"
+                    className="w-full text-left px-3 py-2 rounded text-xs bg-[var(--mc-bg-primary)]/50 hover:bg-[var(--mc-hover)] text-[var(--mc-text-secondary)] hover:text-[var(--mc-text-primary)] transition-colors border border-[var(--mc-border)]/50 hover:border-[var(--mc-accent-blue)]/30"
                   >
                     {action.label}
                   </button>

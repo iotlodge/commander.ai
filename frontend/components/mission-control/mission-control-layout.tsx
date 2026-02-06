@@ -29,6 +29,7 @@ function MissionControlContent() {
       // Special handling for chat agent - enter chat mode
       enterChatMode();
       setSelectedAgentFilter(null);
+      commandInputRef.current?.setCommand("");
       commandInputRef.current?.focus();
     } else {
       // Regular agents - auto-populate @mention

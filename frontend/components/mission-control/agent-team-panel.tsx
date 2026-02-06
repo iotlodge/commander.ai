@@ -186,7 +186,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
               className={`w-full p-3 mb-2 rounded-lg transition-all ${
                 isSelected
                   ? "bg-[var(--mc-accent-blue)]/10 border border-[var(--mc-accent-blue)]/30"
-                  : "bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-transparent"
+                  : "bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)]"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -282,15 +282,15 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
 
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-[var(--mc-bg-primary)] p-2 rounded">
+          <div className="bg-[var(--mc-bg-primary)] p-2 rounded border border-[var(--mc-border)]">
             <div className="text-lg font-bold text-[var(--metric-tokens)]">{totalActive}</div>
             <div className="text-[10px] text-gray-500">Active</div>
           </div>
-          <div className="bg-[var(--mc-bg-primary)] p-2 rounded">
+          <div className="bg-[var(--mc-bg-primary)] p-2 rounded border border-[var(--mc-border)]">
             <div className="text-lg font-bold text-gray-400">{totalQueued}</div>
             <div className="text-[10px] text-gray-500">Queued</div>
           </div>
-          <div className="bg-[var(--mc-bg-primary)] p-2 rounded">
+          <div className="bg-[var(--mc-bg-primary)] p-2 rounded border border-[var(--mc-border)]">
             <div className="text-lg font-bold text-[var(--metric-duration)]">{totalCompleted}</div>
             <div className="text-[10px] text-gray-500">Done</div>
           </div>
