@@ -17,6 +17,7 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
   const [copied, setCopied] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [showExecutionTrace, setShowExecutionTrace] = useState(false);
+  const [showMetadata, setShowMetadata] = useState(false); // Collapsed by default
 
   if (!task) return null;
 
@@ -153,44 +154,7 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
             </div>
           )}
 
-          {/* Metadata Section */}
-          {task.metadata && Object.keys(task.metadata).length > 0 && (
-            <div className="bg-[#2a3444] rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-gray-400 mb-3">Metadata</h3>
-              <div className="bg-[#1e2433] rounded-md p-4 border border-[#3a4454]">
-                <pre className="text-xs text-gray-400 whitespace-pre-wrap font-mono">
-                  {JSON.stringify(task.metadata, null, 2)}
-                </pre>
-              </div>
-            </div>
-          )}
-
-          {/* Metrics */}
-          <div className="bg-[#2a3444] rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-400 mb-3">Performance Metrics</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
-                <div className="text-xs text-gray-500 mb-1">LLM Calls</div>
-                <div className="text-lg font-semibold text-[#4a9eff]">
-                  {task.metadata?.execution_metrics?.llm_calls ?? 0}
-                </div>
-              </div>
-              <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
-                <div className="text-xs text-gray-500 mb-1">Agent Calls</div>
-                <div className="text-lg font-semibold text-purple-400">
-                  {task.metadata?.execution_metrics?.agent_calls ?? 0}
-                </div>
-              </div>
-              <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
-                <div className="text-xs text-gray-500 mb-1">Total Tokens</div>
-                <div className="text-lg font-semibold text-green-400">
-                  {task.metadata?.execution_metrics?.tokens?.total?.toLocaleString() ?? 0}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Execution Trace (Phase 1 - Simple Timeline) */}
+          {/* Execution Trace (Phase 1 - Simple Timeline) - MOVED UP */}
           {executionTrace && executionTrace.length > 0 && (
             <div className="bg-[#2a3444] rounded-lg p-4">
               <div
@@ -277,6 +241,68 @@ export function TaskResultsModal({ task, isOpen, onClose }: TaskResultsModalProp
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Performance Metrics */}
+          <div className="bg-[#2a3444] rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-400 mb-3">Performance Metrics</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
+                <div className="text-xs text-gray-500 mb-1">LLM Calls</div>
+                <div className="text-lg font-semibold text-[#4a9eff]">
+                  {task.metadata?.execution_metrics?.llm_calls ?? 0}
+                </div>
+              </div>
+              <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
+                <div className="text-xs text-gray-500 mb-1">Agent Calls</div>
+                <div className="text-lg font-semibold text-purple-400">
+                  {task.metadata?.execution_metrics?.agent_calls ?? 0}
+                </div>
+              </div>
+              <div className="text-center p-3 bg-[#1e2433] rounded-md border border-[#3a4454]">
+                <div className="text-xs text-gray-500 mb-1">Total Tokens</div>
+                <div className="text-lg font-semibold text-green-400">
+                  {task.metadata?.execution_metrics?.tokens?.total?.toLocaleString() ?? 0}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Metadata Section - MOVED TO BOTTOM, COLLAPSIBLE */}
+          {task.metadata && Object.keys(task.metadata).length > 0 && (
+            <div className="bg-[#2a3444] rounded-lg p-4">
+              <div
+                className="flex items-center justify-between cursor-pointer mb-3"
+                onClick={() => setShowMetadata(!showMetadata)}
+              >
+                <h3 className="text-sm font-semibold text-gray-400 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-gray-400" />
+                  Metadata
+                  <span className="text-xs text-gray-500">
+                    (Full task details)
+                  </span>
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-gray-700/50"
+                >
+                  {showMetadata ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+
+              {showMetadata && (
+                <div className="bg-[#1e2433] rounded-md p-4 border border-[#3a4454]">
+                  <pre className="text-xs text-gray-400 whitespace-pre-wrap font-mono">
+                    {JSON.stringify(task.metadata, null, 2)}
+                  </pre>
                 </div>
               )}
             </div>
