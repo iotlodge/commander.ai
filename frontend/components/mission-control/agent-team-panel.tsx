@@ -7,7 +7,8 @@ import { useTaskStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { TaskStatus } from "@/lib/types";
-import { Activity, Brain, AlertCircle } from "lucide-react";
+import { Activity, Brain, AlertCircle, Settings } from "lucide-react";
+import { PromptListModal } from "@/components/prompt-management";
 
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -54,6 +55,10 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
   const { tasks, getTasksByStatus, clearCompletedTasks } = useTaskStore();
   const { isConnected } = useWebSocket(MVP_USER_ID);
   const { agents: apiAgents, isLoading: agentsLoading } = useAgents();
+
+  // Prompt management modal state
+  const [promptModalOpen, setPromptModalOpen] = useState(false);
+  const [selectedPromptAgent, setSelectedPromptAgent] = useState<AgentInfo | null>(null);
 
   // Calculate agent activity and metrics
   const getAgentActivity = (nickname: string) => {
@@ -192,7 +197,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                   onSelectAgent(isSelected ? null : agent.nickname);
                 }
               }}
-              className={`w-full p-3 mb-2 rounded-lg transition-all ${
+              className={`group w-full p-3 mb-2 rounded-lg transition-all ${
                 isSelected
                   ? "bg-[var(--mc-accent-blue)]/10 border border-[var(--mc-accent-blue)]/30"
                   : "bg-[var(--mc-bg-primary)] hover:bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)]"
@@ -219,8 +224,21 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
 
                 {/* Info */}
                 <div className="flex-1 text-left">
-                  <div className="text-sm font-semibold text-[var(--mc-text-primary)]">
-                    @{agent.nickname}
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-[var(--mc-text-primary)]">
+                      @{agent.nickname}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPromptAgent(agent);
+                        setPromptModalOpen(true);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 hover:bg-[var(--mc-border)] p-1 rounded transition-opacity"
+                      title="Manage Prompts"
+                    >
+                      <Settings className="h-3 w-3 text-[var(--mc-text-tertiary)] hover:text-[var(--mc-accent-blue)]" />
+                    </button>
                   </div>
                   <div className="text-xs text-[var(--mc-text-secondary)]">
                     {agent.specialization}
@@ -322,6 +340,17 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
           </button>
         )}
       </div>
+
+      {/* Prompt Management Modal */}
+      {promptModalOpen && selectedPromptAgent && (
+        <PromptListModal
+          open={promptModalOpen}
+          onOpenChange={setPromptModalOpen}
+          agentId={selectedPromptAgent.id}
+          agentNickname={selectedPromptAgent.nickname}
+          agentName={selectedPromptAgent.specialization}
+        />
+      )}
     </div>
   );
 }
