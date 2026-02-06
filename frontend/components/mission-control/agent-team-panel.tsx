@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useTaskStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { useAgents } from "@/lib/hooks/use-agents";
 import { TaskStatus } from "@/lib/types";
-import { Activity, Brain } from "lucide-react";
+import { Activity, Brain, AlertCircle } from "lucide-react";
 
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -37,6 +38,7 @@ interface AgentTeamPanelProps {
 export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: AgentTeamPanelProps) {
   const { tasks, getTasksByStatus, clearCompletedTasks } = useTaskStore();
   const { isConnected } = useWebSocket(MVP_USER_ID);
+  const { agents: apiAgents, isLoading: agentsLoading } = useAgents();
 
   // Calculate agent activity and metrics
   const getAgentActivity = (nickname: string) => {
@@ -101,6 +103,12 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
   const totalQueued = getTasksByStatus(TaskStatus.QUEUED).length;
   const totalCompleted = getTasksByStatus(TaskStatus.COMPLETED).length + getTasksByStatus(TaskStatus.FAILED).length;
 
+  // Calculate agent status (configured vs active)
+  const configuredAgentsCount = apiAgents.length;
+  const displayAgentsCount = AGENTS.length;
+  const activeAgentsCount = Math.min(configuredAgentsCount, displayAgentsCount);
+  const hasOfflineAgents = configuredAgentsCount !== displayAgentsCount || agentsLoading;
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -122,6 +130,24 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
           >
             {isConnected ? "🟢 Live" : "🔴 Offline"}
           </Badge>
+
+          {/* Agent Status Indicator */}
+          {!agentsLoading && (
+            <Badge
+              variant="outline"
+              className={`text-xs ${
+                hasOfflineAgents
+                  ? "bg-orange-500/10 text-orange-400 border-orange-500/30"
+                  : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+              }`}
+            >
+              <Activity className="h-3 w-3 mr-1" />
+              {activeAgentsCount}/{configuredAgentsCount} agents
+              {hasOfflineAgents && (
+                <AlertCircle className="h-3 w-3 ml-1 text-orange-400" />
+              )}
+            </Badge>
+          )}
         </div>
       </div>
 
