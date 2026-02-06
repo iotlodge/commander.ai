@@ -129,41 +129,43 @@ export function PromptListModal({
             </div>
 
             {/* Filter Controls */}
-            <div className="flex items-center gap-2 flex-wrap w-full">
-              <span className="text-xs text-[var(--mc-text-secondary)] flex items-center gap-1">
-                <Filter className="h-3 w-3" />
-                Filters:
-              </span>
+            <div className="space-y-2 w-full">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-[var(--mc-text-secondary)] flex items-center gap-1">
+                  <Filter className="h-3 w-3" />
+                  Filters:
+                </span>
 
-              {/* Type Filter */}
-              <select
-                value={filterType || "all"}
-                onChange={(e) =>
-                  setFilterType(e.target.value === "all" ? undefined : e.target.value)
-                }
-                className="text-xs bg-[var(--mc-bg-primary)] border border-[var(--mc-border)] rounded px-2 py-1 text-[var(--mc-text-primary)]"
-              >
-                <option value="all">All Types</option>
-                <option value="system">System</option>
-                <option value="human">Human</option>
-                <option value="ai">AI</option>
-              </select>
+                {/* Type Filter */}
+                <select
+                  value={filterType || "all"}
+                  onChange={(e) =>
+                    setFilterType(e.target.value === "all" ? undefined : e.target.value)
+                  }
+                  className="text-xs bg-[var(--mc-bg-primary)] border border-[var(--mc-border)] rounded px-2 py-1 text-[var(--mc-text-primary)]"
+                >
+                  <option value="all">All Types</option>
+                  <option value="system">System</option>
+                  <option value="human">Human</option>
+                  <option value="ai">AI</option>
+                </select>
 
-              {/* Active Filter */}
-              <label className="flex items-center gap-1.5 text-xs text-[var(--mc-text-secondary)] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filterActive}
-                  onChange={(e) => setFilterActive(e.target.checked)}
-                  className="rounded"
-                />
-                Active Only
-              </label>
+                {/* Active Filter */}
+                <label className="flex items-center gap-1.5 text-xs text-[var(--mc-text-secondary)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={filterActive}
+                    onChange={(e) => setFilterActive(e.target.checked)}
+                    className="rounded"
+                  />
+                  Active Only
+                </label>
+              </div>
 
-              {/* Results Count */}
-              <span className="ml-auto text-xs text-[var(--mc-text-tertiary)]">
+              {/* Results Count - Separate row */}
+              <div className="text-xs text-[var(--mc-text-tertiary)] text-right">
                 Showing {filteredPrompts.length} of {prompts.length} prompts
-              </span>
+              </div>
             </div>
           </div>
 
