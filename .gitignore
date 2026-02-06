@@ -243,3 +243,13 @@ next-env.d.ts
 
 # Logs directory
 logs/
+
+# Output files
+output/
+*.png
+*.jpg
+*.jpeg
+
+# System files
+.DS_Store
+**/.DS_Store
