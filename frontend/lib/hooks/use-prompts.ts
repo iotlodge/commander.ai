@@ -86,6 +86,7 @@ export function usePrompts(initialAgentId?: string) {
     try {
       // Build query string
       const params = new URLSearchParams();
+      params.append("user_id", MVP_USER_ID); // MVP development bypass
       if (filters?.agent_id) params.append("agent_id", filters.agent_id);
       if (filters?.prompt_type) params.append("prompt_type", filters.prompt_type);
       if (filters?.active !== undefined) params.append("active", String(filters.active));
@@ -122,7 +123,7 @@ export function usePrompts(initialAgentId?: string) {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/prompts`, {
+      const response = await fetch(`${API_BASE_URL}/api/prompts?user_id=${MVP_USER_ID}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -157,7 +158,7 @@ export function usePrompts(initialAgentId?: string) {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/prompts/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/prompts/${id}?user_id=${MVP_USER_ID}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -195,7 +196,7 @@ export function usePrompts(initialAgentId?: string) {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/prompts/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/prompts/${id}?user_id=${MVP_USER_ID}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
@@ -226,7 +227,7 @@ export function usePrompts(initialAgentId?: string) {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/prompts/test`, {
+        const response = await fetch(`${API_BASE_URL}/api/prompts/test?user_id=${MVP_USER_ID}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -263,7 +264,7 @@ export function usePrompts(initialAgentId?: string) {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/prompts/${id}/clone`, {
+        const response = await fetch(`${API_BASE_URL}/api/prompts/${id}/clone?user_id=${MVP_USER_ID}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
