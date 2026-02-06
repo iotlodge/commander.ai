@@ -38,6 +38,7 @@ TEST_RESULTS*.md
 CHANGES.md
 .claude/
 Specialized_AGENT_REQUEST.md
+image_generate_analyze_upscale.py
 
 # PyInstaller
 #   Usually these files are written by a python script from a template
