@@ -90,13 +90,8 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
       }
     }
 
-    // Only update if items actually changed
-    setConversationItems(prev => {
-      if (JSON.stringify(prev.map(i => i.id)) === JSON.stringify(items.map(i => i.id))) {
-        return prev;
-      }
-      return items;
-    });
+    // Always update - tasks may have new results even with same IDs
+    setConversationItems(items);
   }, [tasks, agentFilter]);
 
   // Auto-scroll to bottom on new messages (if enabled)
