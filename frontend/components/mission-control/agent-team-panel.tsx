@@ -164,7 +164,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent }: AgentTeamPanelP
       </div>
 
       {/* Footer Stats */}
-      <div className="flex-shrink-0 p-4 border-t border-[#2a3444]">
+      <div className="flex-shrink-0 p-4 pb-20 border-t border-[#2a3444]">
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
           <Activity className="h-3 w-3" />
           <span>System Activity</span>
