@@ -107,7 +107,8 @@ async def execute_agent_task(task_id: UUID) -> None:
                         original_command=updated_task.command_text,
                         agent_output=result.response,
                         final_state={},  # Not available in this context
-                        task_metadata=updated_task.metadata or {}
+                        task_metadata=updated_task.metadata or {},
+                        run_peer_eval=False  # Disabled for now - peer eval has JSON parsing issues
                     )
                     logger.info(f"Performance evaluation completed for task {task_id}")
                 except Exception as eval_error:
