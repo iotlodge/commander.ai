@@ -20,6 +20,7 @@ from backend.tools.document_loaders import (
     DocumentChunker,
 )
 from backend.tools.web_search.tavily_toolset import TavilyToolset
+from backend.core.llm_factory import create_llm, DEFAULT_CONFIGS
 
 
 async def parse_input_node(state: DocumentManagerState) -> dict:
@@ -185,8 +186,9 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
             }
 
     else:
-        action_type = "list_collections"
-        params = {}
+        # No hardcoded pattern matched - use LLM reasoning
+        action_type = "needs_reasoning"
+        params = {"original_query": query}
 
     return {
         "action_type": action_type,
@@ -195,6 +197,109 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
         "file_path": params.get("file_path"),
         "current_step": "parse_input",
     }
+
+
+async def llm_reasoning_node(state: DocumentManagerState) -> dict:
+    """
+    Use LLM to understand user intent and decide what action to take
+    Handles queries that don't match hardcoded patterns
+    """
+    query = state["action_params"].get("original_query", state["query"])
+
+    # Create LLM instance
+    model_config = state.get("model_config") or DEFAULT_CONFIGS.get("agent_d")
+    llm = create_llm(model_config, temperature=0.0)
+
+    # Prompt LLM to classify the task
+    reasoning_prompt = f"""You are Alice, a Document Manager agent. Analyze this user request and decide what action to take.
+
+User Request: "{query}"
+
+Available Actions:
+1. "web_search" - Search the internet for information (use Tavily API)
+2. "search_all" - Search across all document collections
+3. "list_collections" - List all document collections
+4. "general_task" - Task requires general reasoning/analysis
+
+For each request, respond with ONLY a JSON object (no markdown, no explanation):
+{{
+  "action": "web_search" | "search_all" | "list_collections" | "general_task",
+  "reasoning": "brief explanation",
+  "search_query": "query to use" (only if action is web_search or search_all)
+}}
+
+Examples:
+- "check for deprecated LLM models" → {{"action": "web_search", "reasoning": "Need to search web for current model status", "search_query": "deprecated LLM models OpenAI Anthropic 2026"}}
+- "find documents about quantum computing" → {{"action": "search_all", "reasoning": "Search across all collections", "search_query": "quantum computing"}}
+- "what collections do I have?" → {{"action": "list_collections", "reasoning": "User wants to see their collections"}}
+
+Analyze and respond:"""
+
+    try:
+        response = await llm.ainvoke(reasoning_prompt)
+        response_text = response.content.strip()
+
+        # Parse JSON response
+        import json
+        # Remove markdown code blocks if present
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+        response_text = response_text.strip()
+
+        decision = json.loads(response_text)
+        action = decision.get("action", "list_collections")
+        search_query = decision.get("search_query", query)
+
+        # Map LLM decision to action_type
+        if action == "web_search":
+            return {
+                "action_type": "search_web",
+                "action_params": {
+                    "query": search_query,
+                    "collection_name": None,
+                },
+                "search_query": search_query,
+                "current_step": "llm_reasoning",
+            }
+        elif action == "search_all":
+            return {
+                "action_type": "search_all",
+                "action_params": {"query": search_query},
+                "search_query": search_query,
+                "current_step": "llm_reasoning",
+            }
+        elif action == "general_task":
+            # For general tasks, use web search as fallback
+            return {
+                "action_type": "search_web",
+                "action_params": {
+                    "query": query,
+                    "collection_name": None,
+                },
+                "search_query": query,
+                "current_step": "llm_reasoning",
+            }
+        else:  # list_collections
+            return {
+                "action_type": "list_collections",
+                "action_params": {},
+                "current_step": "llm_reasoning",
+            }
+
+    except Exception as e:
+        # Fallback to web search if LLM reasoning fails
+        return {
+            "action_type": "search_web",
+            "action_params": {
+                "query": query,
+                "collection_name": None,
+            },
+            "search_query": query,
+            "current_step": "llm_reasoning",
+            "error": f"LLM reasoning failed: {str(e)}, falling back to web search",
+        }
 
 
 async def create_collection_node(state: DocumentManagerState) -> dict:
@@ -1200,6 +1305,10 @@ def route_action(state: DocumentManagerState) -> str:
         "search_collection": "search_collection",
         "search_multiple": "search_multiple",
         "search_all": "search_all",
+        "needs_reasoning": "llm_reasoning",  # NEW: Route to LLM reasoning
+        "crawl_site": "crawl_site",
+        "extract_urls": "extract_urls",
+        "map_site": "map_site",
     }
 
     return action_map.get(action_type, "search_all")

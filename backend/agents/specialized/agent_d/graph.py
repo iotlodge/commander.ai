@@ -14,6 +14,7 @@ from backend.agents.base.agent_interface import (
 from backend.agents.specialized.agent_d.state import DocumentManagerState
 from backend.agents.specialized.agent_d.nodes import (
     parse_input_node,
+    llm_reasoning_node,
     create_collection_node,
     delete_collection_node,
     list_collections_node,
@@ -64,6 +65,7 @@ class DocumentManagerAgent(BaseAgent):
 
         Graph Flow:
         parse_input → route_action → [
+            llm_reasoning → route_action (if no pattern match)
             load_file → chunk_and_embed → store_chunks → finalize
             search_web → process_web_documents → store_chunks → finalize
             crawl_site → process_web_documents → store_chunks → finalize
@@ -75,11 +77,15 @@ class DocumentManagerAgent(BaseAgent):
             delete_collection → finalize
             list_collections → finalize
         ] → END
+
+        NEW: llm_reasoning node uses LLM to understand intent for queries
+        that don't match hardcoded patterns (e.g., "check for deprecated models")
         """
         graph = StateGraph(DocumentManagerState)
 
         # Add all nodes
         graph.add_node("parse_input", parse_input_node)
+        graph.add_node("llm_reasoning", llm_reasoning_node)
         graph.add_node("create_collection", create_collection_node)
         graph.add_node("delete_collection", delete_collection_node)
         graph.add_node("list_collections", list_collections_node)
@@ -102,6 +108,26 @@ class DocumentManagerAgent(BaseAgent):
         # Add conditional routing from parse_input
         graph.add_conditional_edges(
             "parse_input",
+            route_action,
+            {
+                "load_file": "load_file",
+                "search_web": "search_web",
+                "crawl_site": "crawl_site",
+                "extract_urls": "extract_urls",
+                "map_site": "map_site",
+                "create_collection": "create_collection",
+                "delete_collection": "delete_collection",
+                "list_collections": "list_collections",
+                "search_collection": "search_collection",
+                "search_multiple": "search_multiple",
+                "search_all": "search_all",
+                "llm_reasoning": "llm_reasoning",  # NEW: Route to LLM reasoning
+            },
+        )
+
+        # Add conditional routing from llm_reasoning (re-routes based on LLM decision)
+        graph.add_conditional_edges(
+            "llm_reasoning",
             route_action,
             {
                 "load_file": "load_file",
