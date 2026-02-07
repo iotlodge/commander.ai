@@ -7,9 +7,11 @@ import { useTaskStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { TaskStatus } from "@/lib/types";
-import { Activity, Brain, AlertCircle, Settings, Cpu } from "lucide-react";
+import { Activity, Brain, AlertCircle, Settings, Cpu, BarChart3 } from "lucide-react";
 import { PromptListModal } from "@/components/prompt-management";
 import { AgentModelModal } from "@/components/agent-management/agent-model-modal";
+import { AgentPerformanceModal } from "./agent-performance-modal";
+import { AgentRoutingTooltip } from "./agent-routing-tooltip";
 import { ProviderIcon } from "@/components/ui/provider-icon";
 import { useAgentModels } from "@/lib/hooks/use-agent-models";
 import type { AgentModelConfig } from "@/lib/types";
@@ -67,6 +69,10 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
   // Model management modal state
   const [modelModalOpen, setModelModalOpen] = useState(false);
   const [selectedModelAgent, setSelectedModelAgent] = useState<AgentInfo | null>(null);
+
+  // Performance charts modal state
+  const [performanceModalOpen, setPerformanceModalOpen] = useState(false);
+  const [selectedPerformanceAgent, setSelectedPerformanceAgent] = useState<AgentInfo | null>(null);
 
   // Model configurations cache
   const [modelConfigs, setModelConfigs] = useState<Record<string, AgentModelConfig>>({});
@@ -290,6 +296,24 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                     >
                       <Cpu className="h-3 w-3 text-gray-500 dark:text-gray-400 hover:text-[var(--mc-accent-purple)]" />
                     </button>
+                    {/* Performance Charts */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPerformanceAgent(agent);
+                        setPerformanceModalOpen(true);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 hover:bg-[var(--mc-border)] p-1 rounded transition-opacity"
+                      title="View Performance Analytics"
+                    >
+                      <BarChart3 className="h-3 w-3 text-gray-500 dark:text-gray-400 hover:text-green-400" />
+                    </button>
+                    {/* Routing Insights */}
+                    <AgentRoutingTooltip
+                      agentId={agent.id}
+                      agentNickname={agent.nickname}
+                      specialization={agent.specialization}
+                    />
                     {/* Provider Icon - always visible */}
                     {modelConfigs[agent.id] && (
                       <div className="ml-auto">
@@ -422,6 +446,16 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
           }}
           agentId={selectedModelAgent.id}
           agentNickname={selectedModelAgent.nickname}
+        />
+      )}
+
+      {/* Performance Analytics Modal */}
+      {performanceModalOpen && selectedPerformanceAgent && (
+        <AgentPerformanceModal
+          agentId={selectedPerformanceAgent.id}
+          agentNickname={selectedPerformanceAgent.nickname}
+          isOpen={performanceModalOpen}
+          onClose={() => setPerformanceModalOpen(false)}
         />
       )}
     </div>
