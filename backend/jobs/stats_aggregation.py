@@ -209,7 +209,7 @@ class StatsAggregationJob:
         for category, score_list in categories.items():
             category_stats[category] = {
                 "count": len(score_list),
-                "avg_score": round(sum(score_list) / len(score_list), 2)
+                "avg_score": float(round(sum(score_list) / len(score_list), 2))
             }
 
         return category_stats
@@ -250,7 +250,7 @@ class StatsAggregationJob:
         for model_name, data in models.items():
             model_stats[model_name] = {
                 "count": len(data["scores"]),
-                "avg_score": round(sum(data["scores"]) / len(data["scores"]), 2),
+                "avg_score": float(round(sum(data["scores"]) / len(data["scores"]), 2)),
                 "since": data["first_used"].isoformat() if data["first_used"] else None
             }
 
