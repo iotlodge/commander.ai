@@ -6,14 +6,18 @@ import { ConversationStream } from "./conversation-stream";
 import { CommandInputBar } from "./command-input-bar";
 import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
 import { QuickActionsPanel } from "./quick-actions-panel";
+import { LeaderboardPanel } from "./leaderboard-panel";
 import { ThemeToggle } from "./theme-toggle";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { ChatModeProvider, useChatMode } from "./chat-mode-context";
-import { Trash2 } from "lucide-react";
+import { Trash2, Zap, Trophy } from "lucide-react";
 import { useTaskStore } from "@/lib/store";
+
+type RightPanelMode = "quick-actions" | "leaderboard";
 
 function MissionControlContent() {
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
+  const [rightPanelMode, setRightPanelMode] = useState<RightPanelMode>("quick-actions");
   const commandInputRef = useRef<{
     focus: () => void;
     insertMention: (nickname: string) => void;
@@ -148,9 +152,42 @@ function MissionControlContent() {
         </div>
       </div>
 
-      {/* Right Panel: Quick Actions */}
-      <div className="w-72 flex-shrink-0">
-        <QuickActionsPanel onCommandSelect={handleQuickActionSelect} />
+      {/* Right Panel: Quick Actions / Leaderboard */}
+      <div className="w-72 flex-shrink-0 flex flex-col bg-[var(--mc-bg-secondary)]">
+        {/* Panel Toggle */}
+        <div className="flex-shrink-0 flex border-b border-[var(--mc-border)]">
+          <button
+            onClick={() => setRightPanelMode("quick-actions")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+              rightPanelMode === "quick-actions"
+                ? "text-[var(--mc-text-primary)] bg-[var(--mc-bg-primary)] border-b-2 border-[var(--mc-accent-blue)]"
+                : "text-gray-400 hover:text-[var(--mc-text-secondary)] hover:bg-[var(--mc-hover)]"
+            }`}
+          >
+            <Zap className="h-4 w-4" />
+            Quick Actions
+          </button>
+          <button
+            onClick={() => setRightPanelMode("leaderboard")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+              rightPanelMode === "leaderboard"
+                ? "text-[var(--mc-text-primary)] bg-[var(--mc-bg-primary)] border-b-2 border-yellow-500"
+                : "text-gray-400 hover:text-[var(--mc-text-secondary)] hover:bg-[var(--mc-hover)]"
+            }`}
+          >
+            <Trophy className="h-4 w-4" />
+            Leaderboard
+          </button>
+        </div>
+
+        {/* Panel Content */}
+        <div className="flex-1 overflow-hidden">
+          {rightPanelMode === "quick-actions" ? (
+            <QuickActionsPanel onCommandSelect={handleQuickActionSelect} />
+          ) : (
+            <LeaderboardPanel />
+          )}
+        </div>
       </div>
     </div>
   );
