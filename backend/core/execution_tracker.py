@@ -217,7 +217,9 @@ class ExecutionTracker(BaseCallbackHandler):
         **kwargs: Any
     ) -> None:
         """Called when an LLM starts generation"""
-        model_name = kwargs.get("invocation_params", {}).get("model_name", "unknown_model")
+        invocation_params = kwargs.get("invocation_params", {})
+        # Try both OpenAI (model_name) and Anthropic (model) formats
+        model_name = invocation_params.get("model_name") or invocation_params.get("model") or "unknown_model"
 
         key = self._get_step_key()
         self._start_times[key] = datetime.now().timestamp()

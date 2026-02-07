@@ -108,7 +108,7 @@ export function useAgentModels(): UseAgentModelsReturn {
     setError(null);
 
     try {
-      const url = new URL(`${API_BASE_URL}/api/models/approved`);
+      const url = new URL(`${API_BASE_URL}/api/agents/models/approved`);
       url.searchParams.append('user_id', MVP_USER_ID);
       if (provider) {
         url.searchParams.append('provider', provider);

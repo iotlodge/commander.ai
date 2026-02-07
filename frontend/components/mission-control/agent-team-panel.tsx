@@ -87,6 +87,17 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
     loadModelConfigs();
   }, []);
 
+  // Refresh a specific agent's model config
+  const refreshAgentModelConfig = async (agentId: string) => {
+    const config = await fetchModelConfig(agentId);
+    if (config) {
+      setModelConfigs(prev => ({
+        ...prev,
+        [agentId]: config
+      }));
+    }
+  };
+
   // Calculate agent activity and metrics
   const getAgentActivity = (nickname: string) => {
     const agentTasks = Array.from(tasks.values()).filter(
@@ -255,15 +266,6 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                     <div className="text-sm font-semibold text-[var(--mc-text-primary)]">
                       @{agent.nickname}
                     </div>
-                    {/* Model Info - inline with name */}
-                    {modelConfigs[agent.id] && (
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <ProviderIcon provider={modelConfigs[agent.id].provider} size={12} />
-                        <span className="text-[10px] text-[var(--mc-text-tertiary)] font-mono whitespace-nowrap">
-                          {modelConfigs[agent.id].model_name}
-                        </span>
-                      </div>
-                    )}
                     {/* Prompt Settings */}
                     <button
                       onClick={(e) => {
@@ -274,7 +276,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                       className="opacity-0 group-hover:opacity-100 hover:bg-[var(--mc-border)] p-1 rounded transition-opacity"
                       title="Manage Prompts"
                     >
-                      <Settings className="h-3 w-3 text-[var(--mc-text-tertiary)] hover:text-[var(--mc-accent-blue)]" />
+                      <Settings className="h-3 w-3 text-gray-500 dark:text-gray-400 hover:text-[var(--mc-accent-blue)]" />
                     </button>
                     {/* Model Settings */}
                     <button
@@ -284,10 +286,16 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                         setModelModalOpen(true);
                       }}
                       className="opacity-0 group-hover:opacity-100 hover:bg-[var(--mc-border)] p-1 rounded transition-opacity"
-                      title="Model Settings"
+                      title={modelConfigs[agent.id] ? `Model: ${modelConfigs[agent.id].provider} ${modelConfigs[agent.id].model_name}` : "Model Settings"}
                     >
-                      <Cpu className="h-3 w-3 text-[var(--mc-text-tertiary)] hover:text-[var(--mc-accent-purple)]" />
+                      <Cpu className="h-3 w-3 text-gray-500 dark:text-gray-400 hover:text-[var(--mc-accent-purple)]" />
                     </button>
+                    {/* Provider Icon - always visible */}
+                    {modelConfigs[agent.id] && (
+                      <div className="ml-auto">
+                        <ProviderIcon provider={modelConfigs[agent.id].provider} size={14} />
+                      </div>
+                    )}
                   </div>
                   <div className="text-xs text-[var(--mc-text-secondary)]">
                     {agent.specialization}
@@ -405,7 +413,13 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
       {modelModalOpen && selectedModelAgent && (
         <AgentModelModal
           open={modelModalOpen}
-          onOpenChange={setModelModalOpen}
+          onOpenChange={(open) => {
+            setModelModalOpen(open);
+            // Refresh the agent's model config when modal closes after successful update
+            if (!open && selectedModelAgent) {
+              refreshAgentModelConfig(selectedModelAgent.id);
+            }
+          }}
           agentId={selectedModelAgent.id}
           agentNickname={selectedModelAgent.nickname}
         />

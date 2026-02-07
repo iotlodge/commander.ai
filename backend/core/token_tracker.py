@@ -142,26 +142,49 @@ class ExecutionMetrics:
 
 def extract_token_usage_from_response(response: Any) -> tuple[int, int]:
     """
-    Extract token usage from LangChain/OpenAI response
+    Extract token usage from LangChain/OpenAI/Anthropic response
 
     Returns:
         tuple[prompt_tokens, completion_tokens]
     """
     try:
-        # LangChain ChatOpenAI response
+        # LangChain response with response_metadata
         if hasattr(response, "response_metadata"):
-            usage = response.response_metadata.get("token_usage", {})
-            return (
-                usage.get("prompt_tokens", 0),
-                usage.get("completion_tokens", 0)
-            )
+            metadata = response.response_metadata
 
-        # Direct OpenAI API response
+            # OpenAI format
+            usage = metadata.get("token_usage", {})
+            if usage:
+                return (
+                    usage.get("prompt_tokens", 0),
+                    usage.get("completion_tokens", 0)
+                )
+
+            # Anthropic format (in response_metadata.usage)
+            usage = metadata.get("usage", {})
+            if usage:
+                return (
+                    usage.get("input_tokens", 0),
+                    usage.get("output_tokens", 0)
+                )
+
+        # Direct API response with usage attribute
         if hasattr(response, "usage"):
-            return (
-                response.usage.prompt_tokens,
-                response.usage.completion_tokens
-            )
+            usage = response.usage
+
+            # OpenAI format
+            if hasattr(usage, "prompt_tokens"):
+                return (
+                    usage.prompt_tokens,
+                    usage.completion_tokens
+                )
+
+            # Anthropic format
+            if hasattr(usage, "input_tokens"):
+                return (
+                    usage.input_tokens,
+                    usage.output_tokens
+                )
 
         # Fallback
         return (0, 0)

@@ -230,10 +230,7 @@ async def _reload_agent_with_new_model(agent_id: str, config) -> None:
         Exception if agent not found or reload fails
     """
     # Get agent from registry
-    if agent_id == "parent":
-        agent = AgentRegistry.get_orchestrator()
-    else:
-        agent = AgentRegistry.get_specialist(agent_id)
+    agent = AgentRegistry.get_agent(agent_id)
 
     if not agent:
         raise ValueError(f"Agent {agent_id} not found in registry")
