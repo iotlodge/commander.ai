@@ -164,7 +164,7 @@ async def task_websocket(websocket: WebSocket, user_id: str, token: str = None):
 
 
 # Import and include routers
-from backend.api.routes import tasks, commands, graphs, agents, chat, prompts, agent_models, jobs
+from backend.api.routes import tasks, commands, graphs, agents, chat, prompts, agent_models, jobs, performance
 from backend.auth.routes import router as auth_router
 
 # Public routes (no auth required)
@@ -179,3 +179,4 @@ app.include_router(chat.router)
 app.include_router(prompts.router)
 app.include_router(agent_models.router)
 app.include_router(jobs.router)
+app.include_router(performance.router)  # v0.5.0 - Performance tracking

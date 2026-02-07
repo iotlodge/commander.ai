@@ -296,3 +296,103 @@ class ExecutionTracker(BaseCallbackHandler):
         self.flow = []
         self._start_times = {}
         self._step_counter = 0
+
+    # === Performance Tracking (v0.5.0) ===
+
+    async def on_task_complete(
+        self,
+        task_id: UUID,
+        agent_id: str,
+        final_state: Dict[str, Any],
+        task_metadata: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Called when task completes - calculate and save performance metrics
+
+        Args:
+            task_id: Task UUID
+            agent_id: Agent identifier (e.g., "agent_a")
+            final_state: Final state from graph execution
+            task_metadata: Task metadata (tokens, duration, etc.)
+
+        Returns:
+            Dict with calculated performance scores
+        """
+        from backend.repositories.performance_repository import PerformanceRepository
+        from backend.core.database import get_session_maker
+
+        # Calculate efficiency score
+        efficiency_score = self._calculate_efficiency(task_metadata)
+
+        # Basic quality scores (start simple, will enhance later)
+        scores = {
+            "efficiency_score": efficiency_score,
+            "overall_score": efficiency_score,  # For now, use efficiency as overall
+            # TODO: Add LLM-based accuracy/relevance evaluation in Phase 2
+        }
+
+        # Extract execution metadata
+        metadata = {
+            "total_tokens": task_metadata.get("execution_metrics", {}).get("total_tokens", 0),
+            "estimated_cost": task_metadata.get("execution_metrics", {}).get("estimated_cost", 0.0),
+            "duration_seconds": task_metadata.get("execution_metrics", {}).get("duration_seconds", 0.0),
+            "model_used": task_metadata.get("model_config", {}).get("model_name"),
+            "temperature": task_metadata.get("model_config", {}).get("temperature"),
+        }
+
+        # Calculate cost per quality point
+        if scores["overall_score"] and scores["overall_score"] > 0:
+            metadata["cost_per_quality_point"] = (
+                metadata["estimated_cost"] / scores["overall_score"]
+            )
+
+        # Save to database
+        try:
+            session_maker = get_session_maker()
+            async with session_maker() as session:
+                repo = PerformanceRepository(session)
+                await repo.save_performance_score(
+                    task_id=task_id,
+                    agent_id=agent_id,
+                    scores=scores,
+                    metadata=metadata
+                )
+                await session.commit()
+                logger.info(f"Performance score saved for task {task_id}: {scores['overall_score']:.2f}")
+        except Exception as e:
+            logger.error(f"Failed to save performance score: {e}", exc_info=True)
+
+        return scores
+
+    def _calculate_efficiency(self, task_metadata: Dict[str, Any]) -> float:
+        """
+        Calculate efficiency score (0-1 scale)
+
+        Efficiency = quality / cost ratio
+        For Phase 1, we'll use: inverse of (tokens * duration)
+        Lower tokens + faster = higher efficiency
+
+        Args:
+            task_metadata: Task metadata with execution metrics
+
+        Returns:
+            Efficiency score (0-1)
+        """
+        metrics = task_metadata.get("execution_metrics", {})
+
+        tokens = metrics.get("total_tokens", 100)
+        duration = metrics.get("duration_seconds", 1.0)
+
+        # Normalize: assume 1000 tokens in 10 seconds is "baseline" (score = 0.5)
+        baseline = 1000 * 10
+
+        # Calculate score (lower is better, so invert)
+        actual = tokens * duration
+        if actual == 0:
+            return 1.0
+
+        # Normalize to 0-1 scale
+        efficiency = baseline / actual
+        efficiency = min(max(efficiency, 0.0), 1.0)  # Clamp to 0-1
+
+        return round(efficiency, 2)
