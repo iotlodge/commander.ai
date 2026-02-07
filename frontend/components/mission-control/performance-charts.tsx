@@ -19,7 +19,8 @@ interface PerformanceScore {
   task_id: string;
   created_at: string;
   overall_score: number;
-  objective_category?: string;
+  user_rating?: number | null;
+  category?: string | null;
   accuracy_score?: number;
   relevance_score?: number;
   completeness_score?: number;
@@ -28,9 +29,11 @@ interface PerformanceScore {
 
 interface AgentStats {
   total_tasks: number;
-  successful_tasks: number;
-  failed_tasks: number;
+  successful_tasks?: number;
+  failed_tasks?: number;
   avg_overall_score: number;
+  avg_user_rating?: number;
+  rank?: number;
   category_performance?: Record<string, { count: number; avg_score: number }>;
 }
 
@@ -66,19 +69,21 @@ export function PerformanceCharts({ scores, stats, agentNickname }: PerformanceC
     }));
   }, [stats.category_performance]);
 
-  // Prepare task completion data
-  const completionData = [
-    {
-      name: "Completed",
-      count: stats.successful_tasks,
-      fill: "var(--metric-tokens)",
-    },
-    {
-      name: "Failed",
-      count: stats.failed_tasks,
-      fill: "var(--metric-duration)",
-    },
-  ];
+  // Prepare task completion data (if available)
+  const completionData = stats.successful_tasks !== undefined && stats.failed_tasks !== undefined
+    ? [
+        {
+          name: "Completed",
+          count: stats.successful_tasks,
+          fill: "var(--metric-tokens)",
+        },
+        {
+          name: "Failed",
+          count: stats.failed_tasks,
+          fill: "var(--metric-duration)",
+        },
+      ]
+    : [];
 
   const getAgentColor = (nickname: string) => {
     const colors: Record<string, string> = {
@@ -205,55 +210,69 @@ export function PerformanceCharts({ scores, stats, agentNickname }: PerformanceC
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-[var(--mc-accent-blue)]" />
           <h3 className="text-sm font-semibold text-[var(--mc-text-primary)]">
-            Task Completion
+            Performance Summary
           </h3>
         </div>
         <div className="bg-[var(--mc-bg-secondary)] border border-[var(--mc-border)] rounded-lg p-4">
-          <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={completionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--mc-border)" />
-              <XAxis
-                dataKey="name"
-                stroke="var(--mc-text-tertiary)"
-                style={{ fontSize: "12px" }}
-              />
-              <YAxis stroke="var(--mc-text-tertiary)" style={{ fontSize: "12px" }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "var(--mc-bg-tertiary)",
-                  border: "1px solid var(--mc-border)",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                }}
-              />
-              <Bar dataKey="count" name="Tasks" />
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="mt-3 flex justify-around text-center">
+          {completionData.length > 0 && (
+            <ResponsiveContainer width="100%" height={150}>
+              <BarChart data={completionData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--mc-border)" />
+                <XAxis
+                  dataKey="name"
+                  stroke="var(--mc-text-tertiary)"
+                  style={{ fontSize: "12px" }}
+                />
+                <YAxis stroke="var(--mc-text-tertiary)" style={{ fontSize: "12px" }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "var(--mc-bg-tertiary)",
+                    border: "1px solid var(--mc-border)",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
+                />
+                <Bar dataKey="count" name="Tasks" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+          <div className={completionData.length > 0 ? "mt-3 flex justify-around text-center" : "flex justify-around text-center"}>
             <div>
               <div className="text-2xl font-bold text-[var(--mc-text-primary)]">
                 {stats.total_tasks}
               </div>
               <div className="text-xs text-gray-400">Total</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-green-400">
-                {stats.successful_tasks}
+            {stats.successful_tasks !== undefined && (
+              <div>
+                <div className="text-2xl font-bold text-green-400">
+                  {stats.successful_tasks}
+                </div>
+                <div className="text-xs text-gray-400">Success</div>
               </div>
-              <div className="text-xs text-gray-400">Success</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-400">
-                {stats.failed_tasks}
+            )}
+            {stats.failed_tasks !== undefined && (
+              <div>
+                <div className="text-2xl font-bold text-blue-400">
+                  {stats.failed_tasks}
+                </div>
+                <div className="text-xs text-gray-400">Failed</div>
               </div>
-              <div className="text-xs text-gray-400">Failed</div>
-            </div>
+            )}
             <div>
               <div className="text-2xl font-bold text-yellow-400">
                 {stats.avg_overall_score.toFixed(2)}
               </div>
               <div className="text-xs text-gray-400">Avg Score</div>
             </div>
+            {stats.rank !== undefined && (
+              <div>
+                <div className="text-2xl font-bold text-[var(--mc-accent-blue)]">
+                  #{stats.rank}
+                </div>
+                <div className="text-xs text-gray-400">Rank</div>
+              </div>
+            )}
           </div>
         </div>
       </div>

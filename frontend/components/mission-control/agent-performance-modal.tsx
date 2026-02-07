@@ -78,7 +78,7 @@ export function AgentPerformanceModal({
 
           {data && !loading && !error && (
             <>
-              {data.scores.length === 0 ? (
+              {!data.recent_scores || data.recent_scores.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-sm text-gray-400">
                     No performance data yet for @{agentNickname}
@@ -89,7 +89,7 @@ export function AgentPerformanceModal({
                 </div>
               ) : (
                 <PerformanceCharts
-                  scores={data.scores}
+                  scores={data.recent_scores}
                   stats={data.stats}
                   agentNickname={agentNickname}
                 />
