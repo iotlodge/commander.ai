@@ -99,7 +99,7 @@ async def execute_agent_task(task_id: UUID) -> None:
                 # Evaluate performance (Phase 2 integration)
                 try:
                     from backend.core.execution_tracker import ExecutionTracker
-                    tracker = ExecutionTracker(task_id)
+                    tracker = ExecutionTracker()
                     await tracker.on_task_complete(
                         task_id=task_id,
                         agent_id=updated_task.agent_id,
