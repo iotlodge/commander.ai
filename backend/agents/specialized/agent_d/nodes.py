@@ -1458,12 +1458,202 @@ async def process_web_documents_node(state: DocumentManagerState) -> dict:
         }
 
 
+async def _format_model_deprecation_report(state: DocumentManagerState) -> str:
+    """
+    Analyze web search results for model deprecation info and create formatted report
+    Compares against user's configured models
+    """
+    web_documents = state.get("web_documents", [])
+    query = state.get("query", "").lower()
+
+    if not web_documents:
+        return "No information found about model deprecation."
+
+    # Extract model information from web results
+    deprecated_models = []
+    model_info = {}
+
+    # Common model patterns
+    model_patterns = [
+        r'gpt-4[-\w]*',
+        r'gpt-3\.5[-\w]*',
+        r'claude[-\s]?(?:3\.5|3|2\.1|2\.0|2|1)',
+        r'claude[-\s]?(?:opus|sonnet|haiku)[-\s]?[\d.]*',
+        r'text-davinci[-\w]*',
+        r'text-curie[-\w]*',
+    ]
+
+    import re
+    for doc in web_documents:
+        content = doc.get("content", "")
+        title = doc.get("metadata", {}).get("title", "")
+        url = doc.get("metadata", {}).get("url", "")
+
+        # Look for deprecation mentions
+        for pattern in model_patterns:
+            matches = re.finditer(pattern, content, re.IGNORECASE)
+            for match in matches:
+                model_name = match.group(0).strip()
+                # Check context for deprecation keywords
+                context_start = max(0, match.start() - 100)
+                context_end = min(len(content), match.end() + 100)
+                context = content[context_start:context_end].lower()
+
+                if any(keyword in context for keyword in ['deprecat', 'sunset', 'discontinu', 'retired', 'end of life', 'eol']):
+                    if model_name not in model_info:
+                        model_info[model_name] = {
+                            "deprecated": True,
+                            "sources": []
+                        }
+                    model_info[model_name]["sources"].append({"title": title, "url": url})
+
+    # Query database for user's configured models
+    configured_models = {}
+    try:
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            from backend.repositories.agent_model_repository import AgentModelRepository
+            model_repo = AgentModelRepository(session)
+            configs = await model_repo.list_model_configs(user_id=state["user_id"])
+
+            for config in configs:
+                agent_id = config.agent_id
+                model_key = f"{config.provider}_{config.model_name}"
+                configured_models[agent_id] = {
+                    "provider": config.provider,
+                    "model_name": config.model_name,
+                    "model_key": model_key,
+                    "temperature": config.temperature,
+                    "enabled": config.enabled,
+                }
+    except Exception as e:
+        print(f"[Alice] Could not fetch configured models: {e}")
+
+    # Build formatted report
+    report = []
+    report.append("# 🔍 LLM Model Deprecation Analysis Report\n")
+    report.append(f"**Query:** {state.get('search_query', query)}")
+    report.append(f"**Generated:** {__import__('datetime').datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}\n")
+
+    # Section 1: Deprecated Models Found
+    if model_info:
+        report.append("## 📊 Deprecated Models Detected\n")
+        report.append("| Model | Status | Sources |")
+        report.append("|-------|--------|---------|")
+
+        for model_name, info in sorted(model_info.items()):
+            sources_text = ", ".join([f"[{s['title'][:30]}...]({s['url']})" for s in info['sources'][:2]])
+            report.append(f"| `{model_name}` | ⚠️ Deprecated | {sources_text} |")
+
+        report.append("")
+    else:
+        report.append("## ✅ No Deprecated Models Found\n")
+        report.append("Web search did not identify any specific deprecated models in the results.\n")
+
+    # Section 2: Your Active Models
+    if configured_models:
+        report.append("## 🤖 Your Currently Configured Models\n")
+        report.append("| Agent | Provider | Model | Status |")
+        report.append("|-------|----------|-------|--------|")
+
+        for agent_id, config in configured_models.items():
+            model_full = f"{config['provider']}_{config['model_name']}"
+            # Check if model appears in deprecated list
+            is_deprecated = any(
+                model_full.lower().replace('_', '-') in model_name.lower().replace('_', '-')
+                or model_name.lower().replace('_', '-') in model_full.lower().replace('_', '-')
+                for model_name in model_info.keys()
+            )
+
+            status = "⚠️ AT RISK" if is_deprecated else "✅ Active"
+            emoji = "⚠️" if is_deprecated else "✅"
+
+            report.append(
+                f"| `{agent_id}` | {config['provider'].title()} | `{config['model_name']}` | {status} |"
+            )
+
+        report.append("")
+
+    # Section 3: Recommendations
+    report.append("## 💡 Recommendations\n")
+
+    at_risk_count = sum(
+        1 for agent_id, config in configured_models.items()
+        if any(
+            f"{config['provider']}_{config['model_name']}".lower().replace('_', '-') in model_name.lower().replace('_', '-')
+            for model_name in model_info.keys()
+        )
+    )
+
+    if at_risk_count > 0:
+        report.append(f"⚠️ **{at_risk_count} agent(s) using potentially deprecated models**\n")
+        report.append("**Suggested Actions:**")
+        report.append("1. Review deprecated models and plan migration")
+        report.append("2. Test replacement models (GPT-4o, Claude Sonnet 4)")
+        report.append("3. Update agent configs via Mission Control (🧠 Cpu icon)")
+        report.append("4. Monitor for deprecation timelines\n")
+    else:
+        report.append("✅ **All your configured models appear to be current**\n")
+        report.append("Continue monitoring for future deprecation notices.\n")
+
+    # Section 4: Summary
+    report.append("## 📝 Executive Summary\n")
+
+    summary_parts = []
+    if model_info:
+        summary_parts.append(f"Found {len(model_info)} deprecated model(s) mentioned in search results")
+    else:
+        summary_parts.append("No specific deprecated models identified in current search")
+
+    if configured_models:
+        summary_parts.append(f"You have {len(configured_models)} agent(s) configured with specific models")
+        if at_risk_count > 0:
+            summary_parts.append(f"**{at_risk_count} may need attention**")
+
+    report.append(". ".join(summary_parts) + ".")
+    report.append("\n---\n")
+
+    # Section 5: Raw Sources
+    report.append("## 📚 Sources Referenced\n")
+    for idx, doc in enumerate(web_documents[:5], 1):
+        title = doc.get("metadata", {}).get("title", "Untitled")
+        url = doc.get("metadata", {}).get("url", "")
+        report.append(f"{idx}. [{title}]({url})")
+
+    return "\n".join(report)
+
+
 async def finalize_response_node(state: DocumentManagerState) -> dict:
-    """Format and return final response"""
+    """
+    Format and return final response
+
+    Enhanced to intelligently format based on query type:
+    - Model deprecation queries → Formatted analysis report
+    - General queries → Standard formatting
+    """
     if state.get("error"):
         return {
             **state,
             "final_response": state.get("final_response", f"Error: {state['error']}"),
+            "current_step": "finalize",
+        }
+
+    # Check if this is a model-related query that needs special formatting
+    query = state.get("query", "").lower()
+    search_query = state.get("search_query", "").lower()
+    web_documents = state.get("web_documents", [])
+
+    is_model_query = any(
+        keyword in query or keyword in search_query
+        for keyword in ['model', 'deprecated', 'llm', 'gpt', 'claude', 'deprecation', 'sunset']
+    )
+
+    if is_model_query and web_documents and not state.get("final_response"):
+        # Generate formatted model deprecation report
+        formatted_report = await _format_model_deprecation_report(state)
+        return {
+            **state,
+            "final_response": formatted_report,
             "current_step": "finalize",
         }
 
