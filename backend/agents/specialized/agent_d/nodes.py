@@ -203,35 +203,82 @@ async def llm_reasoning_node(state: DocumentManagerState) -> dict:
     """
     Use LLM to understand user intent and decide what action to take
     Handles queries that don't match hardcoded patterns
+
+    Enhanced with:
+    - Full action set (10+ actions)
+    - Context awareness (user's collections)
+    - Confidence scoring
+    - Better examples and decision logic
     """
     query = state["action_params"].get("original_query", state["query"])
+
+    # Get user's collections for context awareness
+    user_collections = []
+    try:
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            from backend.repositories.collection_repository import CollectionRepository
+            collection_repo = CollectionRepository(session)
+            collections = await collection_repo.list_user_collections(user_id=state["user_id"])
+            user_collections = [c.collection_name for c in collections]
+    except Exception:
+        pass  # Continue without collection context if fetch fails
+
+    collections_context = f"User's existing collections: {', '.join(user_collections)}" if user_collections else "User has no collections yet."
 
     # Create LLM instance
     model_config = state.get("model_config") or DEFAULT_CONFIGS.get("agent_d")
     llm = create_llm(model_config, temperature=0.0)
 
-    # Prompt LLM to classify the task
-    reasoning_prompt = f"""You are Alice, a Document Manager agent. Analyze this user request and decide what action to take.
+    # Enhanced prompt with full action set and context
+    reasoning_prompt = f"""You are Alice, an expert Document Manager and Information Retrieval agent. Analyze the user's request and decide the best action.
 
 User Request: "{query}"
 
-Available Actions:
-1. "web_search" - Search the internet for information (use Tavily API)
-2. "search_all" - Search across all document collections
-3. "list_collections" - List all document collections
-4. "general_task" - Task requires general reasoning/analysis
+Context:
+{collections_context}
 
-For each request, respond with ONLY a JSON object (no markdown, no explanation):
+Available Actions (choose the MOST appropriate):
+1. "web_search" - Search internet for current/real-time information (use when user needs latest data, news, or information not in their collections)
+2. "search_collection" - Search within a SPECIFIC collection by name (use when user mentions a collection name)
+3. "search_multiple" - Search across MULTIPLE specific collections (use when user lists collections)
+4. "search_all" - Search across ALL user's document collections (use when user wants to find info in their docs but doesn't specify which)
+5. "create_collection" - Create a new document collection (use when user wants to organize or save documents)
+6. "delete_collection" - Delete a collection (use when user wants to remove a collection)
+7. "list_collections" - Show all collections (use when user asks "what do I have?", "show my collections")
+8. "load_file" - Load a document from file path (use when user provides a file path like /path/to/file.pdf)
+9. "crawl_site" - Crawl and index a website (use when user wants to save/archive a website)
+10. "extract_urls" - Extract content from specific URLs (use when user provides specific URLs to process)
+11. "map_site" - Map website structure without storing (use when user wants to see site structure)
+
+Decision Criteria:
+- If request mentions "latest", "current", "news", "today", "2026", or needs real-time info → web_search
+- If request mentions existing collection name → search_collection
+- If request is about user's documents/collections without specifics → search_all
+- If request wants to save/archive web content → crawl_site or create_collection
+- If request has file path (.pdf, .docx, .txt, .md) → load_file
+- If user asks what they have → list_collections
+
+Respond with ONLY a JSON object (no markdown, no explanation):
 {{
-  "action": "web_search" | "search_all" | "list_collections" | "general_task",
-  "reasoning": "brief explanation",
-  "search_query": "query to use" (only if action is web_search or search_all)
+  "action": "<action_name>",
+  "confidence": 0.0-1.0,
+  "reasoning": "why this action",
+  "params": {{
+    "query": "search query if needed",
+    "collection_name": "collection name if applicable",
+    "file_path": "file path if applicable",
+    "url": "URL if applicable"
+  }}
 }}
 
 Examples:
-- "check for deprecated LLM models" → {{"action": "web_search", "reasoning": "Need to search web for current model status", "search_query": "deprecated LLM models OpenAI Anthropic 2026"}}
-- "find documents about quantum computing" → {{"action": "search_all", "reasoning": "Search across all collections", "search_query": "quantum computing"}}
-- "what collections do I have?" → {{"action": "list_collections", "reasoning": "User wants to see their collections"}}
+- "check for deprecated LLM models" → {{"action": "web_search", "confidence": 0.95, "reasoning": "Needs current model status from web", "params": {{"query": "deprecated LLM models OpenAI Anthropic Claude GPT 2026"}}}}
+- "find documents about quantum computing" → {{"action": "search_all", "confidence": 0.90, "reasoning": "Search user's document collections", "params": {{"query": "quantum computing"}}}}
+- "search my research collection for AI papers" → {{"action": "search_collection", "confidence": 0.95, "reasoning": "User specified 'research' collection", "params": {{"query": "AI papers", "collection_name": "research"}}}}
+- "what collections do I have?" → {{"action": "list_collections", "confidence": 1.0, "reasoning": "User wants to see their collections", "params": {{}}}}
+- "save TechCrunch articles about AI" → {{"action": "crawl_site", "confidence": 0.85, "reasoning": "User wants to archive website content", "params": {{"url": "techcrunch.com", "collection_name": "ai_news"}}}}
+- "load /documents/research.pdf" → {{"action": "load_file", "confidence": 1.0, "reasoning": "User provided file path", "params": {{"file_path": "/documents/research.pdf"}}}}
 
 Analyze and respond:"""
 
@@ -250,48 +297,159 @@ Analyze and respond:"""
 
         decision = json.loads(response_text)
         action = decision.get("action", "list_collections")
-        search_query = decision.get("search_query", query)
+        confidence = decision.get("confidence", 0.5)
+        params = decision.get("params", {})
+        reasoning = decision.get("reasoning", "")
 
-        # Map LLM decision to action_type
+        # Log decision for debugging
+        print(f"[Alice LLM Decision] Action: {action}, Confidence: {confidence}, Reasoning: {reasoning}")
+
+        # Map LLM decision to action_type with enhanced parameter extraction
         if action == "web_search":
+            search_query = params.get("query", query)
             return {
                 "action_type": "search_web",
                 "action_params": {
                     "query": search_query,
-                    "collection_name": None,  # Explicitly None - don't store results
+                    "collection_name": None,  # Don't store by default
                 },
-                "collection_name": None,  # Explicitly set to None to skip storage
+                "collection_name": None,
                 "search_query": search_query,
                 "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
             }
+
+        elif action == "search_collection":
+            search_query = params.get("query", query)
+            collection_name = params.get("collection_name")
+            return {
+                "action_type": "search_collection",
+                "action_params": {
+                    "query": search_query,
+                    "collection_name": collection_name,
+                },
+                "collection_name": collection_name,
+                "search_query": search_query,
+                "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
+            }
+
+        elif action == "search_multiple":
+            search_query = params.get("query", query)
+            collection_names = params.get("collection_names", [])
+            return {
+                "action_type": "search_multiple",
+                "action_params": {
+                    "query": search_query,
+                    "collection_names": collection_names,
+                },
+                "search_query": search_query,
+                "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
+            }
+
         elif action == "search_all":
+            search_query = params.get("query", query)
             return {
                 "action_type": "search_all",
                 "action_params": {"query": search_query},
                 "search_query": search_query,
                 "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
             }
-        elif action == "general_task":
-            # For general tasks, use web search as fallback
+
+        elif action == "create_collection":
+            collection_name = params.get("collection_name", "new_collection")
             return {
-                "action_type": "search_web",
-                "action_params": {
-                    "query": query,
-                    "collection_name": None,  # Explicitly None - don't store results
-                },
-                "collection_name": None,  # Explicitly set to None to skip storage
-                "search_query": query,
+                "action_type": "create_collection",
+                "action_params": {"collection_name": collection_name},
+                "collection_name": collection_name,
                 "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
             }
-        else:  # list_collections
+
+        elif action == "delete_collection":
+            collection_name = params.get("collection_name")
+            return {
+                "action_type": "delete_collection",
+                "action_params": {"collection_name": collection_name},
+                "collection_name": collection_name,
+                "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
+            }
+
+        elif action == "load_file":
+            file_path = params.get("file_path")
+            collection_name = params.get("collection_name", "default")
+            return {
+                "action_type": "load_file",
+                "action_params": {
+                    "file_path": file_path,
+                    "collection_name": collection_name,
+                },
+                "file_path": file_path,
+                "collection_name": collection_name,
+                "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
+            }
+
+        elif action == "crawl_site":
+            url = params.get("url")
+            collection_name = params.get("collection_name")
+            return {
+                "action_type": "crawl_site",
+                "action_params": {
+                    "base_url": url,
+                    "collection_name": collection_name,
+                },
+                "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
+            }
+
+        elif action == "extract_urls":
+            urls = params.get("urls", [])
+            collection_name = params.get("collection_name")
+            return {
+                "action_type": "extract_urls",
+                "action_params": {
+                    "urls": urls,
+                    "collection_name": collection_name,
+                },
+                "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
+            }
+
+        elif action == "map_site":
+            url = params.get("url")
+            return {
+                "action_type": "map_site",
+                "action_params": {"base_url": url},
+                "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
+            }
+
+        else:  # list_collections or fallback
             return {
                 "action_type": "list_collections",
                 "action_params": {},
                 "current_step": "llm_reasoning",
+                "reasoning": reasoning,
+                "confidence": confidence,
             }
 
     except Exception as e:
         # Fallback to web search if LLM reasoning fails
+        print(f"[Alice LLM Error] {str(e)}")
         return {
             "action_type": "search_web",
             "action_params": {
@@ -301,6 +459,7 @@ Analyze and respond:"""
             "search_query": query,
             "current_step": "llm_reasoning",
             "error": f"LLM reasoning failed: {str(e)}, falling back to web search",
+            "confidence": 0.0,
         }
 
 
