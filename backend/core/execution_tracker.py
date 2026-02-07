@@ -303,8 +303,12 @@ class ExecutionTracker(BaseCallbackHandler):
         self,
         task_id: UUID,
         agent_id: str,
+        agent_name: str,
+        original_command: str,
+        agent_output: str,
         final_state: Dict[str, Any],
-        task_metadata: Dict[str, Any]
+        task_metadata: Dict[str, Any],
+        run_peer_eval: bool = True
     ) -> Dict[str, Any]:
         """
         Called when task completes - calculate and save performance metrics
@@ -312,24 +316,57 @@ class ExecutionTracker(BaseCallbackHandler):
         Args:
             task_id: Task UUID
             agent_id: Agent identifier (e.g., "agent_a")
+            agent_name: Human-readable agent name (e.g., "Bob")
+            original_command: User's original command
+            agent_output: Agent's final result
             final_state: Final state from graph execution
             task_metadata: Task metadata (tokens, duration, etc.)
+            run_peer_eval: Whether to trigger peer evaluation job (default: True)
 
         Returns:
             Dict with calculated performance scores
         """
         from backend.repositories.performance_repository import PerformanceRepository
         from backend.core.database import get_session_maker
+        from backend.core.performance_evaluator import PerformanceEvaluator
 
-        # Calculate efficiency score
-        efficiency_score = self._calculate_efficiency(task_metadata)
+        # Phase 2: Use LLM-based quality evaluation
+        evaluator = PerformanceEvaluator()
 
-        # Basic quality scores (start simple, will enhance later)
-        scores = {
-            "efficiency_score": efficiency_score,
-            "overall_score": efficiency_score,  # For now, use efficiency as overall
-            # TODO: Add LLM-based accuracy/relevance evaluation in Phase 2
-        }
+        try:
+            # Evaluate task output quality
+            quality_scores = await evaluator.evaluate_task(
+                original_command=original_command,
+                agent_output=agent_output,
+                agent_name=agent_name,
+                metadata=task_metadata
+            )
+
+            # Calculate efficiency score
+            efficiency_score = self._calculate_efficiency(task_metadata)
+
+            # Combine scores (quality + efficiency)
+            scores = quality_scores.to_dict()
+            scores["efficiency_score"] = efficiency_score
+
+            # Recalculate overall to include efficiency
+            # 80% quality (from evaluator) + 20% efficiency
+            scores["overall_score"] = round(
+                scores["overall_score"] * 0.8 + efficiency_score * 0.2,
+                2
+            )
+
+        except Exception as e:
+            logger.error(f"Quality evaluation failed: {e}", exc_info=True)
+            # Fallback to basic efficiency scoring
+            efficiency_score = self._calculate_efficiency(task_metadata)
+            scores = {
+                "efficiency_score": efficiency_score,
+                "overall_score": efficiency_score,
+                "accuracy_score": 0.5,
+                "relevance_score": 0.5,
+                "completeness_score": 0.5,
+            }
 
         # Extract execution metadata
         metadata = {
@@ -361,6 +398,26 @@ class ExecutionTracker(BaseCallbackHandler):
                 logger.info(f"Performance score saved for task {task_id}: {scores['overall_score']:.2f}")
         except Exception as e:
             logger.error(f"Failed to save performance score: {e}", exc_info=True)
+
+        # Phase 2: Trigger peer evaluation (background)
+        if run_peer_eval:
+            try:
+                import asyncio
+                from backend.jobs.peer_evaluation import run_peer_evaluation
+
+                # Run in background (don't await)
+                asyncio.create_task(
+                    run_peer_evaluation(
+                        task_id=task_id,
+                        agent_id=agent_id,
+                        agent_name=agent_name,
+                        original_command=original_command,
+                        agent_output=agent_output
+                    )
+                )
+                logger.info(f"Peer evaluation job started for task {task_id}")
+            except Exception as e:
+                logger.error(f"Failed to start peer evaluation: {e}", exc_info=True)
 
         return scores
 

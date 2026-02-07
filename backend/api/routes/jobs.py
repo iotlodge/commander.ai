@@ -117,3 +117,43 @@ async def get_deprecation_report(
         DeprecationCheckResponse with current status
     """
     return await check_deprecated_models(session)
+
+
+# v0.5.0 Performance System Jobs
+
+class StatsAggregationResponse(BaseModel):
+    """Response from stats aggregation job"""
+    status: str
+    updated_agents: list[str]
+    updated_count: int
+    duration_seconds: float
+    timestamp: str
+
+
+@router.post("/aggregate-stats", response_model=StatsAggregationResponse)
+async def run_stats_aggregation_job():
+    """
+    Manually trigger stats aggregation job
+
+    This job:
+    1. Aggregates performance data for all agents
+    2. Calculates average scores, cost metrics, speed
+    3. Updates agent_performance_stats table
+    4. Calculates rankings (overall and per-category)
+
+    Normally runs hourly via scheduler, but can be triggered manually.
+
+    Returns:
+        StatsAggregationResponse with summary of updates
+    """
+    try:
+        from backend.jobs.stats_aggregation import run_stats_aggregation
+
+        result = await run_stats_aggregation()
+        return StatsAggregationResponse(**result)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to run stats aggregation: {str(e)}"
+        )

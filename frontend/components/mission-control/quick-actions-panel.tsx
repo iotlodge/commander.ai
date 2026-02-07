@@ -61,6 +61,7 @@ const QUICK_ACTIONS: AgentQuickActions[] = [
     icon: <FileText className="h-4 w-4" />,
     actions: [
       { label: "Check deprecated models", command: "@alice check for deprecated LLM models" },
+      { label: "Aggregate performance stats", command: "@alice run agent performance stats aggregation" },
       { label: "List all documents", command: "@alice list all documents in the system" },
       { label: "Archive old files", command: "@alice archive documents older than 6 months" },
       { label: "Generate summary", command: "@alice generate a summary of recent documents" },
