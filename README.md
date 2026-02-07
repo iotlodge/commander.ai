@@ -33,7 +33,9 @@ Next.js AI dashboard, real-time agent monitoring, AI agent visualization
 Unlike chatbots that force you to wait and guess, Commander.ai shows you **exactly what's happening** as your AI team works—and lets you **engineer their behavior on the fly**:
 
 - 🔴 **Live Agent Activity** - Watch tokens flow and LLM calls execute in real-time
-- 🧠 **Live Prompt Engineering** - Edit agent prompts, test with real LLM, see instant results ✨ **NEW in v0.3.0**
+- 🧠 **Live Prompt Engineering** - Edit agent prompts, test with real LLM, see instant results (v0.3.0)
+- 💻 **Dynamic Model Switching** - Switch between OpenAI, Anthropic per agent on the fly (v0.4.0)
+- 🏆 **Performance Analytics** - Real-time leaderboards, charts, routing insights 🔥 **NEW in v0.5.0**
 - ⚡ **One-Click Commands** - Quick Actions panel for instant delegation
 - 📊 **Complete Visibility** - See every node, tool call, and decision
 - 🎯 **Maximum Control** - Clear completed tasks, zoom agent graphs, filter by agent
@@ -416,13 +418,14 @@ Learn how to monitor, tune, and optimize the entire intelligence layer built acr
 - **PostgreSQL** - Persistent storage with pgvector
 - **Redis** - Hot memory layer (sessions)
 - **Qdrant** - Vector database (semantic search)
-- **OpenAI** - GPT-4o-mini + ada-002 embeddings
+- **OpenAI + Anthropic** - Multi-provider LLM support (GPT-4o, Claude Sonnet 4)
 - **Tavily** - Web search API
 
 **Frontend (TypeScript)**
 - **Next.js 14** - App Router with React Server Components
 - **Tailwind CSS** - Utility-first styling
 - **shadcn/ui** - Accessible component library
+- **Recharts** - Performance visualization
 - **Zustand** - Lightweight state management
 - **WebSocket** - Real-time agent updates
 
@@ -628,7 +631,32 @@ Starts PostgreSQL 16 (with pgvector), Redis 7, and Qdrant with health checks and
 
 ## 🚦 Production Status
 
-**✅ v0.3.0 - Live Prompt Engineering** (February 2026) 🔥 **MAJOR RELEASE**
+**✅ v0.5.0 - Agent Performance System** (February 6, 2026) 🔥 **MAJOR RELEASE**
+
+**🏆 Complete Intelligence Layer:**
+- ✅ **Performance Analytics** - Real-time leaderboards, charts, routing insights
+  - Multi-perspective scoring (LLM self-assessment, user feedback, objective metrics)
+  - Reward system with gamification (bonuses/penalties for quality, efficiency, innovation)
+  - Intelligent routing based on historical performance
+  - Real-time leaderboard with medals (🥇🥈🥉)
+  - Performance charts (score trends, category breakdown, task stats)
+  - Routing insights tooltips (agent strengths, model info, category performance)
+  - Test data generator (avoid $$$ API costs)
+- ✅ **Complete Performance Guide** - `PERFORMANCE_SYSTEM_GUIDE.md` with full architecture
+- ✅ **5 Database Tables** - Scores, peer evaluations, node metrics, stats, templates
+- ✅ **3 Backend Jobs** - Stats aggregation, peer evaluation, performance tracking
+- 📊 **Cost**: ~$0.001/task for full intelligence layer
+
+**✅ v0.4.0 - Dynamic LLM/Provider Switching** (February 6, 2026)
+
+**💻 Multi-Provider Support:**
+- ✅ **Live Model Switching** - Change agent models on the fly (no restart needed)
+- ✅ **Multi-Provider** - OpenAI (GPT-4o, GPT-4o-mini) + Anthropic (Claude Sonnet 4, Haiku 4)
+- ✅ **Database-Backed** - Model configs persist, version tracking for rollback
+- ✅ **UI Integration** - Provider icons, model info in routing tooltips
+- ✅ **Safe Reload** - Blocks changes if agent has active tasks, auto-rollback on failure
+
+**✅ v0.3.0 - Live Prompt Engineering** (February 5, 2026) 🔥 **MAJOR RELEASE**
 
 **🧠 Revolutionary New Feature:**
 - ✅ **Live Prompt Engineering** - Edit, test, and optimize agent behavior in real-time
@@ -750,5 +778,10 @@ Try it. Watch @bob research while @alice stores results. See @maya catch issues 
 
 *Built by developers who believe AI should augment human capability, not replace it.*
 
-**🚀 Status**: v0.3.0 Production - Live Prompt Engineering
+**🚀 Status**: v0.5.0 Production - Performance System Complete
 **📅 Last Updated**: February 6, 2026
+
+**Three Major Releases in One Day** 🎉
+- v0.3.0: Live Prompt Engineering
+- v0.4.0: Multi-Provider LLM Switching
+- v0.5.0: Complete Performance & Intelligence System

@@ -30,7 +30,7 @@ class ParentAgent(BaseAgent):
 
     def __init__(self):
         metadata = AgentMetadata(
-            id="parent",
+            id="agent_parent",
             nickname="leo",
             specialization="Orchestrator",
             description="Coordinates complex multi-step tasks and delegates to specialist agents",
