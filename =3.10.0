@@ -1,0 +1,19 @@
+Collecting apscheduler
+  Downloading apscheduler-3.11.2-py3-none-any.whl.metadata (6.4 kB)
+Collecting croniter
+  Downloading croniter-6.0.0-py2.py3-none-any.whl.metadata (32 kB)
+Collecting tzlocal>=3.0 (from apscheduler)
+  Downloading tzlocal-5.3.1-py3-none-any.whl.metadata (7.6 kB)
+Requirement already satisfied: python-dateutil in ./.venv/lib/python3.12/site-packages (from croniter) (2.9.0.post0)
+Collecting pytz>2021.1 (from croniter)
+  Using cached pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+Requirement already satisfied: six>=1.5 in ./.venv/lib/python3.12/site-packages (from python-dateutil->croniter) (1.17.0)
+Downloading apscheduler-3.11.2-py3-none-any.whl (64 kB)
+Downloading croniter-6.0.0-py2.py3-none-any.whl (25 kB)
+Using cached pytz-2025.2-py2.py3-none-any.whl (509 kB)
+Downloading tzlocal-5.3.1-py3-none-any.whl (18 kB)
+Installing collected packages: pytz, tzlocal, croniter, apscheduler
+Successfully installed apscheduler-3.11.2 croniter-6.0.0 pytz-2025.2 tzlocal-5.3.1
+
+[notice] A new release of pip is available: 24.3.1 -> 26.0
+[notice] To update, run: pip install --upgrade pip
