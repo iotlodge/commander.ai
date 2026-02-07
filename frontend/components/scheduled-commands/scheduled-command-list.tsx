@@ -63,11 +63,8 @@ export function ScheduledCommandList({
 
   const handleDeleteSchedule = async (scheduleId: string) => {
     if (confirm("Are you sure you want to delete this schedule? This action cannot be undone.")) {
-      const success = await deleteSchedule(scheduleId);
-      if (success) {
-        // Refresh list
-        fetchSchedules({ agent_id: agentId });
-      }
+      await deleteSchedule(scheduleId);
+      // No need to refresh - delete already updates local state
     }
   };
 
@@ -77,8 +74,7 @@ export function ScheduledCommandList({
     } else {
       await disableSchedule(scheduleId);
     }
-    // Refresh list
-    fetchSchedules({ agent_id: agentId });
+    // No need to refresh - enable/disable already update local state
   };
 
   const handleRunNow = async (scheduleId: string) => {
@@ -98,8 +94,7 @@ export function ScheduledCommandList({
     setShowEditor(false);
     setSelectedSchedule(null);
     setIsCreating(false);
-    // Refresh list
-    fetchSchedules({ agent_id: agentId });
+    // No need to refresh - create/update already update local state
   };
 
   // Calculate stats
