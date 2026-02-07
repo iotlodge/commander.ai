@@ -6,7 +6,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 from typing import List, Optional
 
-from sqlalchemy import select, update, desc, func, and_, or_
+from sqlalchemy import select, update, desc, func, and_, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Text, Numeric, ARRAY
 from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB, JSON
@@ -21,7 +21,7 @@ class AgentPerformanceScoreModel(Base):
 
     __tablename__ = "agent_performance_scores"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default="gen_random_uuid()")
+    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     task_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
     agent_id = Column(String(50), nullable=False, index=True)
 
@@ -59,7 +59,7 @@ class AgentPeerEvaluationModel(Base):
 
     __tablename__ = "agent_peer_evaluations"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default="gen_random_uuid()")
+    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     task_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
     evaluated_agent_id = Column(String(50), nullable=False, index=True)
     evaluator_agent_id = Column(String(50), nullable=False, index=True)
@@ -76,7 +76,7 @@ class AgentNodePerformanceModel(Base):
 
     __tablename__ = "agent_node_performance"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default="gen_random_uuid()")
+    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     task_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
     agent_id = Column(String(50), nullable=False, index=True)
     node_name = Column(String(100), nullable=False, index=True)
@@ -138,7 +138,7 @@ class ObjectiveTemplateModel(Base):
 
     __tablename__ = "objective_templates"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default="gen_random_uuid()")
+    id = Column(PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     category = Column(String(50), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     evaluation_criteria = Column(JSONB, nullable=True)
