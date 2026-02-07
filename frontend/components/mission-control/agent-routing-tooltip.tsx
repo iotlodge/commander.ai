@@ -15,34 +15,50 @@ interface AgentRoutingTooltipProps {
   agentId: string;
   agentNickname: string;
   specialization: string;
+  modelConfig?: any; // Optional - passed from parent to avoid refetching
 }
 
 export function AgentRoutingTooltip({
   agentId,
   agentNickname,
   specialization,
+  modelConfig: externalModelConfig,
 }: AgentRoutingTooltipProps) {
   const { fetchAgentPerformance } = usePerformance();
   const { fetchModelConfig } = useAgentModels();
   const [stats, setStats] = useState<any>(null);
-  const [modelConfig, setModelConfig] = useState<any>(null);
+  const [modelConfig, setModelConfig] = useState<any>(externalModelConfig || null);
   const [loading, setLoading] = useState(false);
 
   const loadStats = async () => {
     try {
       setLoading(true);
-      const [perfData, modelData] = await Promise.all([
-        fetchAgentPerformance(agentId, undefined, 100),
-        fetchModelConfig(agentId).catch(() => null), // Gracefully handle missing config
-      ]);
-      setStats(perfData.stats);
-      setModelConfig(modelData);
+      // Only fetch model config if not provided by parent
+      const fetchPromises = [fetchAgentPerformance(agentId, undefined, 100)];
+      if (!externalModelConfig) {
+        fetchPromises.push(fetchModelConfig(agentId).catch(() => null));
+      }
+
+      const results = await Promise.all(fetchPromises);
+      setStats(results[0].stats);
+
+      // Only update modelConfig if we fetched it (wasn't provided by parent)
+      if (!externalModelConfig && results[1]) {
+        setModelConfig(results[1]);
+      }
     } catch (err) {
       console.error("Failed to load agent stats:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Update modelConfig when external prop changes
+  useEffect(() => {
+    if (externalModelConfig) {
+      setModelConfig(externalModelConfig);
+    }
+  }, [externalModelConfig]);
 
   // Agent specialization insights
   const getSpecializationInsights = () => {

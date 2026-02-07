@@ -313,6 +313,7 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                       agentId={agent.id}
                       agentNickname={agent.nickname}
                       specialization={agent.specialization}
+                      modelConfig={modelConfigs[agent.id]}
                     />
                   </div>
                   <div className="text-xs text-[var(--mc-text-secondary)]">
