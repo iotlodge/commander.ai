@@ -115,9 +115,9 @@ async def submit_task_feedback(
 
 @router.get("/agents/leaderboard", response_model=LeaderboardResponse)
 async def get_agent_leaderboard(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
     category: Optional[str] = None,
-    limit: int = 10,
-    session: Annotated[AsyncSession, Depends(get_db_session)]
+    limit: int = 10
 ):
     """
     Get agent performance leaderboard
@@ -172,9 +172,9 @@ async def get_agent_leaderboard(
 @router.get("/agents/{agent_id}/performance")
 async def get_agent_performance(
     agent_id: str,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
     category: Optional[str] = None,
-    limit: int = 100,
-    session: Annotated[AsyncSession, Depends(get_db_session)]
+    limit: int = 100
 ):
     """
     Get performance history for a specific agent
