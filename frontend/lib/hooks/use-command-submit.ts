@@ -65,7 +65,7 @@ export function useCommandSubmit({ agents }: UseCommandSubmitProps) {
     if (mentionedAgentIds.length === 1) {
       targetAgentId = mentionedAgentIds[0];
     } else {
-      targetAgentId = "parent"; // Leo orchestrator handles complex/ambiguous tasks
+      targetAgentId = "agent_parent"; // Leo orchestrator handles complex/ambiguous tasks
     }
 
     return { targetAgentId };

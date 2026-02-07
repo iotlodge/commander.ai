@@ -64,11 +64,11 @@ async def submit_command(
     target_agent_id = CommandParser.get_target_agent_id(parsed)
 
     # Verify: If user mentioned specific agents, ensure routing is correct
-    if parsed.mentioned_agents and target_agent_id == "parent":
+    if parsed.mentioned_agents and target_agent_id == "agent_parent":
         # User mentioned specific agents but routing to parent orchestrator
         # This could indicate the mentioned agents weren't found in registry
         logger.warning(
-            f"Command contains agent mentions {parsed.mentioned_agents} but routing to parent. "
+            f"Command contains agent mentions {parsed.mentioned_agents} but routing to agent_parent. "
             f"This may indicate agent lookup failed. Command: {command.text}"
         )
 

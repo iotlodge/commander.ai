@@ -29,7 +29,7 @@ export function useAgents() {
 
         // Fallback to hardcoded agents if API fails
         setAgents([
-          { id: "parent", nickname: "leo", specialization: "Orchestrator", description: "Coordinates complex multi-agent tasks and intelligently delegates work" },
+          { id: "agent_parent", nickname: "leo", specialization: "Orchestrator", description: "Coordinates complex multi-agent tasks and intelligently delegates work" },
           { id: "agent_a", nickname: "bob", specialization: "Research Specialist", description: "Conducts research, synthesis, and information gathering with LLM-powered analysis" },
           { id: "agent_b", nickname: "sue", specialization: "Compliance Specialist", description: "Ensures compliance with regulations and policies" },
           { id: "agent_c", nickname: "rex", specialization: "Data Analyst", description: "Analyzes data and generates insights" },
