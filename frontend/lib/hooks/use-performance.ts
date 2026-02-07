@@ -42,7 +42,7 @@ export function usePerformance() {
       };
 
       const response = await fetch(
-        `${API_BASE_URL}/api/tasks/${taskId}/feedback?user_id=${MVP_USER_ID}`,
+        `${API_BASE_URL}/api/performance/tasks/${taskId}/feedback?user_id=${MVP_USER_ID}`,
         {
           method: "POST",
           headers: {
