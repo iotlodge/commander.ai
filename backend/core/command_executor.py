@@ -96,6 +96,15 @@ async def execute_agent_task(task_id: UUID) -> None:
                 # Fetch updated task to get metadata
                 updated_task = await repo.get_task(task_id)
 
+                # Evaluate performance (Phase 2 integration)
+                try:
+                    from backend.core.execution_tracker import ExecutionTracker
+                    tracker = ExecutionTracker(task_id)
+                    await tracker.finalize_task_metrics(session, updated_task)
+                    logger.info(f"Performance evaluation completed for task {task_id}")
+                except Exception as eval_error:
+                    logger.error(f"Performance evaluation failed for task {task_id}: {eval_error}", exc_info=True)
+
                 # Broadcast completion event with full data
                 from backend.models.task_models import TaskCompletedEvent
                 from datetime import datetime
