@@ -13,7 +13,7 @@ from backend.repositories.task_repository import get_db_session
 from backend.repositories.performance_repository import PerformanceRepository
 
 
-router = APIRouter(prefix="/api", tags=["performance"])
+router = APIRouter(prefix="/api/performance", tags=["performance"])
 
 
 # Pydantic Models
@@ -113,7 +113,7 @@ async def submit_task_feedback(
         )
 
 
-@router.get("/agents/leaderboard", response_model=LeaderboardResponse)
+@router.get("/leaderboard", response_model=LeaderboardResponse)
 async def get_agent_leaderboard(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     category: Optional[str] = None,
@@ -169,7 +169,7 @@ async def get_agent_leaderboard(
         )
 
 
-@router.get("/agents/{agent_id}/performance")
+@router.get("/agents/{agent_id}")
 async def get_agent_performance(
     agent_id: str,
     session: Annotated[AsyncSession, Depends(get_db_session)],

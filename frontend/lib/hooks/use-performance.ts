@@ -72,7 +72,7 @@ export function usePerformance() {
       params.append("limit", limit.toString());
 
       const response = await fetch(
-        `${API_BASE_URL}/api/agents/leaderboard?${params.toString()}`
+        `${API_BASE_URL}/api/performance/leaderboard?${params.toString()}`
       );
 
       if (!response.ok) {
@@ -95,7 +95,7 @@ export function usePerformance() {
       params.append("limit", limit.toString());
 
       const response = await fetch(
-        `${API_BASE_URL}/api/agents/${agentId}/performance?${params.toString()}`
+        `${API_BASE_URL}/api/performance/agents/${agentId}?${params.toString()}`
       );
 
       if (!response.ok) {
