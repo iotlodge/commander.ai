@@ -261,7 +261,7 @@ export function PerformanceCharts({ scores, stats, agentNickname }: PerformanceC
             )}
             <div>
               <div className="text-2xl font-bold text-yellow-400">
-                {stats.avg_overall_score.toFixed(2)}
+                {stats.avg_overall_score !== null ? stats.avg_overall_score.toFixed(2) : "N/A"}
               </div>
               <div className="text-xs text-gray-400">Avg Score</div>
             </div>
