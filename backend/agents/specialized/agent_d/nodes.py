@@ -258,8 +258,9 @@ Analyze and respond:"""
                 "action_type": "search_web",
                 "action_params": {
                     "query": search_query,
-                    "collection_name": None,
+                    "collection_name": None,  # Explicitly None - don't store results
                 },
+                "collection_name": None,  # Explicitly set to None to skip storage
                 "search_query": search_query,
                 "current_step": "llm_reasoning",
             }
@@ -276,8 +277,9 @@ Analyze and respond:"""
                 "action_type": "search_web",
                 "action_params": {
                     "query": query,
-                    "collection_name": None,
+                    "collection_name": None,  # Explicitly None - don't store results
                 },
+                "collection_name": None,  # Explicitly set to None to skip storage
                 "search_query": query,
                 "current_step": "llm_reasoning",
             }
@@ -561,7 +563,7 @@ async def chunk_and_embed_node(state: DocumentManagerState) -> dict:
 
 
 async def store_chunks_node(state: DocumentManagerState) -> dict:
-    """Store chunks in collection"""
+    """Store chunks in collection (or skip if no collection specified)"""
     try:
         chunks = state.get("chunks")
         if not chunks:
@@ -572,11 +574,32 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
                 "current_step": "store_chunks",
             }
 
-        collection_name = (
-            state.get("collection_name") or
-            state["action_params"].get("collection_name") or
-            "default"
-        )
+        # Check if we should store or just return results
+        collection_name = state.get("collection_name") or state["action_params"].get("collection_name")
+
+        # If no collection specified (None), skip storage and return web results directly
+        if collection_name is None:
+            # Format web documents as final response
+            web_documents = state.get("web_documents", [])
+            if web_documents:
+                response_parts = []
+                for idx, doc in enumerate(web_documents, 1):
+                    title = doc.get("metadata", {}).get("title", "Untitled")
+                    url = doc.get("metadata", {}).get("url", "")
+                    content_preview = doc.get("content", "")[:500]  # First 500 chars
+                    response_parts.append(f"{idx}. **{title}**\n   URL: {url}\n   {content_preview}...")
+
+                final_response = "Web search results:\n\n" + "\n\n".join(response_parts)
+            else:
+                final_response = "Retrieved information but no results to display."
+
+            return {
+                **state,
+                "final_response": final_response,
+                "current_step": "store_chunks_skipped",
+            }
+
+        # Collection specified - proceed with storage
         file_path = (
             state.get("file_path") or
             state["action_params"].get("file_path") or
