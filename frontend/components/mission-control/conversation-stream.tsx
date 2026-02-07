@@ -6,6 +6,8 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { AgentTask, TaskStatus } from "@/lib/types";
 import { ConversationMessage } from "./conversation-message";
 import { SystemMessage } from "./system-message";
+import { TaskFeedbackWidget } from "./task-feedback-widget";
+import { usePerformance } from "@/lib/hooks/use-performance";
 import { Inbox, Sparkles } from "lucide-react";
 
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
@@ -24,12 +26,15 @@ type ConversationItem = {
 export function ConversationStream({ agentFilter }: ConversationStreamProps) {
   const { tasks, handleWebSocketEvent } = useTaskStore();
   const { events } = useWebSocket(MVP_USER_ID);
+  const { submitTaskFeedback } = usePerformance();
   const [conversationItems, setConversationItems] = useState<ConversationItem[]>([]);
   const [lastProcessedIndex, setLastProcessedIndex] = useState(-1);
   const streamEndRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const hasAnimatedRef = useRef(new Set<string>());
   const previousItemCountRef = useRef(0);
+  const [feedbackDismissed, setFeedbackDismissed] = useState<Set<string>>(new Set());
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<Set<string>>(new Set());
 
   // Handle WebSocket events
   useEffect(() => {
@@ -114,6 +119,26 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
     setAutoScroll(isAtBottom);
   };
 
+  // Feedback handlers
+  const handleFeedbackSubmit = async (taskId: string, rating: number, feedback: string) => {
+    try {
+      await submitTaskFeedback(taskId, rating, feedback);
+      setFeedbackSubmitted((prev) => new Set(prev).add(taskId));
+      setFeedbackDismissed((prev) => new Set(prev).add(taskId));
+    } catch (error) {
+      console.error("Failed to submit feedback:", error);
+      throw error;
+    }
+  };
+
+  const handleFeedbackDismiss = (taskId: string) => {
+    setFeedbackDismissed((prev) => new Set(prev).add(taskId));
+  };
+
+  const shouldShowFeedback = (taskId: string) => {
+    return !feedbackDismissed.has(taskId) && !feedbackSubmitted.has(taskId);
+  };
+
   if (conversationItems.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -177,14 +202,26 @@ export function ConversationStream({ agentFilter }: ConversationStreamProps) {
           }
 
           if (item.type === "agent_response") {
+            const task = item.content.task;
+            const showFeedback = task.status === TaskStatus.COMPLETED && shouldShowFeedback(task.id);
+
             return (
               <div
                 key={item.id}
               >
                 <ConversationMessage
-                  task={item.content.task}
+                  task={task}
                   timestamp={item.timestamp}
                 />
+                {showFeedback && (
+                  <div className="mt-3">
+                    <TaskFeedbackWidget
+                      taskId={task.id}
+                      onSubmit={(rating, feedback) => handleFeedbackSubmit(task.id, rating, feedback)}
+                      onDismiss={() => handleFeedbackDismiss(task.id)}
+                    />
+                  </div>
+                )}
               </div>
             );
           }
