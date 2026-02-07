@@ -41,7 +41,7 @@ const getAgentColor = (nickname: string): string => {
 };
 
 const AGENTS: AgentInfo[] = [
-  { id: "parent", nickname: "leo", specialization: "Orchestrator", color: getAgentColor("leo") },
+  { id: "agent_parent", nickname: "leo", specialization: "Orchestrator", color: getAgentColor("leo") },
   { id: "agent_g", nickname: "chat", specialization: "Interactive Chat", color: getAgentColor("chat") },
   { id: "agent_a", nickname: "bob", specialization: "Research Specialist", color: getAgentColor("bob") },
   { id: "agent_b", nickname: "sue", specialization: "Compliance Specialist", color: getAgentColor("sue") },
