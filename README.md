@@ -35,7 +35,8 @@ Unlike chatbots that force you to wait and guess, Commander.ai shows you **exact
 - 🔴 **Live Agent Activity** - Watch tokens flow and LLM calls execute in real-time
 - 🧠 **Live Prompt Engineering** - Edit agent prompts, test with real LLM, see instant results (v0.3.0)
 - 💻 **Dynamic Model Switching** - Switch between OpenAI, Anthropic per agent on the fly (v0.4.0)
-- 🏆 **Performance Analytics** - Real-time leaderboards, charts, routing insights 🔥 **NEW in v0.5.0**
+- 🏆 **Performance Analytics** - Real-time leaderboards, charts, routing insights (v0.5.0)
+- ⏰ **NLP Command Scheduler** - Automate agent tasks with cron or interval schedules 🔥 **NEW in v0.6.0**
 - ⚡ **One-Click Commands** - Quick Actions panel for instant delegation
 - 📊 **Complete Visibility** - See every node, tool call, and decision
 - 🎯 **Maximum Control** - Clear completed tasks, zoom agent graphs, filter by agent
@@ -630,6 +631,39 @@ Starts PostgreSQL 16 (with pgvector), Redis 7, and Qdrant with health checks and
 ---
 
 ## 🚦 Production Status
+
+**✅ v0.6.0 - NLP Command Scheduler** (February 7, 2026) 🔥 **MAJOR RELEASE**
+
+**⏰ Automated Agent Task Execution:**
+- ✅ **Schedule Creation** - Visual UI with interval and cron support
+  - Clock icon (⏰) on each agent card for schedule management
+  - Interval schedules: Every N minutes/hours/days (5-minute minimum)
+  - Cron schedules: Full cron expressions with timezone support
+  - 50 schedules per user limit with rate limiting
+- ✅ **Real-Time Execution** - Scheduled tasks appear in Mission Control
+  - WebSocket integration for live updates
+  - Tasks execute via existing agent pipeline
+  - Full metrics collection (tokens, duration, LLM calls)
+- ✅ **Execution Management** - Complete control over schedules
+  - Enable/disable schedules with one click
+  - "Run Now" for manual execution
+  - Execution history viewer with performance metrics
+  - Edit schedules without recreation
+- ✅ **Backend Integration** - Production-ready scheduler
+  - APScheduler with PostgreSQL-backed job store
+  - Persistent schedules survive restarts
+  - Automatic loading of enabled schedules on startup
+  - Full REST API with 9 endpoints
+
+**Use Cases:**
+- Daily health checks: `@alice check deprecated models` (every day at 9am)
+- Regular updates: `@bob search latest AI news` (every 4 hours)
+- Weekly reports: `@maya weekly reflection` (Fridays at 5pm)
+- Automated maintenance: `@rex analyze performance metrics` (daily)
+
+**Impact:** Set it and forget it - your AI team works around the clock on schedules you define.
+
+---
 
 **✅ v0.5.0 - Agent Performance System** (February 6, 2026) 🔥 **MAJOR RELEASE**
 
