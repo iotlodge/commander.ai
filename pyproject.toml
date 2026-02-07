@@ -38,6 +38,9 @@ dependencies = [
     "python-dateutil>=2.8",
     "black>=26.1.0",
     "isort>=7.0.0",
+    # Scheduling
+    "apscheduler>=3.10.0",
+    "croniter>=3.0.0",
     # Document Processing
     "langchain-community>=0.3.0",
     "pypdf>=5.0.0",

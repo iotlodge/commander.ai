@@ -40,11 +40,22 @@ async def lifespan(app: FastAPI):
     # Initialize and register agents
     await initialize_default_agents()
 
+    # Initialize and start scheduler
+    from backend.core.scheduler import get_scheduler_service
+    scheduler = get_scheduler_service()
+    await scheduler.initialize()
+    await scheduler.start()
+    print("📅 Scheduler started")
+
     print("🚀 commander.ai started successfully")
 
     yield
 
     # Shutdown
+    # Shutdown scheduler
+    await scheduler.shutdown()
+    print("📅 Scheduler stopped")
+
     await memory_service.shutdown()
 
     # Close database connections
@@ -164,7 +175,7 @@ async def task_websocket(websocket: WebSocket, user_id: str, token: str = None):
 
 
 # Import and include routers
-from backend.api.routes import tasks, commands, graphs, agents, chat, prompts, agent_models, jobs, performance, routing
+from backend.api.routes import tasks, commands, graphs, agents, chat, prompts, agent_models, jobs, performance, routing, scheduled_commands
 from backend.auth.routes import router as auth_router
 
 # Public routes (no auth required)
@@ -181,3 +192,4 @@ app.include_router(agent_models.router)
 app.include_router(jobs.router)
 app.include_router(performance.router)  # v0.5.0 - Performance tracking
 app.include_router(routing.router)      # v0.5.0 - Intelligent routing
+app.include_router(scheduled_commands.router)  # v0.6.0 - Scheduled commands
