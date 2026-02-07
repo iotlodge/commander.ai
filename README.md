@@ -388,6 +388,24 @@ Edit the command, add context, hit Enter. Done.
 
 ---
 
+## 📊 Performance & Intelligence System
+
+**Commander.ai learns and optimizes agent performance automatically.**
+
+The system tracks, evaluates, and routes tasks intelligently using:
+
+- **🎯 Multi-Perspective Scoring** - Objective metrics, LLM self-assessment, peer reviews, user feedback, category performance
+- **🏆 Reward System** - Gamification with bonuses/penalties based on quality, efficiency, speed, and innovation
+- **🤖 Peer Evaluation** - Agents (Kai + Maya) review each other's work for continuous improvement
+- **🧠 Intelligent Routing** - Auto-classify tasks and select best agent based on historical performance
+- **📈 Real-Time Stats** - Aggregated performance data drives routing decisions (~$0.001/task for full intelligence)
+
+**📘 [Complete Performance System Guide →](PERFORMANCE_SYSTEM_GUIDE.md)**
+
+Learn how to monitor, tune, and optimize the entire intelligence layer built across Phases 1-3.
+
+---
+
 ## 🏗️ Architecture
 
 ### Tech Stack
