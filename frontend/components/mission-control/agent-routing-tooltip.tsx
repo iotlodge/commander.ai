@@ -33,7 +33,7 @@ export function AgentRoutingTooltip({
       setLoading(true);
       const [perfData, modelData] = await Promise.all([
         fetchAgentPerformance(agentId, undefined, 100),
-        fetchModelConfig(agentId),
+        fetchModelConfig(agentId).catch(() => null), // Gracefully handle missing config
       ]);
       setStats(perfData.stats);
       setModelConfig(modelData);
