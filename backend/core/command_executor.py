@@ -100,7 +100,15 @@ async def execute_agent_task(task_id: UUID) -> None:
                 try:
                     from backend.core.execution_tracker import ExecutionTracker
                     tracker = ExecutionTracker(task_id)
-                    await tracker.finalize_task_metrics(session, updated_task)
+                    await tracker.on_task_complete(
+                        task_id=task_id,
+                        agent_id=updated_task.agent_id,
+                        agent_name=updated_task.agent_nickname or updated_task.agent_id,
+                        original_command=updated_task.command_text,
+                        agent_output=result.response,
+                        final_state={},  # Not available in this context
+                        task_metadata=updated_task.metadata or {}
+                    )
                     logger.info(f"Performance evaluation completed for task {task_id}")
                 except Exception as eval_error:
                     logger.error(f"Performance evaluation failed for task {task_id}: {eval_error}", exc_info=True)
