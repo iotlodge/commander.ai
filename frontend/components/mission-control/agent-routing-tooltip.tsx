@@ -6,8 +6,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Info, Target, Star, Zap } from "lucide-react";
+import { Info, Target, Star, Zap, Cpu } from "lucide-react";
 import { usePerformance } from "@/lib/hooks/use-performance";
+import { useAgentModels } from "@/lib/hooks/use-agent-models";
+import { ProviderIcon } from "@/components/ui/provider-icon";
 
 interface AgentRoutingTooltipProps {
   agentId: string;
@@ -21,14 +23,20 @@ export function AgentRoutingTooltip({
   specialization,
 }: AgentRoutingTooltipProps) {
   const { fetchAgentPerformance } = usePerformance();
+  const { fetchModelConfig } = useAgentModels();
   const [stats, setStats] = useState<any>(null);
+  const [modelConfig, setModelConfig] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const loadStats = async () => {
     try {
       setLoading(true);
-      const data = await fetchAgentPerformance(agentId, undefined, 100);
-      setStats(data.stats);
+      const [perfData, modelData] = await Promise.all([
+        fetchAgentPerformance(agentId, undefined, 100),
+        fetchModelConfig(agentId),
+      ]);
+      setStats(perfData.stats);
+      setModelConfig(modelData);
     } catch (err) {
       console.error("Failed to load agent stats:", err);
     } finally {
@@ -139,6 +147,29 @@ export function AgentRoutingTooltip({
             </div>
             <p className="text-xs text-gray-400">{insights.description}</p>
           </div>
+
+          {/* Active Model */}
+          {modelConfig && (
+            <div className="pt-3 border-t border-[var(--mc-border)]">
+              <div className="flex items-center gap-2 mb-1">
+                <Cpu className="h-3 w-3 text-[var(--mc-accent-purple)]" />
+                <span className="text-xs font-medium text-[var(--mc-text-secondary)]">
+                  Active Model
+                </span>
+              </div>
+              <div className="flex items-center gap-2 bg-[var(--mc-bg-primary)] rounded px-2 py-1.5">
+                <ProviderIcon provider={modelConfig.provider} size={16} />
+                <div className="flex-1">
+                  <div className="text-xs font-medium text-[var(--mc-text-primary)]">
+                    {modelConfig.model_name}
+                  </div>
+                  <div className="text-xs text-gray-500 capitalize">
+                    {modelConfig.provider}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Strengths */}
           {insights.strengths.length > 0 && (

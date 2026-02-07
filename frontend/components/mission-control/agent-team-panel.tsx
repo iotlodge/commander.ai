@@ -314,12 +314,6 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                       agentNickname={agent.nickname}
                       specialization={agent.specialization}
                     />
-                    {/* Provider Icon - always visible */}
-                    {modelConfigs[agent.id] && (
-                      <div className="ml-auto">
-                        <ProviderIcon provider={modelConfigs[agent.id].provider} size={14} />
-                      </div>
-                    )}
                   </div>
                   <div className="text-xs text-[var(--mc-text-secondary)]">
                     {agent.specialization}
