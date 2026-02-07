@@ -30,19 +30,96 @@ Next.js AI dashboard, real-time agent monitoring, AI agent visualization
 
 **Single AI assistants give you one perspective. Commander.ai gives you a specialized team you can tune in real-time.**
 
-Unlike chatbots that force you to wait and guess, Commander.ai shows you **exactly what's happening** as your AI team works—and lets you **engineer their behavior on the fly**:
-
-- 🔴 **Live Agent Activity** - Watch tokens flow and LLM calls execute in real-time
-- 🧠 **Live Prompt Engineering** - Edit agent prompts, test with real LLM, see instant results (v0.3.0)
-- 💻 **Dynamic Model Switching** - Switch between OpenAI, Anthropic per agent on the fly (v0.4.0)
-- 🏆 **Performance Analytics** - Real-time leaderboards, charts, routing insights (v0.5.0)
-- ⏰ **NLP Command Scheduler** - Automate agent tasks with cron or interval schedules 🔥 **NEW in v0.6.0**
-- ⚡ **One-Click Commands** - Quick Actions panel for instant delegation
-- 📊 **Complete Visibility** - See every node, tool call, and decision
-- 🎯 **Maximum Control** - Clear completed tasks, zoom agent graphs, filter by agent
-- 🚀 **True Parallelization** - Multiple agents working simultaneously
+Unlike chatbots that force you to wait and guess, Commander.ai shows you **exactly what's happening** as your AI team works—and lets you **engineer their behavior on the fly**.
 
 **This isn't a chat interface with agents bolted on. It's Mission Control with a prompt engineering workshop built in.**
+
+---
+
+## ✨ Core Features
+
+### 🧠 Live Prompt Engineering (v0.3.0)
+**Edit agent behavior in real-time without code changes**
+- 🔧 **Visual Prompt Editor** - Full CRUD for agent prompts via UI
+- 🧪 **Live LLM Testing** - Test prompts with GPT-4o-mini before activating
+- 📊 **Performance Metrics** - See tokens, time, and cost per test
+- 🎯 **Template Variables** - `{query}`, `{token_budget}`, `{urgency}`, `{tools_list}`
+- 🔄 **A/B Testing** - Toggle between active/inactive prompts
+- 🔍 **Search & Filter** - Find prompts by role, version, or content
+- ⚙️ **One-Click Access** - Settings icon on every agent card
+
+**Impact:** Frontend teams tune agents independently, 10x faster iteration, data-driven optimization.
+
+### ⏰ NLP Command Scheduler (v0.6.0) 🔥 **NEW**
+**Automate your AI team to work around the clock**
+- 📅 **Flexible Scheduling** - Cron expressions or simple intervals (every N minutes/hours/days)
+- 🌍 **Timezone Support** - Full timezone selection for cron schedules
+- ▶️ **Run Now** - Manual execution for testing or immediate needs
+- 📊 **Execution History** - Track past runs with metrics (tokens, duration, success rate)
+- ⚡ **Real-Time Updates** - Scheduled tasks appear in Mission Control via WebSocket
+- 🎛️ **Complete Control** - Enable/disable, edit, delete schedules on the fly
+- 🔄 **Persistent** - APScheduler with PostgreSQL-backed job store survives restarts
+- 🎯 **Agent-Specific** - Clock icon (⏰) on each agent card for schedule management
+
+**Use Cases:**
+- Daily health checks: `@alice check deprecated models` (every day at 9am)
+- Regular updates: `@bob search latest AI news` (every 4 hours)
+- Weekly reports: `@maya weekly reflection` (Fridays at 5pm)
+- Automated maintenance: `@rex analyze performance metrics` (daily)
+
+**Impact:** Set it and forget it - your AI team works around the clock on schedules you define.
+
+### 🏆 Performance Analytics (v0.5.0)
+**Intelligence layer for agent optimization**
+- 📈 **Real-Time Leaderboards** - See which agents excel at what tasks
+- 🎯 **Multi-Perspective Scoring** - LLM self-assessment + user feedback + objective metrics
+- 🎖️ **Reward System** - Bonuses/penalties for quality, efficiency, innovation
+- 🧠 **Intelligent Routing** - Auto-route to best-performing agents
+- 📊 **Performance Charts** - Score trends, category breakdown, task stats
+- 💡 **Routing Insights** - Tooltips show agent strengths, model info, category performance
+- 💰 **Cost Efficient** - ~$0.001/task for full intelligence layer
+
+**Impact:** Data-driven agent selection, continuous improvement, optimized resource allocation.
+
+### 💻 Dynamic Model Switching (v0.4.0)
+**Change LLMs on the fly - no restart needed**
+- 🔄 **Live Switching** - Change agent models without downtime
+- 🌐 **Multi-Provider** - OpenAI (GPT-4o, GPT-4o-mini) + Anthropic (Claude Sonnet 4, Haiku 4)
+- 💾 **Database-Backed** - Model configs persist with version tracking for rollback
+- 🎨 **UI Integration** - Provider icons, model info in routing tooltips
+- 🛡️ **Safe Reload** - Blocks changes if agent has active tasks, auto-rollback on failure
+- 🧠 **Per-Agent Config** - Optimize each agent independently (speed vs quality)
+
+**Impact:** Optimize agent performance and cost without backend deploys.
+
+### 🕹️ Mission Control Interface
+**Real-time visibility into your AI team**
+- 🔴 **Live Agent Activity** - Watch tokens flow, LLM calls execute, nodes progress in real-time
+- 📊 **Complete Metrics** - Tokens (green), LLM calls (purple), tool calls (yellow), duration (blue)
+- 🎯 **Execution Flow** - Expandable timeline showing every step, decision, and tool use
+- 🔍 **Agent Graphs** - Inline LangGraph visualization with zoom and pan
+- 💬 **Conversation Stream** - Chronological command/response flow with expandable details
+- 🎨 **Light/Dark Theme** - Full theme support with instant switching
+- 🚀 **True Parallelization** - Multiple agents working simultaneously with separate metrics
+
+### ⚡ Quick Actions Panel
+**One-click delegation for common tasks**
+- 📄 **Alice**: "List all documents", "Archive old files", "Check deprecated models"
+- 🔍 **Bob**: "Latest AI news", "Market research", "Competitive analysis"
+- 📊 **Rex**: "Analyze data", "Generate report", "Performance metrics"
+- ⚖️ **Sue**: "Check compliance", "Regulatory review", "Risk assessment"
+- 💡 **Maya**: "Reflect on progress", "Identify patterns", "Strategic insights"
+- 🧪 **Kai**: "Verify solutions", "Test hypotheses", "Iterative refinement"
+- 💬 **Chat**: "Answer questions", "General assistance", "Web search"
+
+### 🎛️ Advanced Control
+**Maximum flexibility and control**
+- 🎯 **Smart Routing** - Single @mention = direct, multiple = @leo orchestrates
+- 🖱️ **Multi-Select** - Hold ⌘/Shift to select multiple agents
+- 🧹 **Clear Completed** - Remove finished tasks to keep conversation focused
+- 🔍 **Filter by Agent** - See only tasks for specific agents
+- ⚙️ **Agent Settings** - Per-agent prompt engineering, model switching, scheduling
+- 📈 **Performance Dashboard** - View agent leaderboards, charts, routing insights
 
 <div align="center">
   <picture>
