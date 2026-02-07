@@ -26,3 +26,4 @@ class ChatAgentState(TypedDict):
     current_step: str
     task_callback: Any | None  # TaskProgressCallback (avoid circular import)
     metrics: Any | None  # ExecutionMetrics for tracking token usage
+    model_config: Any | None  # ModelConfig for LLM instantiation

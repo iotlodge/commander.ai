@@ -4,11 +4,11 @@ Intelligently synthesizes outputs from multiple specialist agents
 """
 
 from typing import Any
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.core.config import get_settings
 from backend.core.token_tracker import ExecutionMetrics, extract_token_usage_from_response
+from backend.core.llm_factory import ModelConfig, create_llm, DEFAULT_CONFIGS
 
 
 async def llm_aggregate_results(
@@ -16,7 +16,8 @@ async def llm_aggregate_results(
     specialist_results: dict[str, dict[str, Any]],
     task_type: str,
     decomposition_reasoning: str | None = None,
-    metrics: ExecutionMetrics | None = None
+    metrics: ExecutionMetrics | None = None,
+    model_config: ModelConfig | None = None
 ) -> str:
     """
     Use LLM to intelligently aggregate results from multiple agents
@@ -26,23 +27,21 @@ async def llm_aggregate_results(
         specialist_results: Dict of {agent_nickname: result_dict}
         task_type: Type of task (research, compliance, etc.)
         decomposition_reasoning: Optional reasoning from task decomposition
+        metrics: Optional execution metrics tracker
+        model_config: Optional model configuration (defaults to parent config)
 
     Returns:
         Synthesized final response
     """
-    settings = get_settings()
-
     # If only one agent, just return their response
     if len(specialist_results) == 1:
         agent_name = list(specialist_results.keys())[0]
         return specialist_results[agent_name]["response"]
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.3,
-        api_key=settings.openai_api_key,
-        max_tokens=3000,
-    )
+    # Use provided config or default to parent config
+    config = model_config or DEFAULT_CONFIGS["parent"]
+
+    llm = create_llm(config, temperature=0.3)
 
     # TODO: Add image generation capability for complex flows
     # Use image_generate_analyze_upscale.py to create diagrams when:
@@ -119,7 +118,7 @@ Ensure the final response directly addresses the original query."""
         if metrics:
             prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
             metrics.add_llm_call(
-                model="gpt-4o-mini",
+                model=config.model_name,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 purpose="result_aggregation"

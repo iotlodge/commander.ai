@@ -7,7 +7,6 @@ Web search powered by TavilyToolset with cache-first pattern
 import logging
 from typing import Any
 from uuid import UUID
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
@@ -16,6 +15,7 @@ from backend.core.config import get_settings
 from backend.core.dependencies import get_document_store
 from backend.core.token_tracker import ExecutionMetrics, extract_token_usage_from_response
 from backend.tools.web_search.tavily_toolset import TavilyToolset
+from backend.core.llm_factory import ModelConfig, create_llm, DEFAULT_CONFIGS
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,8 @@ async def llm_generate_chat_response(
     current_message: str,
     user_id: UUID,
     conversation_history: list[dict[str, str]] | None = None,
-    metrics: ExecutionMetrics | None = None
+    metrics: ExecutionMetrics | None = None,
+    model_config: ModelConfig | None = None
 ) -> str:
     """
     Generate chat response using LLM with web search capability
@@ -121,21 +122,21 @@ async def llm_generate_chat_response(
         user_id: User ID for cache scoping
         conversation_history: Previous messages in format [{role: "user/assistant", content: "..."}]
         metrics: Optional execution metrics tracker
+        model_config: Optional model configuration (defaults to agent_g config)
 
     Returns:
         Generated response string
     """
     settings = get_settings()
 
+    # Use provided config or default to agent_g config
+    config = model_config or DEFAULT_CONFIGS["agent_g"]
+
     # Create web search tool with cache-first pattern
     web_search_tool = await _create_web_search_tool(user_id)
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.7,
-        api_key=settings.openai_api_key,
-        max_tokens=2000,
-    ).bind_tools(tools=[web_search_tool])
+    # Create LLM using factory pattern
+    llm = create_llm(config).bind_tools(tools=[web_search_tool])
 
     system_prompt = """You are a helpful AI assistant in the Commander.ai system.
 Your role is to have natural, informative conversations with users.
@@ -182,7 +183,7 @@ Guidelines:
         if metrics:
             prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
             metrics.add_llm_call(
-                model="gpt-4o-mini",
+                model=config.model_name,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 purpose="chat_response"

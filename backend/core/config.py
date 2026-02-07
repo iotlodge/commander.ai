@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     openai_temperature: float = 0.7
     openai_max_tokens: int = 2000
 
+    # Anthropic Configuration
+    anthropic_api_key: str = ""
+
     # Application Configuration
     app_env: str = "development"
     app_debug: bool = True

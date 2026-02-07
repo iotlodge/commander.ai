@@ -4,7 +4,6 @@ Reviews and critiques outputs, providing constructive feedback
 """
 
 from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.agents.base.agent_interface import (
@@ -16,22 +15,19 @@ from backend.agents.base.agent_interface import (
 from backend.agents.specialized.agent_e.state import ReflectionAgentState
 from backend.core.config import get_settings
 from backend.core.token_tracker import extract_token_usage_from_response
+from backend.core.llm_factory import ModelConfig, create_llm, DEFAULT_CONFIGS
 
 
 async def analyze_content_node(state: ReflectionAgentState) -> dict:
     """
     Perform initial analysis of the content to review
     """
-    settings = get_settings()
-
     if callback := state.get("task_callback"):
         await callback.on_progress_update(25, "analyzing")
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.2,
-        api_key=settings.openai_api_key,
-    )
+    # Use provided config or default to agent_e config
+    config = state.get("model_config") or DEFAULT_CONFIGS["agent_e"]
+    llm = create_llm(config, temperature=0.2)
 
     system_prompt = """You are Maya, a Reflection Specialist at Commander.ai.
 Your role is to critically analyze content and provide constructive feedback.
@@ -67,7 +63,7 @@ Provide your initial analysis covering:
     if metrics := state.get("metrics"):
         prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
         metrics.add_llm_call(
-            model="gpt-4o-mini",
+            model=config.model_name,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             purpose="content_analysis"
@@ -84,16 +80,12 @@ async def identify_issues_node(state: ReflectionAgentState) -> dict:
     """
     Identify specific issues and improvement opportunities
     """
-    settings = get_settings()
-
     if callback := state.get("task_callback"):
         await callback.on_progress_update(50, "identifying_issues")
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0,
-        api_key=settings.openai_api_key,
-    )
+    # Use provided config or default to agent_e config
+    config = state.get("model_config") or DEFAULT_CONFIGS["agent_e"]
+    llm = create_llm(config, temperature=0)
 
     system_prompt = """You are Maya, identifying specific issues in content.
 
@@ -132,7 +124,7 @@ Identify specific issues in JSON format."""
         if metrics := state.get("metrics"):
             prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
             metrics.add_llm_call(
-                model="gpt-4o-mini",
+                model=config.model_name,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 purpose="identify_issues"
@@ -344,6 +336,7 @@ class ReflectionAgent(BaseAgent):
             "current_step": "starting",
             "task_callback": context.task_callback,
             "metrics": context.metrics,
+            "model_config": self.model_config,
         }
 
         # Build config with execution tracker callbacks

@@ -222,6 +222,7 @@ class ComplianceAgent(BaseAgent):
             "error": None,
             "current_step": "starting",
             "risk_level": None,
+            "model_config": self.model_config,
         }
 
         # Build config with execution tracker callbacks

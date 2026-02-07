@@ -4,20 +4,27 @@ Intelligent task decomposition using OpenAI GPT-4o-mini
 """
 
 from typing import Any
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.core.config import get_settings
 from backend.core.token_tracker import ExecutionMetrics, extract_token_usage_from_response
+from backend.core.llm_factory import ModelConfig, create_llm, DEFAULT_CONFIGS
 
 
-async def llm_decompose_task(query: str, user_context: dict[str, Any] | None = None, metrics: ExecutionMetrics | None = None) -> dict[str, Any]:
+async def llm_decompose_task(
+    query: str,
+    user_context: dict[str, Any] | None = None,
+    metrics: ExecutionMetrics | None = None,
+    model_config: ModelConfig | None = None
+) -> dict[str, Any]:
     """
     Use LLM to intelligently decompose a research task into subtasks
 
     Args:
         query: The user's research request
         user_context: Optional context about conversation history
+        metrics: Optional execution metrics tracker
+        model_config: Optional model configuration (defaults to parent config)
 
     Returns:
         dict containing:
@@ -25,14 +32,11 @@ async def llm_decompose_task(query: str, user_context: dict[str, Any] | None = N
             - subtasks: list[dict] with agent assignments and refined prompts
             - reasoning: str explaining the decomposition
     """
-    settings = get_settings()
+    # Use provided config or default to parent config
+    config = model_config or DEFAULT_CONFIGS["parent"]
 
-    # Initialize GPT-4o-mini for cost-effective reasoning
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0,
-        api_key=settings.openai_api_key,
-    )
+    # Initialize LLM using factory pattern
+    llm = create_llm(config, temperature=0)
 
     system_prompt = """You are an intelligent task orchestrator for Commander.ai.
 Your job is to analyze research requests and decompose them into targeted subtasks.
@@ -112,7 +116,7 @@ Provide your decomposition in JSON format."""
         if metrics:
             prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
             metrics.add_llm_call(
-                model="gpt-4o-mini",
+                model=config.model_name,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 purpose="task_decomposition"

@@ -35,3 +35,4 @@ class ParentAgentState(TypedDict):
     current_step: str  # Track progress
     requires_consultation: bool  # If multiple specialists needed
     metrics: Any | None  # ExecutionMetrics for tracking token usage
+    model_config: Any | None  # ModelConfig for LLM instantiation

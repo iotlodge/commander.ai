@@ -37,3 +37,4 @@ class ReflexionAgentState(TypedDict):
     should_iterate: bool  # Whether to continue iterating
     task_callback: Any  # TaskProgressCallback
     metrics: Any  # ExecutionMetrics for tracking token usage
+    model_config: Any | None  # ModelConfig for LLM instantiation

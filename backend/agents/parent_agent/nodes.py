@@ -35,7 +35,8 @@ async def decompose_task_node(state: ParentAgentState) -> dict[str, Any]:
         decomposition = await llm_decompose_task(
             query=query,
             user_context=state.get("conversation_context"),
-            metrics=state.get("metrics")
+            metrics=state.get("metrics"),
+            model_config=state.get("model_config")
         )
 
         task_type = decomposition.get("task_type", "research")
@@ -219,7 +220,8 @@ async def aggregate_results_node(state: ParentAgentState) -> dict[str, Any]:
             specialist_results=results,
             task_type=state.get("task_type", "unknown"),
             decomposition_reasoning=state.get("decomposition_reasoning"),
-            metrics=state.get("metrics")
+            metrics=state.get("metrics"),
+            model_config=state.get("model_config")
         )
 
         # Add disclaimer if some specialists failed

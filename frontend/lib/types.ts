@@ -110,3 +110,46 @@ export interface AgentInfo {
   specialization: string;
   description: string;
 }
+
+// Agent Model Configuration Types
+export interface ApprovedModel {
+  id: string;
+  provider: string; // 'openai', 'anthropic', 'huggingface'
+  model_name: string;
+  model_display_name: string | null;
+  mode: string | null; // 'reasoning', 'chat', 'planning', etc.
+  context_window: number | null;
+  supports_function_calling: boolean;
+  approved: boolean;
+  version: string | null;
+  deprecated: boolean;
+  replacement_model_id: string | null;
+  cost_per_1k_input: number | null;
+  cost_per_1k_output: number | null;
+  default_params: Record<string, any>;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentModelConfig {
+  agent_id: string;
+  nickname: string;
+  provider: string;
+  model_name: string;
+  model_display_name: string | null;
+  temperature: number;
+  max_tokens: number;
+  model_params: Record<string, any>;
+  version: number;
+  supports_function_calling: boolean;
+  context_window: number | null;
+}
+
+export interface AgentModelUpdate {
+  provider: string;
+  model_name: string;
+  temperature?: number;
+  max_tokens?: number;
+  model_params?: Record<string, any>;
+}

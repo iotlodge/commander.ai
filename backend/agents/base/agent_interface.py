@@ -37,6 +37,8 @@ from backend.repositories.graph_repository import GraphRepository
 from backend.repositories.task_repository import get_session_factory
 from backend.core.token_tracker import ExecutionMetrics
 from backend.core.execution_tracker import ExecutionTracker
+from backend.core.llm_factory import ModelConfig, get_default_config
+from backend.repositories.agent_model_repository import AgentModelRepository
 
 
 @dataclass
@@ -183,6 +185,7 @@ class BaseAgent(ABC, MemoryAwareMixin):
         super().__init__()
         self.metadata = metadata
         self.graph: StateGraph | None = None
+        self.model_config: ModelConfig | None = None
 
     @property
     def agent_id(self) -> str:
@@ -205,10 +208,39 @@ class BaseAgent(ABC, MemoryAwareMixin):
     async def initialize(self) -> None:
         """Initialize agent (create graph, connect to memory)"""
         await self._ensure_memory_service()
+
+        # Load model configuration from database (with fallback to defaults)
+        await self._load_model_config()
+
         self.graph = self.create_graph()
 
         # Generate and store graph visualization
         await self._store_graph_visualization()
+
+    async def _load_model_config(self) -> None:
+        """Load model configuration from database, fall back to defaults"""
+        try:
+            session_factory = get_session_factory()
+            async with session_factory() as session:
+                repo = AgentModelRepository(session)
+                config = await repo.get_agent_model_config(self.metadata.id)
+
+                if config:
+                    # Convert database config to ModelConfig
+                    self.model_config = ModelConfig(
+                        provider=config.provider,
+                        model_name=config.model_name,
+                        temperature=config.temperature,
+                        max_tokens=config.max_tokens,
+                        model_params=config.model_params,
+                    )
+                else:
+                    # Use default config
+                    self.model_config = get_default_config(self.metadata.id)
+        except Exception as e:
+            # If database is unavailable, use defaults
+            print(f"Warning: Could not load model config for {self.metadata.nickname}, using defaults: {e}")
+            self.model_config = get_default_config(self.metadata.id)
 
     def _build_graph_config(
         self,

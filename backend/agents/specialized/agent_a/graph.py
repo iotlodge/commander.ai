@@ -62,7 +62,8 @@ async def synthesize_node(state: ResearchAgentState) -> dict:
         query=query,
         search_results=results,
         context=state.get("conversation_context"),
-        metrics=state.get("metrics")
+        metrics=state.get("metrics"),
+        model_config=state.get("model_config")
     )
 
     return {
@@ -84,7 +85,11 @@ async def check_compliance_need_node(state: ResearchAgentState) -> dict:
     text_to_check = f"{state['query']}\n\n{state.get('synthesis', '')}"
 
     # Use LLM-powered compliance detection
-    needs_review, concerns = await llm_check_compliance_keywords(text_to_check, metrics=state.get("metrics"))
+    needs_review, concerns = await llm_check_compliance_keywords(
+        text_to_check,
+        metrics=state.get("metrics"),
+        model_config=state.get("model_config")
+    )
 
     return {
         **state,
@@ -227,6 +232,7 @@ class ResearchAgent(BaseAgent):
             "current_step": "starting",
             "task_callback": context.task_callback,  # Pass through callback
             "metrics": context.metrics,
+            "model_config": self.model_config,
         }
 
         # Build config with execution tracker callbacks

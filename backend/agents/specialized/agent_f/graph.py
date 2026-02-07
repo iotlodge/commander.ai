@@ -4,7 +4,6 @@ Self-reflective reasoning with iterative improvement based on Reflexion paper
 """
 
 from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.agents.base.agent_interface import (
@@ -16,22 +15,19 @@ from backend.agents.base.agent_interface import (
 from backend.agents.specialized.agent_f.state import ReflexionAgentState
 from backend.core.config import get_settings
 from backend.core.token_tracker import extract_token_usage_from_response
+from backend.core.llm_factory import ModelConfig, create_llm, DEFAULT_CONFIGS
 
 
 async def initial_reasoning_node(state: ReflexionAgentState) -> dict:
     """
     Generate initial reasoning attempt for the problem
     """
-    settings = get_settings()
-
     if callback := state.get("task_callback"):
         await callback.on_progress_update(20, "initial_reasoning")
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.3,
-        api_key=settings.openai_api_key,
-    )
+    # Use provided config or default to agent_f config
+    config = state.get("model_config") or DEFAULT_CONFIGS["agent_f"]
+    llm = create_llm(config, temperature=0.3)
 
     system_prompt = """You are Kai, a Reflexion Specialist at Commander.ai.
 Your role is to solve problems through self-reflective reasoning.
@@ -59,7 +55,7 @@ Provide your initial reasoning and solution."""
     if metrics := state.get("metrics"):
         prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
         metrics.add_llm_call(
-            model="gpt-4o-mini",
+            model=config.model_name,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             purpose="initial_reasoning"
@@ -98,11 +94,9 @@ async def self_critique_node(state: ReflexionAgentState) -> dict:
         progress = 20 + (state.get("iteration", 1) * 20)
         await callback.on_progress_update(min(progress, 80), "self_critiquing")
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.2,
-        api_key=settings.openai_api_key,
-    )
+    # Use provided config or default to agent_f config
+    config = state.get("model_config") or DEFAULT_CONFIGS["agent_f"]
+    llm = create_llm(config, temperature=0.2)
 
     # Get current reasoning to critique
     current_reasoning = state.get("refined_reasoning") or state.get("initial_attempt")
@@ -212,11 +206,9 @@ async def refine_reasoning_node(state: ReflexionAgentState) -> dict:
     if callback := state.get("task_callback"):
         await callback.on_progress_update(70, "refining_reasoning")
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.3,
-        api_key=settings.openai_api_key,
-    )
+    # Use provided config or default to agent_f config
+    config = state.get("model_config") or DEFAULT_CONFIGS["agent_f"]
+    llm = create_llm(config, temperature=0.3)
 
     # Get previous reasoning
     previous_reasoning = state.get("refined_reasoning") or state.get("initial_attempt")
@@ -260,7 +252,7 @@ Generate refined reasoning that addresses these issues."""
     if metrics := state.get("metrics"):
         prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
         metrics.add_llm_call(
-            model="gpt-4o-mini",
+            model=config.model_name,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             purpose=f"refine_reasoning_iteration_{state.get('iteration', 1)}"
@@ -425,6 +417,7 @@ class ReflexionAgent(BaseAgent):
             "should_iterate": True,
             "task_callback": context.task_callback,
             "metrics": context.metrics,
+            "model_config": self.model_config,
         }
 
         # Build config with execution tracker callbacks

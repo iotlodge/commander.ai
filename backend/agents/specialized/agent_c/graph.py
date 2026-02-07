@@ -275,6 +275,7 @@ class DataAgent(BaseAgent):
             "final_response": None,
             "error": None,
             "current_step": "starting",
+            "model_config": self.model_config,
         }
 
         # Build config with execution tracker callbacks

@@ -33,3 +33,4 @@ class DataAgentState(TypedDict):
 
     # Metadata
     current_step: str
+    model_config: Any | None  # ModelConfig for LLM instantiation

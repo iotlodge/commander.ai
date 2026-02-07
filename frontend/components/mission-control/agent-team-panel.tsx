@@ -7,8 +7,12 @@ import { useTaskStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { TaskStatus } from "@/lib/types";
-import { Activity, Brain, AlertCircle, Settings } from "lucide-react";
+import { Activity, Brain, AlertCircle, Settings, Cpu } from "lucide-react";
 import { PromptListModal } from "@/components/prompt-management";
+import { AgentModelModal } from "@/components/agent-management/agent-model-modal";
+import { ProviderIcon } from "@/components/ui/provider-icon";
+import { useAgentModels } from "@/lib/hooks/use-agent-models";
+import type { AgentModelConfig } from "@/lib/types";
 
 const MVP_USER_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -59,6 +63,29 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
   // Prompt management modal state
   const [promptModalOpen, setPromptModalOpen] = useState(false);
   const [selectedPromptAgent, setSelectedPromptAgent] = useState<AgentInfo | null>(null);
+
+  // Model management modal state
+  const [modelModalOpen, setModelModalOpen] = useState(false);
+  const [selectedModelAgent, setSelectedModelAgent] = useState<AgentInfo | null>(null);
+
+  // Model configurations cache
+  const [modelConfigs, setModelConfigs] = useState<Record<string, AgentModelConfig>>({});
+  const { fetchModelConfig } = useAgentModels();
+
+  // Load model configs for all agents on mount
+  useEffect(() => {
+    const loadModelConfigs = async () => {
+      const configs: Record<string, AgentModelConfig> = {};
+      for (const agent of AGENTS) {
+        const config = await fetchModelConfig(agent.id);
+        if (config) {
+          configs[agent.id] = config;
+        }
+      }
+      setModelConfigs(configs);
+    };
+    loadModelConfigs();
+  }, []);
 
   // Calculate agent activity and metrics
   const getAgentActivity = (nickname: string) => {
@@ -228,6 +255,16 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                     <div className="text-sm font-semibold text-[var(--mc-text-primary)]">
                       @{agent.nickname}
                     </div>
+                    {/* Model Info - inline with name */}
+                    {modelConfigs[agent.id] && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <ProviderIcon provider={modelConfigs[agent.id].provider} size={12} />
+                        <span className="text-[10px] text-[var(--mc-text-tertiary)] font-mono whitespace-nowrap">
+                          {modelConfigs[agent.id].model_name}
+                        </span>
+                      </div>
+                    )}
+                    {/* Prompt Settings */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -238,6 +275,18 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
                       title="Manage Prompts"
                     >
                       <Settings className="h-3 w-3 text-[var(--mc-text-tertiary)] hover:text-[var(--mc-accent-blue)]" />
+                    </button>
+                    {/* Model Settings */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedModelAgent(agent);
+                        setModelModalOpen(true);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 hover:bg-[var(--mc-border)] p-1 rounded transition-opacity"
+                      title="Model Settings"
+                    >
+                      <Cpu className="h-3 w-3 text-[var(--mc-text-tertiary)] hover:text-[var(--mc-accent-purple)]" />
                     </button>
                   </div>
                   <div className="text-xs text-[var(--mc-text-secondary)]">
@@ -349,6 +398,16 @@ export function AgentTeamPanel({ selectedAgent, onSelectAgent, onAgentClick }: A
           agentId={selectedPromptAgent.id}
           agentNickname={selectedPromptAgent.nickname}
           agentName={selectedPromptAgent.specialization}
+        />
+      )}
+
+      {/* Model Management Modal */}
+      {modelModalOpen && selectedModelAgent && (
+        <AgentModelModal
+          open={modelModalOpen}
+          onOpenChange={setModelModalOpen}
+          agentId={selectedModelAgent.id}
+          agentNickname={selectedModelAgent.nickname}
         />
       )}
     </div>

@@ -94,6 +94,7 @@ class ParentAgent(BaseAgent):
             "current_step": "starting",
             "requires_consultation": False,
             "metrics": context.metrics,
+            "model_config": self.model_config,
         }
 
         # Build config with execution tracker callbacks

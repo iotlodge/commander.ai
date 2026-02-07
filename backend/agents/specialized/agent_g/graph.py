@@ -51,7 +51,8 @@ async def generate_response_node(state: ChatAgentState) -> dict:
         current_message=query,
         user_id=user_id,
         conversation_history=conversation_history,
-        metrics=state.get("metrics")
+        metrics=state.get("metrics"),
+        model_config=state.get("model_config")
     )
 
     # Update conversation history
@@ -134,6 +135,7 @@ class ChatAgent(BaseAgent):
             "current_step": "starting",
             "task_callback": context.task_callback,
             "metrics": context.metrics,
+            "model_config": self.model_config,
         }
 
         # Build config with execution tracker callbacks

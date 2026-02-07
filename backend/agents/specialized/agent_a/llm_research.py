@@ -7,7 +7,6 @@ Web search powered by TavilyToolset with cache-first pattern
 import logging
 from typing import Any
 from uuid import UUID
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.core.config import get_settings
@@ -19,6 +18,7 @@ from backend.tools.web_search.exceptions import (
     TavilyRateLimitError,
     TavilyTimeoutError,
 )
+from backend.core.llm_factory import ModelConfig, create_llm, DEFAULT_CONFIGS
 
 logger = logging.getLogger(__name__)
 
@@ -124,11 +124,8 @@ async def llm_web_search(
         logger.info("Tavily API key not configured, using LLM knowledge fallback")
 
     # Fallback: Use LLM's knowledge (no real web search)
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.3,
-        api_key=settings.openai_api_key,
-    )
+    config = DEFAULT_CONFIGS["agent_a"]
+    llm = create_llm(config, temperature=0.3)
 
     system_prompt = """You are a research assistant. When given a search query, provide relevant information based on your knowledge.
 Format your response as if you were presenting web search results.
@@ -149,7 +146,7 @@ Provide 3-5 key points about this topic based on your knowledge."""
     if metrics:
         prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
         metrics.add_llm_call(
-            model="gpt-4o-mini",
+            model=config.model_name,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             purpose="web_search_fallback"
@@ -170,7 +167,8 @@ async def llm_synthesize_research(
     query: str,
     search_results: list[dict[str, Any]],
     context: dict[str, Any] | None = None,
-    metrics: ExecutionMetrics | None = None
+    metrics: ExecutionMetrics | None = None,
+    model_config: ModelConfig | None = None
 ) -> str:
     """
     Use LLM to synthesize search results into coherent research response
@@ -180,18 +178,15 @@ async def llm_synthesize_research(
         search_results: List of search results to synthesize
         context: Optional conversation context
         metrics: Optional execution metrics tracker
+        model_config: Optional model configuration (defaults to agent_a config)
 
     Returns:
         Synthesized research response
     """
-    settings = get_settings()
+    # Use provided config or default to agent_a config
+    config = model_config or DEFAULT_CONFIGS["agent_a"]
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.3,
-        api_key=settings.openai_api_key,
-        max_tokens=2000,
-    )
+    llm = create_llm(config, temperature=0.3)
 
     # TODO: Add image generation capability for complex research synthesis
     # Use image_generate_analyze_upscale.py to create visualizations when:
@@ -243,7 +238,7 @@ Synthesize these sources into a comprehensive research response. Structure your 
     if metrics:
         prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
         metrics.add_llm_call(
-            model="gpt-4o-mini",
+            model=config.model_name,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             purpose="research_synthesis"
@@ -252,24 +247,26 @@ Synthesize these sources into a comprehensive research response. Structure your 
     return response.content
 
 
-async def llm_check_compliance_keywords(text: str, metrics: ExecutionMetrics | None = None) -> tuple[bool, list[str]]:
+async def llm_check_compliance_keywords(
+    text: str,
+    metrics: ExecutionMetrics | None = None,
+    model_config: ModelConfig | None = None
+) -> tuple[bool, list[str]]:
     """
     Use LLM to intelligently detect compliance/regulatory concerns
 
     Args:
         text: Text to analyze for compliance concerns
         metrics: Optional execution metrics tracker
+        model_config: Optional model configuration (defaults to agent_a config)
 
     Returns:
         Tuple of (needs_review: bool, concerns: list[str])
     """
-    settings = get_settings()
+    # Use provided config or default to agent_a config
+    config = model_config or DEFAULT_CONFIGS["agent_a"]
 
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0,
-        api_key=settings.openai_api_key,
-    )
+    llm = create_llm(config, temperature=0)
 
     system_prompt = """You are a compliance detection assistant.
 Analyze text for mentions of:
@@ -305,7 +302,7 @@ Provide your analysis in JSON format."""
         if metrics:
             prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
             metrics.add_llm_call(
-                model="gpt-4o-mini",
+                model=config.model_name,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 purpose="compliance_check"

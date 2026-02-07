@@ -29,3 +29,4 @@ class ComplianceAgentState(TypedDict):
     # Metadata
     current_step: str
     risk_level: str | None  # "low", "medium", "high"
+    model_config: Any | None  # ModelConfig for LLM instantiation
