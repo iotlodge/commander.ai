@@ -100,7 +100,48 @@ async def _format_model_deprecation_report(state: DocumentManagerState) -> str:
     report.append(f"**Query:** {state.get('search_query', query)}")
     report.append(f"**Generated:** {__import__('datetime').datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}\n")
 
-    # Section 1: Deprecated Models Found
+    # Calculate at_risk_count early for use in summary
+    at_risk_count = 0
+    if configured_models and model_info:
+        at_risk_count = sum(
+            1 for agent_id, config in configured_models.items()
+            if any(
+                f"{config['provider']}_{config['model_name']}".lower().replace('_', '-') in model_name.lower().replace('_', '-')
+                for model_name in model_info.keys()
+            )
+        )
+
+    # Section 1: Executive Summary (MOVED TO TOP)
+    report.append("## 📝 Executive Summary\n")
+
+    summary_parts = []
+    if model_info:
+        summary_parts.append(f"Found {len(model_info)} deprecated model(s) mentioned in search results")
+    else:
+        summary_parts.append("No specific deprecated models identified in current search")
+
+    if configured_models:
+        summary_parts.append(f"You have {len(configured_models)} agent(s) configured with specific models")
+        if at_risk_count > 0:
+            summary_parts.append(f"**{at_risk_count} may need attention**")
+
+    report.append(". ".join(summary_parts) + ".\n")
+
+    # Section 2: Recommendations (MOVED TO TOP)
+    report.append("## 💡 Recommendations\n")
+
+    if at_risk_count > 0:
+        report.append(f"⚠️ **{at_risk_count} agent(s) using potentially deprecated models**\n")
+        report.append("**Suggested Actions:**")
+        report.append("1. Review deprecated models and plan migration")
+        report.append("2. Test replacement models (GPT-4o, Claude Sonnet 4)")
+        report.append("3. Update agent configs via Mission Control (🧠 Cpu icon)")
+        report.append("4. Monitor for deprecation timelines\n")
+    else:
+        report.append("✅ **All your configured models appear to be current**\n")
+        report.append("Continue monitoring for future deprecation notices.\n")
+
+    # Section 3: Deprecated Models Found
     if model_info:
         report.append("## 📊 Deprecated Models Detected\n")
         report.append("| Model | Status | Sources |")
@@ -115,7 +156,7 @@ async def _format_model_deprecation_report(state: DocumentManagerState) -> str:
         report.append("## ✅ No Deprecated Models Found\n")
         report.append("Web search did not identify any specific deprecated models in the results.\n")
 
-    # Section 2: Your Active Models
+    # Section 4: Your Active Models
     if configured_models:
         report.append("## 🤖 Your Currently Configured Models\n")
         report.append("| Agent | Provider | Model | Status |")
@@ -131,7 +172,6 @@ async def _format_model_deprecation_report(state: DocumentManagerState) -> str:
             )
 
             status = "⚠️ AT RISK" if is_deprecated else "✅ Active"
-            emoji = "⚠️" if is_deprecated else "✅"
 
             report.append(
                 f"| `{agent_id}` | {config['provider'].title()} | `{config['model_name']}` | {status} |"
@@ -139,46 +179,8 @@ async def _format_model_deprecation_report(state: DocumentManagerState) -> str:
 
         report.append("")
 
-    # Section 3: Recommendations
-    report.append("## 💡 Recommendations\n")
-
-    at_risk_count = sum(
-        1 for agent_id, config in configured_models.items()
-        if any(
-            f"{config['provider']}_{config['model_name']}".lower().replace('_', '-') in model_name.lower().replace('_', '-')
-            for model_name in model_info.keys()
-        )
-    )
-
-    if at_risk_count > 0:
-        report.append(f"⚠️ **{at_risk_count} agent(s) using potentially deprecated models**\n")
-        report.append("**Suggested Actions:**")
-        report.append("1. Review deprecated models and plan migration")
-        report.append("2. Test replacement models (GPT-4o, Claude Sonnet 4)")
-        report.append("3. Update agent configs via Mission Control (🧠 Cpu icon)")
-        report.append("4. Monitor for deprecation timelines\n")
-    else:
-        report.append("✅ **All your configured models appear to be current**\n")
-        report.append("Continue monitoring for future deprecation notices.\n")
-
-    # Section 4: Summary
-    report.append("## 📝 Executive Summary\n")
-
-    summary_parts = []
-    if model_info:
-        summary_parts.append(f"Found {len(model_info)} deprecated model(s) mentioned in search results")
-    else:
-        summary_parts.append("No specific deprecated models identified in current search")
-
-    if configured_models:
-        summary_parts.append(f"You have {len(configured_models)} agent(s) configured with specific models")
-        if at_risk_count > 0:
-            summary_parts.append(f"**{at_risk_count} may need attention**")
-
-    report.append(". ".join(summary_parts) + ".")
+    # Section 5: Sources Referenced
     report.append("\n---\n")
-
-    # Section 5: Raw Sources
     report.append("## 📚 Sources Referenced\n")
     for idx, doc in enumerate(web_documents[:5], 1):
         title = doc.get("metadata", {}).get("title", "Untitled")
