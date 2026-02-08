@@ -47,6 +47,20 @@ async def lifespan(app: FastAPI):
     await scheduler.start()
     print("📅 Scheduler started")
 
+    # Add system-level recurring jobs
+    from apscheduler.triggers.interval import IntervalTrigger
+    from backend.jobs.stats_aggregation import run_stats_aggregation
+
+    # Stats aggregation job - runs every hour
+    hourly_trigger = IntervalTrigger(hours=1)
+    await scheduler.add_system_job(
+        job_id="system_stats_aggregation",
+        job_function=run_stats_aggregation,
+        trigger=hourly_trigger,
+        name="Hourly Stats Aggregation"
+    )
+    print("📊 Hourly stats aggregation job scheduled")
+
     print("🚀 commander.ai started successfully")
 
     yield

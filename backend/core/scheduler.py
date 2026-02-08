@@ -371,6 +371,49 @@ class CommandSchedulerService:
             "jobs": jobs,
         }
 
+    async def add_system_job(
+        self,
+        job_id: str,
+        job_function,
+        trigger,
+        name: str,
+        **kwargs
+    ) -> bool:
+        """
+        Add a system-level recurring job to the scheduler
+
+        This is for internal jobs like stats aggregation, cache cleanup, etc.
+        Unlike user schedules, these jobs are not stored in the database.
+
+        Args:
+            job_id: Unique identifier for the job
+            job_function: Async function to execute
+            trigger: APScheduler trigger (IntervalTrigger, CronTrigger, etc.)
+            name: Human-readable job name
+            **kwargs: Additional arguments for scheduler.add_job()
+
+        Returns:
+            True if successfully added, False otherwise
+        """
+        if not self.scheduler:
+            logger.error("Scheduler not initialized")
+            return False
+
+        try:
+            self.scheduler.add_job(
+                job_function,
+                trigger=trigger,
+                id=job_id,
+                name=name,
+                replace_existing=True,
+                **kwargs
+            )
+            logger.info(f"Added system job '{name}' (ID: {job_id})")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add system job '{name}': {e}", exc_info=True)
+            return False
+
 
 # Global scheduler instance
 _scheduler_service: CommandSchedulerService | None = None
