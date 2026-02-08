@@ -42,3 +42,4 @@ class DocumentManagerState(TypedDict):
     current_step: str
     task_callback: Any | None
     model_config: Any | None  # ModelConfig for LLM instantiation
+    metrics: Any | None  # ExecutionMetrics for token/call tracking

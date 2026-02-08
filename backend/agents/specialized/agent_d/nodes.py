@@ -21,6 +21,7 @@ from backend.tools.document_loaders import (
 )
 from backend.tools.web_search.tavily_toolset import TavilyToolset
 from backend.core.llm_factory import create_llm, DEFAULT_CONFIGS
+from backend.core.token_tracker import extract_token_usage_from_response
 
 
 async def _format_model_deprecation_report(state: DocumentManagerState) -> str:
@@ -29,7 +30,7 @@ async def _format_model_deprecation_report(state: DocumentManagerState) -> str:
     Compares against user's configured models
     """
     web_documents = state.get("web_documents", [])
-    query = state.get("query", "").lower()
+    query = (state.get("query") or "").lower()
 
     if not web_documents:
         return "No information found about model deprecation."
@@ -203,7 +204,8 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
     quoted_strings = re.findall(r'"([^"]+)"', query)
 
     # Extract collection name patterns like "into collection_name" or "search collection_name"
-    collection_match = re.search(r'(?:into|collection|search)\s+([a-zA-Z0-9_-]+)', query_lower)
+    # Handle both quoted and unquoted collection names
+    collection_match = re.search(r'(?:into|collection|search)\s+["\']?([a-zA-Z0-9_-]+)["\']?', query_lower)
     collection_name = collection_match.group(1) if collection_match else None
 
     # Special handling for search commands: "search collection_name for query"
@@ -235,15 +237,15 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
 
     elif "create collection" in query_lower or "new collection" in query_lower:
         action_type = "create_collection"
-        # Extract collection name after "create collection"
-        match = re.search(r'(?:create|new)\s+collection\s+([a-zA-Z0-9_-]+)', query_lower)
+        # Extract collection name after "create collection" (handle quotes)
+        match = re.search(r'(?:create|new)\s+collection\s+["\']?([a-zA-Z0-9_-]+)["\']?', query_lower)
         collection_name = match.group(1) if match else "default"
         params = {"collection_name": collection_name}
 
     elif "delete collection" in query_lower or "remove collection" in query_lower:
         action_type = "delete_collection"
-        # Extract collection name after "delete collection"
-        match = re.search(r'(?:delete|remove)\s+collection\s+([a-zA-Z0-9_-]+)', query_lower)
+        # Extract collection name after "delete collection" (handle quotes)
+        match = re.search(r'(?:delete|remove)\s+collection\s+["\']?([a-zA-Z0-9_-]+)["\']?', query_lower)
         collection_name = match.group(1) if match else None
         params = {"collection_name": collection_name}
 
@@ -279,7 +281,7 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
             "base_url": base_url,
         }
 
-    elif "search web" in query_lower or "web search" in query_lower or "search online" in query_lower:
+    elif any(keyword in query_lower for keyword in ["search web", "web search", "search online", "search the web", "search on web", "search internet", "google", "look up online"]):
         action_type = "search_web"
         # Extract search query (everything after "for" or quoted string)
         search_query = query
@@ -289,8 +291,8 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
         elif quoted_strings:
             search_query = quoted_strings[0]
 
-        # Check if storing into collection
-        store_match = re.search(r'(?:into|in)\s+([a-zA-Z0-9_-]+)', query_lower)
+        # Check if storing into collection (handle quotes)
+        store_match = re.search(r'(?:into|in)\s+["\']?([a-zA-Z0-9_-]+)["\']?', query_lower)
         store_collection = store_match.group(1) if store_match else None
 
         params = {
@@ -316,10 +318,10 @@ async def parse_input_node(state: DocumentManagerState) -> dict:
                 "collection_names": target_collections,
             }
 
-        # Pattern 2: "search for <query> in/into <collection>" - Single collection
-        elif re.search(r'search\s+for\s+.+?\s+(?:in|into)\s+[a-zA-Z0-9_-]+', query_lower):
+        # Pattern 2: "search for <query> in/into <collection>" - Single collection (handle quotes)
+        elif re.search(r'search\s+for\s+.+?\s+(?:in|into)\s+["\']?[a-zA-Z0-9_-]+["\']?', query_lower):
             action_type = "search_collection"
-            search_for_into = re.search(r'search\s+for\s+(.+?)\s+(?:in|into)\s+([a-zA-Z0-9_-]+)', query_lower)
+            search_for_into = re.search(r'search\s+for\s+(.+?)\s+(?:in|into)\s+["\']?([a-zA-Z0-9_-]+)["\']?', query_lower)
             if search_for_into:
                 search_query = search_for_into.group(1).strip('"').strip("'")
                 target_collection = search_for_into.group(2)
@@ -418,13 +420,32 @@ Available Actions (choose the MOST appropriate):
 10. "extract_urls" - Extract content from specific URLs (use when user provides specific URLs to process)
 11. "map_site" - Map website structure without storing (use when user wants to see site structure)
 
-Decision Criteria:
-- If request mentions "latest", "current", "news", "today", "2026", or needs real-time info → web_search
-- If request mentions existing collection name → search_collection
-- If request is about user's documents/collections without specifics → search_all
-- If request wants to save/archive web content → crawl_site or create_collection
-- If request has file path (.pdf, .docx, .txt, .md) → load_file
-- If user asks what they have → list_collections
+CRITICAL DECISION CRITERIA - Where to Search:
+
+**WEB (Internet) - Use web_search when:**
+- Request explicitly mentions: "web", "internet", "online", "google", "search for"
+- Needs current/real-time information: "latest", "current", "today", "2026", "news", "recent"
+- Topic requires up-to-date data: stock prices, weather, current events, model availability
+- User has NO collections OR collections likely don't contain this information
+- Examples: "latest AI news", "current GPT-4 pricing", "search web for X", "what's new in Y"
+
+**DATASTORES (User's Collections) - Use search_collection/search_all when:**
+- Request explicitly mentions: "my documents", "my files", "my collections", "what I have"
+- Refers to existing collection name (check context above)
+- User wants to find information they previously saved
+- Question about their own data: "find that paper I saved", "search my research"
+- Examples: "find documents about X", "search my notes", "what did I save about Y"
+
+**BOTH (Web + Datastores) - Complex queries:**
+- If unsure, default to web_search for current information
+- User can explicitly request both: "search my docs AND the web for X"
+- Consider suggesting a follow-up: "I searched the web. Would you like me to also check your collections?"
+
+Decision Priority:
+1. Explicit keywords ("web", "my docs") → Follow user's explicit intent
+2. Temporal indicators ("latest", "current") → Prefer web_search
+3. Collection context (user has relevant collections) → Consider search_all
+4. Default for ambiguous "search" → web_search (safer to get current info)
 
 Respond with ONLY a JSON object (no markdown, no explanation):
 {{
@@ -440,18 +461,41 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 }}
 
 Examples:
-- "check for deprecated LLM models" → {{"action": "web_search", "confidence": 0.95, "reasoning": "Needs current model status from web", "params": {{"query": "deprecated LLM models OpenAI Anthropic Claude GPT 2026"}}}}
-- "find documents about quantum computing" → {{"action": "search_all", "confidence": 0.90, "reasoning": "Search user's document collections", "params": {{"query": "quantum computing"}}}}
-- "search my research collection for AI papers" → {{"action": "search_collection", "confidence": 0.95, "reasoning": "User specified 'research' collection", "params": {{"query": "AI papers", "collection_name": "research"}}}}
+
+WEB SEARCH (Current/Real-time Information):
+- "search the web for latest AI news" → {{"action": "web_search", "confidence": 0.95, "reasoning": "Explicit 'web' + 'latest' indicates need for current internet information", "params": {{"query": "latest AI news 2026"}}}}
+- "check for deprecated LLM models" → {{"action": "web_search", "confidence": 0.95, "reasoning": "Model status changes frequently, needs current web data", "params": {{"query": "deprecated LLM models OpenAI Anthropic Claude GPT 2026"}}}}
+- "what's the current price of Bitcoin?" → {{"action": "web_search", "confidence": 1.0, "reasoning": "Real-time financial data from web", "params": {{"query": "Bitcoin price USD 2026"}}}}
+
+DATASTORE SEARCH (User's Saved Documents):
+- "find documents about quantum computing" → {{"action": "search_all", "confidence": 0.90, "reasoning": "User said 'documents' implying their saved collections", "params": {{"query": "quantum computing"}}}}
+- "search my research collection for AI papers" → {{"action": "search_collection", "confidence": 0.95, "reasoning": "User explicitly specified 'my research' collection", "params": {{"query": "AI papers", "collection_name": "research"}}}}
+- "what did I save about machine learning?" → {{"action": "search_all", "confidence": 0.90, "reasoning": "User asking about their own saved data", "params": {{"query": "machine learning"}}}}
+
+COLLECTION MANAGEMENT:
 - "what collections do I have?" → {{"action": "list_collections", "confidence": 1.0, "reasoning": "User wants to see their collections", "params": {{}}}}
-- "save TechCrunch articles about AI" → {{"action": "crawl_site", "confidence": 0.85, "reasoning": "User wants to archive website content", "params": {{"url": "techcrunch.com", "collection_name": "ai_news"}}}}
-- "load /documents/research.pdf" → {{"action": "load_file", "confidence": 1.0, "reasoning": "User provided file path", "params": {{"file_path": "/documents/research.pdf"}}}}
+- "create a new collection called research-papers" → {{"action": "create_collection", "confidence": 1.0, "reasoning": "User wants to create collection", "params": {{"collection_name": "research-papers"}}}}
+
+WEB ARCHIVING:
+- "save TechCrunch articles about AI" → {{"action": "crawl_site", "confidence": 0.85, "reasoning": "User wants to archive website content into collection", "params": {{"url": "techcrunch.com", "collection_name": "ai_news"}}}}
+- "load /documents/research.pdf" → {{"action": "load_file", "confidence": 1.0, "reasoning": "User provided file path to load", "params": {{"file_path": "/documents/research.pdf"}}}}
 
 Analyze and respond:"""
 
     try:
         response = await llm.ainvoke(reasoning_prompt)
         response_text = response.content.strip()
+
+        # Track token usage
+        metrics = state.get("metrics")
+        if metrics:
+            prompt_tokens, completion_tokens = extract_token_usage_from_response(response)
+            metrics.add_llm_call(
+                model=model_config.model_name,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                purpose="llm_reasoning"
+            )
 
         # Parse JSON response
         import json
@@ -906,14 +950,14 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
         # If no collection specified (None), skip storage and return web results directly
         if collection_name is None:
             # Check if this is a model-related query for intelligent formatting
-            query = state.get("query", "").lower()
-            search_query = state.get("search_query", "").lower()
+            query = (state.get("query") or "").lower()
+            search_query = (state.get("search_query") or "").lower()
             web_documents = state.get("web_documents", [])
 
-            is_model_query = any(
-                keyword in query or keyword in search_query
-                for keyword in ['model', 'deprecated', 'llm', 'gpt', 'claude', 'deprecation', 'sunset']
-            )
+            # SPECIFIC model deprecation detection - require BOTH model names AND deprecation keywords
+            model_names = any(keyword in query or keyword in search_query for keyword in ['gpt', 'claude', 'llm'])
+            deprecation_keywords = any(keyword in query or keyword in search_query for keyword in ['deprecated', 'deprecation', 'sunset', 'end of life', 'eol', 'retired', 'replaced'])
+            is_model_query = model_names and deprecation_keywords
 
             if is_model_query and web_documents:
                 # Generate formatted model deprecation report
@@ -921,14 +965,27 @@ async def store_chunks_node(state: DocumentManagerState) -> dict:
             else:
                 # Standard formatting for non-model queries
                 if web_documents:
-                    response_parts = []
-                    for idx, doc in enumerate(web_documents, 1):
+                    response_parts = ["## Web Search Results\n"]
+
+                    for idx, doc in enumerate(web_documents[:5], 1):  # Limit to top 5 results
                         title = doc.get("metadata", {}).get("title", "Untitled")
                         url = doc.get("metadata", {}).get("url", "")
-                        content_preview = doc.get("content", "")[:500]  # First 500 chars
-                        response_parts.append(f"{idx}. **{title}**\n   URL: {url}\n   {content_preview}...")
+                        content = doc.get("content", "")
 
-                    final_response = "Web search results:\n\n" + "\n\n".join(response_parts)
+                        # Clean and summarize content (first 300 chars, break at sentence)
+                        content_preview = content[:300].strip()
+                        last_period = content_preview.rfind('.')
+                        if last_period > 100:  # Only break at sentence if it's reasonable
+                            content_preview = content_preview[:last_period + 1]
+
+                        response_parts.append(
+                            f"### {idx}. {title}\n"
+                            f"**Source:** {url}\n\n"
+                            f"{content_preview}\n"
+                        )
+
+                    response_parts.append(f"\n---\n*Found {len(web_documents)} results, showing top {min(5, len(web_documents))}*")
+                    final_response = "\n".join(response_parts)
                 else:
                     final_response = "Retrieved information but no results to display."
 
@@ -1656,14 +1713,14 @@ async def finalize_response_node(state: DocumentManagerState) -> dict:
         }
 
     # Check if this is a model-related query that needs special formatting
-    query = state.get("query", "").lower()
-    search_query = state.get("search_query", "").lower()
+    query = (state.get("query") or "").lower()
+    search_query = (state.get("search_query") or "").lower()
     web_documents = state.get("web_documents", [])
 
-    is_model_query = any(
-        keyword in query or keyword in search_query
-        for keyword in ['model', 'deprecated', 'llm', 'gpt', 'claude', 'deprecation', 'sunset']
-    )
+    # SPECIFIC model deprecation detection - require BOTH model names AND deprecation keywords
+    model_names = any(keyword in query or keyword in search_query for keyword in ['gpt', 'claude', 'llm'])
+    deprecation_keywords = any(keyword in query or keyword in search_query for keyword in ['deprecated', 'deprecation', 'sunset', 'end of life', 'eol', 'retired', 'replaced'])
+    is_model_query = model_names and deprecation_keywords
 
     if is_model_query and web_documents and not state.get("final_response"):
         # Generate formatted model deprecation report

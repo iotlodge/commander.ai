@@ -205,6 +205,7 @@ class DocumentManagerAgent(BaseAgent):
             "current_step": "starting",
             "task_callback": context.task_callback,
             "model_config": self.model_config,
+            "metrics": context.metrics,
         }
 
         # Build config with execution tracker callbacks
